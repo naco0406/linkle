@@ -1,0 +1,9 @@
+{
+  "extends": "@linkle/tsconfig/react.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "baseUrl": ".",
+    "types": []
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx"]
+}

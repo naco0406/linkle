@@ -1,0 +1,86 @@
+/*
+ * Linkle design system — global CSS variables.
+ * Edits here must be reflected in docs/design-system.md §2.
+ */
+@import './fonts.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Brand */
+    --linkle: 217 60% 50%;
+    --linkle-foreground: 0 0% 100%;
+
+    /* Surfaces */
+    --background: 217 67% 97%;
+    --foreground: 220 30% 15%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 30% 15%;
+
+    /* Muted / accent */
+    --muted: 217 30% 92%;
+    --muted-foreground: 220 15% 45%;
+    --accent: 217 60% 94%;
+    --accent-foreground: 220 30% 15%;
+
+    /* Feedback */
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Lines & focus */
+    --border: 217 25% 85%;
+    --input: 217 25% 85%;
+    --ring: 217 60% 50%;
+
+    /* Dark theme placeholders (no UI toggle in v1) */
+    color-scheme: light;
+  }
+
+  html {
+    font-family:
+      var(--linkle-font-sans, 'Pretendard Variable'),
+      -apple-system,
+      BlinkMacSystemFont,
+      'Apple SD Gothic Neo',
+      'Noto Sans KR',
+      system-ui,
+      sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  /* Default focus ring — keyboard only */
+  :focus-visible {
+    @apply ring-ring ring-offset-background outline-none ring-2 ring-offset-2;
+  }
+
+  /* Reduce motion */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* Utility: prevent the page content from being user-selectable on the game
+   board (discourages in-page browser search highlighting). */
+@layer utilities {
+  .linkle-no-select {
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+}

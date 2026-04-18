@@ -1,0 +1,6 @@
+/* Pretendard Variable — Korean UI font.
+   Served from the public CDN that ships with the font repo. */
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css');
+
+/* Rhodium Libre — serif accent for logo / display numbers. */
+@import url('https://fonts.googleapis.com/css2?family=Rhodium+Libre&display=swap');

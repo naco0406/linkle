@@ -1,0 +1,20 @@
+# Git hooks run locally before commit/push to enforce the quality harness.
+# See docs/harness.md for the full policy.
+
+pre-commit:
+  parallel: true
+  commands:
+    typecheck:
+      glob: "**/*.{ts,tsx}"
+      run: pnpm typecheck
+    lint:
+      glob: "**/*.{ts,tsx,js,jsx}"
+      run: pnpm lint
+    format:
+      glob: "**/*.{ts,tsx,js,jsx,json,md,css}"
+      run: pnpm format:check
+
+pre-push:
+  commands:
+    unit-tests:
+      run: pnpm test:unit

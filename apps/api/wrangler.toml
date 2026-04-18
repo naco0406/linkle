@@ -1,0 +1,31 @@
+name = "linkle-api"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+[observability]
+enabled = true
+
+# D1 binding — the only persistent store.
+[[d1_databases]]
+binding = "DB"
+database_name = "linkle-db"
+# Fill in after `pnpm --filter @linkle/api run db:create`.
+database_id = "REPLACE_AFTER_D1_CREATE"
+migrations_dir = "migrations"
+
+# Secrets (set via `wrangler secret put`):
+#   OPENAI_API_KEY       — used for similarity scoring
+#   ADMIN_JWT_SECRET     — HS256 key for admin sessions
+
+[vars]
+ALLOWED_ORIGINS = "http://localhost:5173,http://localhost:5174"
+OPENAI_MODEL = "gpt-4o-mini"
+
+[env.staging]
+name = "linkle-api-staging"
+vars = { ALLOWED_ORIGINS = "https://staging.linkle.kr,https://admin-staging.linkle.kr", OPENAI_MODEL = "gpt-4o-mini" }
+
+[env.production]
+name = "linkle-api"
+vars = { ALLOWED_ORIGINS = "https://linkle.kr,https://admin.linkle.kr", OPENAI_MODEL = "gpt-4o-mini" }

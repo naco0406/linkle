@@ -1,0 +1,9 @@
+{
+  "extends": "@linkle/tsconfig/node.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "baseUrl": ".",
+    "types": ["node", "@playwright/test"]
+  },
+  "include": ["**/*.ts", "**/*.tsx"]
+}

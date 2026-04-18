@@ -1,0 +1,39 @@
+# deps
+node_modules/
+.pnpm-store/
+
+# build
+dist/
+build/
+.wrangler/
+.turbo/
+.vite/
+
+# test output
+coverage/
+playwright-report/
+test-results/
+blob-report/
+
+# env
+.env
+.env.*
+!.env.example
+
+# editor
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# misc
+*.log
+.npm
+.eslintcache
+.stylelintcache
+*.tsbuildinfo
+
+# cloudflare
+.dev.vars
+wrangler.toml.bak
+.mf/
