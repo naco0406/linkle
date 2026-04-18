@@ -113,11 +113,25 @@
 
 ### ✅ Phase 9 — 배포 & CI
 
+**배포 전략** (runbook):
+
+- `apps/web`, `apps/admin` → **Cloudflare Pages Git 연동** (대시보드에서 연결).
+  모노레포 설정은 프로젝트당:
+  - Build command: `pnpm install --frozen-lockfile && pnpm --filter @linkle/<web|admin> build`
+  - Build output: `apps/<web|admin>/dist`
+  - Env: `VITE_API_BASE_URL=https://api.linkle.kr`, `NODE_VERSION=20.11.0`
+- `apps/api` → **GitHub Actions의 `deploy-api` job**이 main 머지 후 `wrangler deploy`.
+
+**한 번만 하는 세팅**:
+
 - [x] `apps/api` wrangler — production / staging 환경
 - [x] `apps/web` / `apps/admin` Cloudflare Pages 설정 (`_redirects`, `_headers`)
-- [x] GitHub Actions `.github/workflows/ci.yml` — harness → deploy-api / deploy-web / deploy-admin
+- [x] GitHub Actions `.github/workflows/ci.yml` — `harness` + `deploy-api` 두 job
 - [ ] Cloudflare D1 생성 후 `database_id` 치환 (`wrangler d1 create linkle-db`)
-- [ ] Cloudflare secrets: `OPENAI_API_KEY`, `ADMIN_JWT_SECRET` (런칭 직전)
+- [ ] Cloudflare Worker secrets: `OPENAI_API_KEY`, `ADMIN_JWT_SECRET`
+- [ ] Cloudflare Pages 두 프로젝트 Git 연동 (web, admin)
+- [ ] GitHub repo secrets: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`
+- [ ] main 브랜치 보호: `harness` job 통과 요구 (PR → merge 게이트)
 
 ---
 

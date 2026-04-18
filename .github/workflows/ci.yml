@@ -1,5 +1,15 @@
 name: harness
 
+# Strategy:
+#   - apps/web, apps/admin  → Cloudflare Pages Git integration
+#     (build + deploy handled by Cloudflare itself; this workflow does not
+#     publish them. Branch protection on `main` should require `harness` to
+#     pass before Pages even sees the commit.)
+#   - apps/api              → deployed from here via `wrangler deploy`,
+#     gated on `harness`.
+#
+# See docs/plan.md §9 for the runbook.
+
 on:
   push:
     branches: [main]
@@ -74,47 +84,3 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: pnpm --filter @linkle/api run deploy --env production
-
-  deploy-web:
-    needs: harness
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20.11.0
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @linkle/web build
-      - name: publish Cloudflare Pages (web)
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy apps/web/dist --project-name=linkle-web --branch=main
-
-  deploy-admin:
-    needs: harness
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20.11.0
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @linkle/admin build
-      - name: publish Cloudflare Pages (admin)
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy apps/admin/dist --project-name=linkle-admin --branch=main
