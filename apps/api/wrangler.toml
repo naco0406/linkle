@@ -6,12 +6,13 @@ compatibility_flags = ["nodejs_compat"]
 [observability]
 enabled = true
 
-# D1 binding — the only persistent store.
+# Top-level D1 binding used by `wrangler dev` (local) when no --env flag is
+# passed. Cloudflare does NOT inherit d1_databases into named environments, so
+# env.production / env.staging each declare their own binding below.
 [[d1_databases]]
 binding = "DB"
 database_name = "linkle-db"
-# Fill in after `pnpm --filter @linkle/api run db:create`.
-database_id = "REPLACE_AFTER_D1_CREATE"
+database_id = "0b50fddc-51f4-437c-ad2a-d653606a1aaf"
 migrations_dir = "migrations"
 
 # Secrets (set via `wrangler secret put`):
@@ -22,10 +23,24 @@ migrations_dir = "migrations"
 ALLOWED_ORIGINS = "http://localhost:5173,http://localhost:5174"
 OPENAI_MODEL = "gpt-4o-mini"
 
+# ─── staging ──────────────────────────────────────────────────────────────
 [env.staging]
 name = "linkle-api-staging"
 vars = { ALLOWED_ORIGINS = "https://staging.linkle.kr,https://admin-staging.linkle.kr", OPENAI_MODEL = "gpt-4o-mini" }
 
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "linkle-db"
+database_id = "0b50fddc-51f4-437c-ad2a-d653606a1aaf"
+migrations_dir = "migrations"
+
+# ─── production ───────────────────────────────────────────────────────────
 [env.production]
 name = "linkle-api"
 vars = { ALLOWED_ORIGINS = "https://linkle.kr,https://admin.linkle.kr", OPENAI_MODEL = "gpt-4o-mini" }
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "linkle-db"
+database_id = "0b50fddc-51f4-437c-ad2a-d653606a1aaf"
+migrations_dir = "migrations"
