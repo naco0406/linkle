@@ -54,7 +54,12 @@ adminRoute.post('/login', async (c) => {
   setCookie(c, COOKIE_NAME, token, {
     httpOnly: true,
     secure: true,
-    sameSite: 'Lax',
+    // `None` is required because the admin UI (linkle-admin.pages.dev) and
+    // API (linkle-api.*.workers.dev) live on different eTLD+1 sites until a
+    // shared custom domain (*.linkle.kr) is wired up. `Secure` is mandatory
+    // for cross-site cookies and the strict CORS allow-list backs the CSRF
+    // posture. See docs/architecture.md §7.
+    sameSite: 'None',
     path: '/',
     maxAge: SESSION_TTL_SEC,
   });
@@ -65,7 +70,12 @@ adminRoute.post('/logout', (c) => {
   setCookie(c, COOKIE_NAME, '', {
     httpOnly: true,
     secure: true,
-    sameSite: 'Lax',
+    // `None` is required because the admin UI (linkle-admin.pages.dev) and
+    // API (linkle-api.*.workers.dev) live on different eTLD+1 sites until a
+    // shared custom domain (*.linkle.kr) is wired up. `Secure` is mandatory
+    // for cross-site cookies and the strict CORS allow-list backs the CSRF
+    // posture. See docs/architecture.md §7.
+    sameSite: 'None',
     path: '/',
     maxAge: 0,
   });
