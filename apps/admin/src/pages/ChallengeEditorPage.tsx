@@ -1,7 +1,14 @@
 import { useEffect, useState, type JSX } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Button, Card, CardContent, CardHeader, CardTitle, Input } from '@linkle/design-system';
+import {
+  AutocompleteWikipediaInput,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@linkle/design-system';
 import { challengeDateSchema } from '@linkle/shared';
 import { deleteChallenge, listChallenges, upsertChallenge } from '../lib/api.js';
 
@@ -73,26 +80,20 @@ function ChallengeEditor({ date }: ChallengeEditorProps): JSX.Element {
           >
             <label className="flex flex-col gap-1 text-sm" htmlFor="start-page">
               <span>출발 페이지</span>
-              <Input
+              <AutocompleteWikipediaInput
                 id="start-page"
                 value={startPage}
-                onChange={(e) => {
-                  setStartPage(e.currentTarget.value);
-                }}
+                onChange={setStartPage}
                 placeholder="예: 대한민국"
-                required
               />
             </label>
             <label className="flex flex-col gap-1 text-sm" htmlFor="end-page">
               <span>도착 페이지</span>
-              <Input
+              <AutocompleteWikipediaInput
                 id="end-page"
                 value={endPage}
-                onChange={(e) => {
-                  setEndPage(e.currentTarget.value);
-                }}
+                onChange={setEndPage}
                 placeholder="예: 비틀즈"
-                required
               />
             </label>
             <div className="flex gap-2">

@@ -24,3 +24,8 @@ export { PathTrail, type PathTrailProps, type PathTrailEntry } from './linkle/Pa
 export { EmojiSquareLine, type EmojiSquareLineProps } from './linkle/EmojiSquareLine.js';
 export { ChallengeCard, type ChallengeCardProps } from './linkle/ChallengeCard.js';
 export { ForcedEndPanel, type ForcedEndPanelProps } from './linkle/ForcedEndPanel.js';
+export {
+  AutocompleteWikipediaInput,
+  type AutocompleteWikipediaInputProps,
+} from './linkle/AutocompleteWikipediaInput.js';
+export { HelpDialog, type HelpDialogProps } from './linkle/HelpDialog.js';

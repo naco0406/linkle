@@ -84,3 +84,82 @@
     user-select: none;
   }
 }
+
+/* Wikipedia article content rendered via dangerouslySetInnerHTML. We keep
+   the base typography conservative so sanitized HTML looks like a readable
+   article rather than a styled product surface. */
+@layer components {
+  .wiki-content {
+    color: hsl(var(--foreground));
+    font-size: 0.95rem;
+    line-height: 1.7;
+  }
+  .wiki-content h1,
+  .wiki-content h2,
+  .wiki-content h3,
+  .wiki-content h4 {
+    font-weight: 700;
+    line-height: 1.3;
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+  }
+  .wiki-content h1 {
+    font-size: 1.75rem;
+  }
+  .wiki-content h2 {
+    font-size: 1.5rem;
+    border-bottom: 1px solid hsl(var(--border));
+    padding-bottom: 0.25em;
+  }
+  .wiki-content h3 {
+    font-size: 1.25rem;
+  }
+  .wiki-content p {
+    margin: 0.75em 0;
+  }
+  .wiki-content a {
+    color: hsl(var(--linkle));
+    text-decoration: none;
+  }
+  .wiki-content a:hover {
+    text-decoration: underline;
+  }
+  .wiki-content ul,
+  .wiki-content ol {
+    margin: 0.75em 0;
+    padding-left: 1.5em;
+  }
+  .wiki-content li {
+    margin: 0.25em 0;
+  }
+  .wiki-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+  }
+  .wiki-content table {
+    border-collapse: collapse;
+    margin: 1em 0;
+    font-size: 0.9em;
+  }
+  .wiki-content table td,
+  .wiki-content table th {
+    border: 1px solid hsl(var(--border));
+    padding: 0.35em 0.6em;
+  }
+  .wiki-content .infobox {
+    float: right;
+    max-width: 280px;
+    margin: 0 0 1em 1em;
+    background: hsl(var(--muted));
+    border-radius: 8px;
+    font-size: 0.85em;
+  }
+  @media (max-width: 640px) {
+    .wiki-content .infobox {
+      float: none;
+      max-width: 100%;
+      margin: 1em 0;
+    }
+  }
+}
