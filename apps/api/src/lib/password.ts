@@ -3,7 +3,11 @@
  * Node-only deps). Hash format: `v1$<iters>$<saltB64>$<hashB64>`.
  */
 
-const ITERATIONS = 150_000;
+// Cloudflare Workers caps PBKDF2 iterations at 100_000; going higher throws
+// `NotSupportedError: Pbkdf2 failed: iteration counts above 100000 are not
+// supported`. 100k is still within OWASP's recommended range for PBKDF2-SHA256
+// and is what we store in the hash string so verify can read it back.
+const ITERATIONS = 100_000;
 const SALT_BYTES = 16;
 const HASH_BYTES = 32;
 
