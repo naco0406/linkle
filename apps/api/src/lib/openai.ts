@@ -17,7 +17,12 @@ export interface ScoreOptions {
   readonly apiKey: string;
   readonly model: string;
   readonly timeoutMs?: number;
+  /** Override the OpenAI base URL — e.g. a Cloudflare AI Gateway endpoint.
+   *  The client appends `/chat/completions`. Defaults to the official API. */
+  readonly baseUrl?: string;
 }
+
+const DEFAULT_BASE_URL = 'https://api.openai.com/v1';
 
 const payloadSchema = z.object({
   results: z.array(openAiReasonEntrySchema),
@@ -26,7 +31,7 @@ const payloadSchema = z.object({
 export async function scoreSimilarity(
   referenceWord: string,
   words: readonly string[],
-  { apiKey, model, timeoutMs = 15_000 }: ScoreOptions,
+  { apiKey, model, timeoutMs = 15_000, baseUrl }: ScoreOptions,
 ): Promise<OpenAiReasonEntry[]> {
   if (words.length === 0) return [];
 
@@ -35,8 +40,10 @@ export async function scoreSimilarity(
     controller.abort();
   }, timeoutMs);
 
+  const endpoint = `${(baseUrl ?? DEFAULT_BASE_URL).replace(/\/+$/u, '')}/chat/completions`;
+
   try {
-    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    const res = await fetch(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -1,0 +1,15 @@
+# Wrangler loads this file (rename to `.dev.vars`) for `wrangler dev` so
+# the local Worker has the same secrets the production deployment does.
+# Never commit the real `.dev.vars` — it is already in .gitignore.
+
+# Required for admin login to mint JWTs. Any non-empty string works locally.
+ADMIN_JWT_SECRET=dev-only-change-me
+
+# Required for OpenAI scoring. Without this, submissions still succeed but
+# `emojiResult` comes back null and the done screen shows the pending state.
+OPENAI_API_KEY=sk-...
+
+# Optional. If OpenAI blocks Cloudflare egress IPs (403 unsupported_country_
+# region_territory), create a Cloudflare AI Gateway and point here:
+#   https://gateway.ai.cloudflare.com/v1/<account-id>/<gateway-slug>/openai
+# OPENAI_BASE_URL=

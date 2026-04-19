@@ -38,7 +38,11 @@ migrations_dir = "migrations"
 [env.production]
 name = "linkle-api"
 # `.pages.dev` URLs are allowed until the custom domains are wired up.
-vars = { ALLOWED_ORIGINS = "https://linkle.kr,https://admin.linkle.kr,https://linkle-web.pages.dev,https://linkle-admin.pages.dev", OPENAI_MODEL = "gpt-5.4-mini" }
+# OPENAI_BASE_URL defaults to the official endpoint; set it to a Cloudflare
+# AI Gateway URL (`https://gateway.ai.cloudflare.com/v1/<account>/<gateway>/openai`)
+# once the gateway is provisioned, so scoring calls originate from a region
+# OpenAI allows. Leave blank to keep using the direct endpoint.
+vars = { ALLOWED_ORIGINS = "https://linkle.kr,https://admin.linkle.kr,https://linkle-web.pages.dev,https://linkle-admin.pages.dev", OPENAI_MODEL = "gpt-5.4-mini", OPENAI_BASE_URL = "" }
 
 [[env.production.d1_databases]]
 binding = "DB"

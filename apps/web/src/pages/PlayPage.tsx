@@ -15,12 +15,14 @@ import {
   selectCanGoBack,
   selectCurrentTitle,
   selectMoveCount,
+  selectPath,
   selectPreviousPageTitle,
   useGameStore,
 } from '../game/gameStore.js';
+import { annotateVisitedLinks } from '../lib/annotateVisitedLinks.js';
 import { useElapsedMs } from '../game/useTimer.js';
 import { useSearchGuard } from '../game/useSearchGuard.js';
-import { fetchTodayChallenge, submitRanking } from '../lib/api.js';
+import { ApiError, fetchTodayChallenge, submitRanking } from '../lib/api.js';
 import { getOrCreateIdentity } from '../lib/userIdentity.js';
 import { loadLocalDailyState, saveLocalDailyState } from '../lib/localDailyStore.js';
 
@@ -76,10 +78,23 @@ export function PlayPage(): JSX.Element {
     retry: 1,
   });
 
-  const sanitizedHtml = useMemo(
-    () => (pageQuery.data ? sanitizeWikipediaHtml(pageQuery.data.html) : null),
-    [pageQuery.data],
-  );
+  // Collect the titles the player has already visited this session so the
+  // renderer can dim those links — it's a common frustration on Wikirace-style
+  // games to accidentally loop through the same hub.
+  const visitedTitles = useMemo<Set<string>>(() => {
+    const set = new Set<string>();
+    const path = selectPath(status);
+    for (const entry of path) {
+      if (entry.type === 'page') set.add(entry.title);
+    }
+    return set;
+  }, [status]);
+
+  const sanitizedHtml = useMemo(() => {
+    if (!pageQuery.data) return null;
+    const base = sanitizeWikipediaHtml(pageQuery.data.html);
+    return annotateVisitedLinks(base, visitedTitles);
+  }, [pageQuery.data, visitedTitles]);
 
   // ─── bootstrap (idle → playing) ───────────────────────────────────────
 
@@ -158,6 +173,35 @@ export function PlayPage(): JSX.Element {
         rank: res.rank,
       });
       void navigate('/play/done', { replace: true });
+    },
+    onError: (err, variables) => {
+      // 409 = UNIQUE(date, user_id) violation. Server is the source of truth;
+      // the player already has a submission for today, most likely from another
+      // tab or device. Collapse this run into a completed state locally so the
+      // done screen can render something — the full cross-device sync happens
+      // when we add GET /v1/rankings/:date/me (v1.1).
+      if (err instanceof ApiError && err.status === 409) {
+        onSubmitted({ rank: 0, emojiResult: null });
+        const identity = getOrCreateIdentity();
+        saveLocalDailyState({
+          date: today,
+          userId: identity.userId,
+          nickname: identity.nickname,
+          path: variables.path,
+          moveCount: variables.moveCount,
+          startedAtMs: null,
+          finishedAtMs: Date.now(),
+          timeSec: variables.timeSec,
+          status: 'completed',
+          emojiResult: null,
+          rank: null,
+        });
+        void navigate('/play/done', { replace: true });
+      } else {
+        // Any other error — surface it in the submitting screen via mutation
+        // state. PlayPage's render branch handles submitMutation.isError below.
+        console.error('[submit] failed', err);
+      }
     },
   });
 
@@ -282,6 +326,19 @@ export function PlayPage(): JSX.Element {
   }
 
   if (status.kind === 'submitting') {
+    if (submitMutation.isError) {
+      return (
+        <FullScreenStatus
+          tone="error"
+          title="결과 제출에 실패했어요"
+          detail={messageOf(submitMutation.error)}
+          onRetry={() => {
+            submitMutation.reset();
+            submitIfGoal(status.path, status.moveCount, Date.now() - status.timeSec * 1000);
+          }}
+        />
+      );
+    }
     return (
       <FullScreenStatus
         tone="loading"

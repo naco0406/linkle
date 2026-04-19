@@ -25,15 +25,30 @@ export interface SanitizePolicy {
 export const SANITIZE_POLICY: SanitizePolicy = {
   removeSections: ['같이 보기', '각주', '외부 링크'],
   removeBySelector: [
+    // Chrome / navigation
     '#mw-navigation',
     '#footer',
     '#siteNotice',
-    '.mw-references-wrap',
     '.mw-editsection',
+    // References & footnote cruft
+    '.mw-references-wrap',
+    '.reference', // inline [1] [2] superscripts
+    '.reference-accessdate',
+    '.cite-accessibility-label',
+    // Top-of-article notices / sister-project boxes
     '.dablink',
     '.hatnote',
+    '.sistersitebox',
+    '.sister-wikipedia',
+    // Navigation templates
     '.navbox',
+    '.navbox-group',
     '.metadata.mbox-small',
+    '.mbox-small',
+    // Empty / visual-only helpers
+    '.thumb .magnify',
+    '.printfooter',
+    // Inline media / script / head leftovers
     'audio',
     'script',
     'style',

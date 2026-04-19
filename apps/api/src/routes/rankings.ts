@@ -123,6 +123,7 @@ async function maybeScoreSubmission(
     const reasons = await scoreSimilarity(referenceWord, wordsToScore, {
       apiKey,
       model: env.OPENAI_MODEL,
+      ...(env.OPENAI_BASE_URL ? { baseUrl: env.OPENAI_BASE_URL } : {}),
       timeoutMs: 15_000,
     });
     const sims: (number | null)[] = [...reasons.map((r) => r.similarity), null];

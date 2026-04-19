@@ -145,41 +145,80 @@
    the base typography conservative so sanitized HTML looks like a readable
    article rather than a styled product surface. */
 @layer components {
+  /* Wikipedia article content rendered via dangerouslySetInnerHTML.
+     We aim for a reader-mode feel: generous line-height, muted secondary
+     chrome, and a clear link hierarchy. Visited pages in the player's own
+     path are dimmed via [data-visited] so re-entering a hub feels obvious. */
   .wiki-content {
     color: hsl(var(--foreground));
-    font-size: 0.95rem;
-    line-height: 1.7;
+    font-size: 1rem;
+    line-height: 1.8;
+    font-feature-settings: 'ss10', 'kern';
+    overflow-wrap: anywhere;
   }
   .wiki-content h1,
   .wiki-content h2,
   .wiki-content h3,
   .wiki-content h4 {
     font-weight: 700;
-    line-height: 1.3;
-    margin-top: 1.5em;
+    line-height: 1.35;
+    margin-top: 1.6em;
     margin-bottom: 0.5em;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
   }
   .wiki-content h1 {
-    font-size: 1.75rem;
+    font-size: 1.875rem;
   }
   .wiki-content h2 {
     font-size: 1.5rem;
     border-bottom: 1px solid hsl(var(--border));
-    padding-bottom: 0.25em;
+    padding-bottom: 0.3em;
   }
   .wiki-content h3 {
     font-size: 1.25rem;
   }
+  .wiki-content h4 {
+    font-size: 1.05rem;
+    color: hsl(var(--muted-foreground));
+  }
   .wiki-content p {
     margin: 0.75em 0;
   }
+
+  /* Internal links: brand blue, underlined on hover for a clear "click me"
+     cue. Visited in the current session: muted + strike-through hint so the
+     eye skips them. Non-internal links were converted to <span> in the
+     sanitizer so they do not appear here at all. */
   .wiki-content a {
     color: hsl(var(--linkle));
     text-decoration: none;
+    text-decoration-color: hsl(var(--linkle) / 0.4);
+    text-underline-offset: 2px;
+    border-radius: 2px;
+    transition:
+      color 120ms ease-out,
+      background-color 120ms ease-out;
   }
   .wiki-content a:hover {
     text-decoration: underline;
+    background: hsl(var(--accent) / 0.6);
   }
+  .wiki-content a:focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+  .wiki-content a[data-visited='true'] {
+    color: hsl(var(--muted-foreground));
+    text-decoration: underline dotted;
+    text-decoration-color: hsl(var(--muted-foreground) / 0.5);
+    text-underline-offset: 3px;
+  }
+  .wiki-content a[data-visited='true']:hover {
+    color: hsl(var(--foreground));
+    background: hsl(var(--muted));
+  }
+
   .wiki-content ul,
   .wiki-content ol {
     margin: 0.75em 0;
@@ -188,12 +227,42 @@
   .wiki-content li {
     margin: 0.25em 0;
   }
+  .wiki-content blockquote {
+    border-left: 3px solid hsl(var(--border));
+    margin: 1em 0;
+    padding: 0.25em 1em;
+    color: hsl(var(--muted-foreground));
+    font-style: italic;
+  }
+  .wiki-content hr {
+    border: none;
+    border-top: 1px solid hsl(var(--border));
+    margin: 1.5em 0;
+  }
+
   .wiki-content img {
     max-width: 100%;
     height: auto;
-    border-radius: 4px;
+    border-radius: 6px;
+    background: hsl(var(--muted) / 0.4);
   }
+  .wiki-content figure {
+    margin: 1em 0;
+  }
+  .wiki-content figcaption {
+    font-size: 0.85em;
+    color: hsl(var(--muted-foreground));
+    margin-top: 0.35em;
+    text-align: center;
+  }
+
+  /* Tables get a scroll wrapper via `display: block; overflow: auto` so they
+     do not blow up mobile width. Looks messy in theory but is the pragmatic
+     solution that Wikipedia's own mobile skin uses. */
   .wiki-content table {
+    display: block;
+    overflow-x: auto;
+    max-width: 100%;
     border-collapse: collapse;
     margin: 1em 0;
     font-size: 0.9em;
@@ -201,21 +270,39 @@
   .wiki-content table td,
   .wiki-content table th {
     border: 1px solid hsl(var(--border));
-    padding: 0.35em 0.6em;
+    padding: 0.4em 0.7em;
+    vertical-align: top;
   }
+  .wiki-content table th {
+    background: hsl(var(--muted) / 0.5);
+    font-weight: 600;
+  }
+
+  /* Infobox (right-floated summary card on desktop) */
   .wiki-content .infobox {
     float: right;
     max-width: 280px;
-    margin: 0 0 1em 1em;
-    background: hsl(var(--muted));
-    border-radius: 8px;
+    margin: 0 0 1em 1.25em;
+    background: hsl(var(--muted) / 0.6);
+    border: 1px solid hsl(var(--border));
+    border-radius: 10px;
     font-size: 0.85em;
+    overflow: hidden;
   }
-  @media (max-width: 640px) {
+  .wiki-content .infobox img {
+    border-radius: 0;
+  }
+  @media (max-width: 720px) {
     .wiki-content .infobox {
       float: none;
       max-width: 100%;
       margin: 1em 0;
     }
+  }
+
+  /* Pretendard renders Korean numbers slightly lighter than Latin digits;
+     keep stat numerics aligned on baseline + use tabular for consistency. */
+  .wiki-content .tabular-nums {
+    font-variant-numeric: tabular-nums;
   }
 }
