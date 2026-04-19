@@ -35,6 +35,21 @@ linkle/
 - [`docs/design-system.md`](./docs/design-system.md) — 디자인 토큰·컴포넌트 정책
 - [`docs/harness.md`](./docs/harness.md) — 품질 하네스 정책
 
+## 로컬 풀스택으로 돌리기
+
+```bash
+# 1. 로컬 D1 준비 (최초 1회)
+pnpm --filter @linkle/api run db:migrate:local
+pnpm --filter @linkle/api run db:seed:local
+# → admin/1234 계정, 오늘/내일 챌린지(대한민국 → 무궁화) 삽입
+
+# 2. 병렬 실행 — web(5173) + admin(5174) + api(8787)
+pnpm dev
+```
+
+웹/어드민의 API 기본값은 `http://localhost:8787`. 다른 엔드포인트를 쓰려면
+`apps/web/.env.local` / `apps/admin/.env.local` 에 `VITE_API_BASE_URL=...` 추가.
+
 ## 배포
 
 Cloudflare Pages(web, admin) + Cloudflare Workers(api) + D1(database).

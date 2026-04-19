@@ -1,98 +1,124 @@
-// Explicit game state machine. Each transition is a pure reducer mutation;
-// illegal transitions are impossible to express because of the discriminated
-// union on `status.kind` — the store methods only accept events valid in the
-// current kind. See docs/architecture.md §5.
-
+/**
+ * Game domain state.
+ *
+ * Rule: this store is responsible for *what the player has done* — the path
+ * they took, the clock, whether they've reached the goal. It does NOT hold
+ * Wikipedia HTML; that is server state and lives in TanStack Query, keyed by
+ * the current page title. Splitting the two like this means:
+ *
+ *   - A page refresh can rehydrate the path from localStorage and let Query
+ *     refetch the HTML automatically — there is no "rehydrated but no HTML"
+ *     stuck state.
+ *   - StrictMode double-invoking effects can't leave us in a half-fetched
+ *     state because there are no imperative `onPageLoaded(html, title)`
+ *     actions to race.
+ *   - The store is trivially serializable and unit-testable.
+ *
+ * The phase is a discriminated union so invalid transitions ("submit from
+ * forcedEnd") are caught at the type level.
+ */
 import { create } from 'zustand';
-import {
-  isEndPage,
-  type DailyChallenge,
-  type GameStatus,
-  type Path,
-  type PathEntry,
-} from '@linkle/shared';
+import { isEndPage, type DailyChallenge, type Path, type PathEntry } from '@linkle/shared';
+
+export type GameStatus =
+  | { readonly kind: 'idle' }
+  | {
+      readonly kind: 'playing';
+      readonly currentTitle: string;
+      readonly path: Path;
+      readonly moveCount: number;
+      readonly startedAt: number;
+    }
+  | {
+      readonly kind: 'submitting';
+      readonly path: Path;
+      readonly moveCount: number;
+      readonly timeSec: number;
+    }
+  | {
+      readonly kind: 'completed';
+      readonly rank: number;
+      readonly path: Path;
+      readonly moveCount: number;
+      readonly timeSec: number;
+      readonly emojiResult: string | null;
+    }
+  | { readonly kind: 'forcedEnd'; readonly reason: 'search-detected' };
 
 interface GameState {
   readonly challenge: DailyChallenge | null;
   readonly status: GameStatus;
-  readonly currentHtml: string | null;
 
-  // Hydration / lifecycle
-  loadChallenge: (challenge: DailyChallenge) => void;
-  beginLoading: () => void;
-  onFirstPageLoaded: (html: string, title: string) => void;
-  onPageLoaded: (html: string, title: string) => void;
-
-  // In-game actions
-  visitPage: (title: string) => { reachedGoal: boolean };
+  loadChallenge: (c: DailyChallenge) => void;
+  /** Transition idle → playing using the challenge's start page. */
+  startFresh: () => void;
+  /** Restore an in-progress game from persisted path/moveCount. */
+  rehydrate: (args: { path: Path; moveCount: number; startedAtMs: number }) => void;
+  /** Append a page visit. Returns whether the new page is the goal. */
+  visit: (title: string) => { reachedGoal: boolean };
+  /** Append a back + previous-page pair. */
   goBack: () => void;
+  /** Force-end because a disallowed hotkey was pressed. */
   forceEndDueToSearch: () => void;
-
-  // Submission
+  /** Move from playing to submitting. */
   beginSubmit: (timeSec: number) => void;
+  /** Server acked; submitting → completed. */
   onSubmitted: (args: { rank: number; emojiResult: string | null }) => void;
-
-  // Rehydration from localStorage
-  rehydrate: (args: {
-    challenge: DailyChallenge;
-    path: Path;
-    moveCount: number;
-    startedAtMs: number;
-  }) => void;
-
   reset: () => void;
 }
 
-const idleStatus: GameStatus = { kind: 'idle' };
+const idle: GameStatus = { kind: 'idle' };
 
 export const useGameStore = create<GameState>()((set, get) => ({
   challenge: null,
-  status: idleStatus,
-  currentHtml: null,
+  status: idle,
 
   loadChallenge: (challenge) => {
-    set({ challenge, status: idleStatus });
+    set({ challenge });
   },
 
-  beginLoading: () => {
-    set({ status: { kind: 'loading' } });
-  },
-
-  onFirstPageLoaded: (html, title) => {
+  startFresh: () => {
+    const { challenge, status } = get();
+    if (!challenge) return;
+    if (status.kind !== 'idle') return;
+    const startTitle = challenge.startPage;
     set({
-      currentHtml: html,
       status: {
         kind: 'playing',
-        currentTitle: title,
-        path: [{ type: 'page', title }],
+        currentTitle: startTitle,
+        path: [{ type: 'page', title: startTitle }],
         moveCount: 0,
         startedAt: Date.now(),
       },
     });
   },
 
-  onPageLoaded: (html, title) => {
-    const s = get().status;
-    if (s.kind !== 'playing') return;
+  rehydrate: ({ path, moveCount, startedAtMs }) => {
+    const last = lastPageTitle(path);
+    if (!last) return;
     set({
-      currentHtml: html,
-      status: { ...s, currentTitle: title },
+      status: {
+        kind: 'playing',
+        currentTitle: last,
+        path,
+        moveCount,
+        startedAt: startedAtMs,
+      },
     });
   },
 
-  visitPage: (title) => {
+  visit: (title) => {
     const state = get();
-    const { status, challenge } = state;
-    if (status.kind !== 'playing' || !challenge) return { reachedGoal: false };
-    const nextEntry: PathEntry = { type: 'page', title };
-    const nextPath = [...status.path, nextEntry];
-    const nextMoveCount = status.moveCount + 1;
-    const reachedGoal = isEndPage(title, challenge.endPage);
+    if (state.status.kind !== 'playing' || !state.challenge) {
+      return { reachedGoal: false };
+    }
+    const reachedGoal = isEndPage(title, state.challenge.endPage);
+    const nextPath: Path = [...state.status.path, { type: 'page', title }];
     set({
       status: {
-        ...status,
+        ...state.status,
         path: nextPath,
-        moveCount: nextMoveCount,
+        moveCount: state.status.moveCount + 1,
         currentTitle: title,
       },
     });
@@ -101,81 +127,101 @@ export const useGameStore = create<GameState>()((set, get) => ({
 
   goBack: () => {
     const state = get();
-    const { status } = state;
-    if (status.kind !== 'playing') return;
-    // Find the previous distinct page in the path. The tail entry IS the
-    // current page, so we need the one before it.
-    const pages = status.path.filter(
+    if (state.status.kind !== 'playing') return;
+    const distinctPages = state.status.path.filter(
       (p): p is Extract<PathEntry, { type: 'page' }> => p.type === 'page',
     );
-    if (pages.length < 2) return;
-    const target = pages[pages.length - 2]?.title;
-    if (!target) return;
+    if (distinctPages.length < 2) return;
+    const previous = distinctPages[distinctPages.length - 2];
+    if (!previous) return;
     set({
       status: {
-        ...status,
-        path: [...status.path, { type: 'back' }, { type: 'page', title: target }],
-        moveCount: status.moveCount + 1,
-        currentTitle: target,
+        ...state.status,
+        path: [...state.status.path, { type: 'back' }, { type: 'page', title: previous.title }],
+        moveCount: state.status.moveCount + 1,
+        currentTitle: previous.title,
       },
     });
   },
 
   forceEndDueToSearch: () => {
-    const state = get().status;
-    if (state.kind === 'completed' || state.kind === 'forcedEnd') return;
+    const { status } = get();
+    if (status.kind === 'completed' || status.kind === 'forcedEnd') return;
     set({ status: { kind: 'forcedEnd', reason: 'search-detected' } });
   },
 
   beginSubmit: (timeSec) => {
-    const state = get().status;
-    if (state.kind !== 'playing') return;
+    const { status } = get();
+    if (status.kind !== 'playing') return;
     set({
       status: {
         kind: 'submitting',
-        path: state.path,
-        moveCount: state.moveCount,
+        path: status.path,
+        moveCount: status.moveCount,
         timeSec,
       },
     });
   },
 
   onSubmitted: ({ rank, emojiResult }) => {
-    const state = get().status;
-    if (state.kind !== 'submitting') return;
+    const { status } = get();
+    if (status.kind !== 'submitting') return;
     set({
       status: {
         kind: 'completed',
-        path: state.path,
-        moveCount: state.moveCount,
-        timeSec: state.timeSec,
+        path: status.path,
+        moveCount: status.moveCount,
+        timeSec: status.timeSec,
         rank,
         emojiResult,
       },
     });
   },
 
-  rehydrate: ({ challenge, path, moveCount, startedAtMs }) => {
-    const lastPage = [...path]
-      .reverse()
-      .find((p): p is Extract<PathEntry, { type: 'page' }> => p.type === 'page');
-    if (!lastPage) {
-      set({ challenge, status: idleStatus });
-      return;
-    }
-    set({
-      challenge,
-      status: {
-        kind: 'playing',
-        currentTitle: lastPage.title,
-        path,
-        moveCount,
-        startedAt: startedAtMs,
-      },
-    });
-  },
-
   reset: () => {
-    set({ challenge: null, status: idleStatus, currentHtml: null });
+    set({ challenge: null, status: idle });
   },
 }));
+
+// ---------- derived selectors ----------
+
+export function selectCurrentTitle(status: GameStatus): string | null {
+  return status.kind === 'playing' ? status.currentTitle : null;
+}
+
+export function selectPath(status: GameStatus): Path {
+  if (status.kind === 'playing' || status.kind === 'submitting' || status.kind === 'completed') {
+    return status.path;
+  }
+  return [];
+}
+
+export function selectMoveCount(status: GameStatus): number {
+  if (status.kind === 'playing' || status.kind === 'submitting' || status.kind === 'completed') {
+    return status.moveCount;
+  }
+  return 0;
+}
+
+export function selectCanGoBack(status: GameStatus): boolean {
+  if (status.kind !== 'playing') return false;
+  return status.path.filter((p) => p.type === 'page').length >= 2;
+}
+
+export function selectPreviousPageTitle(status: GameStatus): string | null {
+  if (status.kind !== 'playing') return null;
+  const pages = status.path.filter(
+    (p): p is Extract<PathEntry, { type: 'page' }> => p.type === 'page',
+  );
+  return pages[pages.length - 2]?.title ?? null;
+}
+
+// ---------- helpers ----------
+
+function lastPageTitle(path: Path): string | null {
+  for (let i = path.length - 1; i >= 0; i -= 1) {
+    const entry = path[i];
+    if (entry?.type === 'page') return entry.title;
+  }
+  return null;
+}

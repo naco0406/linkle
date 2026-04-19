@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef, useState, type JSX } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { useCallback, useEffect, useMemo, useRef, useState, type JSX } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Button, ForcedEndPanel, HelpDialog, cn } from '@linkle/design-system';
 import { ArrowLeft, CircleHelp, Loader2, TriangleAlert } from 'lucide-react';
@@ -9,10 +9,15 @@ import {
   parseLinkHref,
   getKstToday,
   type Path,
-  type PathEntry,
 } from '@linkle/shared';
 import { sanitizeWikipediaHtml } from '@linkle/shared/sanitize';
-import { useGameStore } from '../game/gameStore.js';
+import {
+  selectCanGoBack,
+  selectCurrentTitle,
+  selectMoveCount,
+  selectPreviousPageTitle,
+  useGameStore,
+} from '../game/gameStore.js';
 import { useElapsedMs } from '../game/useTimer.js';
 import { useSearchGuard } from '../game/useSearchGuard.js';
 import { fetchTodayChallenge, submitRanking } from '../lib/api.js';
@@ -22,88 +27,89 @@ import { loadLocalDailyState, saveLocalDailyState } from '../lib/localDailyStore
 /**
  * Game play surface.
  *
- * Visual layout is the three-region chrome familiar from the original
- * wikirace project:
- *   header (back | goal | help) · article (click-delegated) · footer (stats)
+ * State architecture (see gameStore.ts for the contract):
+ *   - `useGameStore`   — domain state only (path, moveCount, phase, timer anchor)
+ *   - `challengeQuery` — TanStack Query: today's challenge from the Worker
+ *   - `pageQuery`      — TanStack Query: the *current* Wikipedia article,
+ *                        keyed on `selectCurrentTitle(status)`. Every visit()
+ *                        or goBack() mutation rekeys the query, which means
+ *                        there is no imperative "now fetch the new page"
+ *                        useEffect to race.
  *
- * Two design policies worth noting:
- *
- * 1. The game lives entirely at `/play`; navigating between Wikipedia
- *    articles does NOT change the URL. Instead, each article visit pushes
- *    an entry onto the browser history so the native Back button can pop
- *    the wiki stack the same way the on-screen back button does. That
- *    matches the player's mental model ("I was on X, back should go to the
- *    previous X") without leaking the game route to /play?title=… URLs.
- *
- * 2. In-article links and the chrome back button both route through the
- *    Zustand store (`visitPage`, `goBack`). The store is the single source
- *    of truth; the browser history only mirrors the wiki stack depth.
+ * Browser Back history mirrors the wiki stack: each visit pushes a history
+ * entry tagged with depth so the native Back button pops the wiki stack
+ * (via goBack) until the player is at depth 1 and falls through to /.
  */
 export function PlayPage(): JSX.Element {
   const navigate = useNavigate();
   const today = getKstToday();
+
   const challenge = useGameStore((s) => s.challenge);
   const status = useGameStore((s) => s.status);
-  const currentHtml = useGameStore((s) => s.currentHtml);
   const loadChallenge = useGameStore((s) => s.loadChallenge);
-  const onFirstPageLoaded = useGameStore((s) => s.onFirstPageLoaded);
-  const onPageLoaded = useGameStore((s) => s.onPageLoaded);
-  const visitPage = useGameStore((s) => s.visitPage);
+  const startFresh = useGameStore((s) => s.startFresh);
+  const rehydrate = useGameStore((s) => s.rehydrate);
+  const visit = useGameStore((s) => s.visit);
   const goBack = useGameStore((s) => s.goBack);
   const forceEndDueToSearch = useGameStore((s) => s.forceEndDueToSearch);
   const beginSubmit = useGameStore((s) => s.beginSubmit);
   const onSubmitted = useGameStore((s) => s.onSubmitted);
-  const rehydrate = useGameStore((s) => s.rehydrate);
+
+  const [helpOpen, setHelpOpen] = useState(false);
+
+  // ─── server state ─────────────────────────────────────────────────────
 
   const challengeQuery = useQuery({
     queryKey: ['challenge', 'today'],
     queryFn: fetchTodayChallenge,
   });
 
-  // Timer — hooks rules: unconditional.
-  const startedAtForTimer = status.kind === 'playing' ? status.startedAt : null;
-  const timerRunning = status.kind === 'playing';
-  const elapsedMs = useElapsedMs(startedAtForTimer, timerRunning);
+  const currentTitle = selectCurrentTitle(status);
+  const pageQuery = useQuery({
+    queryKey: ['wiki', 'page', currentTitle],
+    queryFn: async () => {
+      if (!currentTitle) throw new Error('no current title');
+      return fetchWikiPage(currentTitle);
+    },
+    enabled: currentTitle !== null && status.kind === 'playing',
+    staleTime: 60 * 60 * 1000, // article content is stable for a session
+    retry: 1,
+  });
 
-  const [helpOpen, setHelpOpen] = useState(false);
-  const [linkLoadError, setLinkLoadError] = useState<string | null>(null);
+  const sanitizedHtml = useMemo(
+    () => (pageQuery.data ? sanitizeWikipediaHtml(pageQuery.data.html) : null),
+    [pageQuery.data],
+  );
 
-  // ---- bootstrap --------------------------------------------------------
+  // ─── bootstrap (idle → playing) ───────────────────────────────────────
 
   const bootstrapped = useRef(false);
   useEffect(() => {
     if (bootstrapped.current) return;
     if (!challengeQuery.data) return;
     bootstrapped.current = true;
+
     loadChallenge(challengeQuery.data);
 
     const saved = loadLocalDailyState(today);
-    if (saved?.status === 'playing' && saved.startedAtMs !== null) {
+    if (saved?.status === 'playing' && saved.startedAtMs !== null && saved.path.length > 0) {
       rehydrate({
-        challenge: challengeQuery.data,
         path: saved.path,
         moveCount: saved.moveCount,
         startedAtMs: saved.startedAtMs,
       });
+    } else {
+      startFresh();
     }
-  }, [challengeQuery.data, loadChallenge, rehydrate, today]);
+  }, [challengeQuery.data, loadChallenge, rehydrate, startFresh, today]);
 
-  const startPageQuery = useQuery({
-    queryKey: ['wiki', 'start', challenge?.startPage ?? ''],
-    queryFn: async () => {
-      if (!challenge) throw new Error('no challenge');
-      return fetchWikiPage(challenge.startPage);
-    },
-    enabled: challenge !== null,
-    retry: 1,
-  });
-  useEffect(() => {
-    if (status.kind !== 'idle') return;
-    if (!startPageQuery.data) return;
-    onFirstPageLoaded(sanitizeWikipediaHtml(startPageQuery.data.html), startPageQuery.data.title);
-  }, [status.kind, startPageQuery.data, onFirstPageLoaded]);
+  // ─── timer ────────────────────────────────────────────────────────────
 
-  // ---- persistence & guards ---------------------------------------------
+  const startedAtForTimer = status.kind === 'playing' ? status.startedAt : null;
+  const timerRunning = status.kind === 'playing';
+  const elapsedMs = useElapsedMs(startedAtForTimer, timerRunning);
+
+  // ─── in-progress persistence ──────────────────────────────────────────
 
   useEffect(() => {
     if (status.kind !== 'playing' || !challenge) return;
@@ -123,13 +129,15 @@ export function PlayPage(): JSX.Element {
     });
   }, [status, challenge, today]);
 
+  // ─── hotkey guard ─────────────────────────────────────────────────────
+
   useSearchGuard(
     useCallback(() => {
       forceEndDueToSearch();
     }, [forceEndDueToSearch]),
   );
 
-  // ---- submission -------------------------------------------------------
+  // ─── submission ───────────────────────────────────────────────────────
 
   const submitMutation = useMutation({
     mutationFn: submitRanking,
@@ -153,7 +161,7 @@ export function PlayPage(): JSX.Element {
     },
   });
 
-  const submitIfReachedGoal = useCallback(
+  const submitIfGoal = useCallback(
     (finalPath: Path, finalMoveCount: number, startedAt: number) => {
       const timeSec = Math.max(0, Math.floor((Date.now() - startedAt) / 1000));
       beginSubmit(timeSec);
@@ -170,94 +178,34 @@ export function PlayPage(): JSX.Element {
     [beginSubmit, submitMutation, today],
   );
 
-  // ---- browser-history mirroring ----------------------------------------
-  // Each successful wiki hop pushes a history entry tagged with the wiki
-  // depth. Browser-back pops the wiki stack instead of leaving the game
-  // (until we're at depth 1, at which point back exits to home).
-
-  const wikiDepth = currentWikiDepth(status);
-  const lastPushedDepth = useRef<number | null>(null);
-  useEffect(() => {
-    if (status.kind !== 'playing') return;
-    if (wikiDepth <= 1) {
-      // Mark the entry so popstate can tell we're at the root.
-      window.history.replaceState({ linkleWikiDepth: 1 }, '');
-      lastPushedDepth.current = 1;
-      return;
-    }
-    if (lastPushedDepth.current !== null && wikiDepth > lastPushedDepth.current) {
-      window.history.pushState({ linkleWikiDepth: wikiDepth }, '');
-    } else {
-      window.history.replaceState({ linkleWikiDepth: wikiDepth }, '');
-    }
-    lastPushedDepth.current = wikiDepth;
-  }, [wikiDepth, status.kind]);
-
-  useEffect(() => {
-    const onPopState = (e: PopStateEvent): void => {
-      const s = useGameStore.getState();
-      if (s.status.kind !== 'playing') return;
-      const pages = s.status.path.filter((p) => p.type === 'page');
-      if (pages.length <= 1) return; // let the navigation exit the game
-      const targetDepthRaw = (e.state as { linkleWikiDepth?: unknown } | null)?.linkleWikiDepth;
-      const targetDepth = typeof targetDepthRaw === 'number' ? targetDepthRaw : 1;
-      if (targetDepth < pages.length) {
-        goBack();
-      }
-    };
-    window.addEventListener('popstate', onPopState);
-    return () => {
-      window.removeEventListener('popstate', onPopState);
-    };
-  }, [goBack]);
-
-  // ---- link click delegation --------------------------------------------
+  // ─── link-click delegation ────────────────────────────────────────────
 
   const contentRef = useRef<HTMLDivElement | null>(null);
   const handleContentClick = useCallback(
-    async (ev: React.MouseEvent<HTMLDivElement>) => {
+    (ev: React.MouseEvent<HTMLDivElement>) => {
       const s = useGameStore.getState();
       if (s.status.kind !== 'playing' || !s.challenge) return;
+
       const target = ev.target as HTMLElement;
       const anchor = target.closest('a');
       if (!anchor) return;
-      const href = anchor.getAttribute('href');
-      const raw = parseLinkHref(href);
+      const raw = parseLinkHref(anchor.getAttribute('href'));
       if (!raw) return;
       ev.preventDefault();
 
       const title = formatPageTitle(raw);
-      const { reachedGoal } = visitPage(title);
+      const { reachedGoal } = visit(title);
 
       if (reachedGoal) {
-        const postState = useGameStore.getState();
-        if (postState.status.kind === 'playing') {
-          submitIfReachedGoal(
-            postState.status.path,
-            postState.status.moveCount,
-            postState.status.startedAt,
-          );
+        const post = useGameStore.getState();
+        if (post.status.kind === 'playing') {
+          submitIfGoal(post.status.path, post.status.moveCount, post.status.startedAt);
         }
-        return;
       }
-
-      setLinkLoadError(null);
-      try {
-        const page = await fetchWikiPage(raw);
-        onPageLoaded(sanitizeWikipediaHtml(page.html), page.title);
-        contentRef.current?.scrollTo({ top: 0, behavior: 'instant' });
-      } catch (err) {
-        console.error('failed to load next page', err);
-        setLinkLoadError(
-          err instanceof Error
-            ? `문서를 불러오지 못했어요: ${err.message}`
-            : '문서를 불러오지 못했어요.',
-        );
-        // Roll the visit back so the path doesn't record an unreachable page.
-        goBack();
-      }
+      // Non-goal: pageQuery rekeys on `currentTitle` and fetches automatically.
+      contentRef.current?.scrollTo({ top: 0, behavior: 'instant' });
     },
-    [visitPage, onPageLoaded, submitIfReachedGoal, goBack],
+    [visit, submitIfGoal],
   );
 
   useEffect(() => {
@@ -266,24 +214,56 @@ export function PlayPage(): JSX.Element {
     }
   }, [status.kind, navigate]);
 
-  // ---- early-return guards ---------------------------------------------
+  // ─── browser history mirroring ────────────────────────────────────────
+
+  const pageDepth = status.kind === 'playing' ? countPages(status.path) : 0;
+  const lastPushedDepth = useRef<number | null>(null);
+  useEffect(() => {
+    if (status.kind !== 'playing') return;
+    if (pageDepth <= 1) {
+      window.history.replaceState({ linkleWikiDepth: 1 }, '');
+      lastPushedDepth.current = 1;
+      return;
+    }
+    if (lastPushedDepth.current !== null && pageDepth > lastPushedDepth.current) {
+      window.history.pushState({ linkleWikiDepth: pageDepth }, '');
+    } else {
+      window.history.replaceState({ linkleWikiDepth: pageDepth }, '');
+    }
+    lastPushedDepth.current = pageDepth;
+  }, [pageDepth, status.kind]);
+
+  useEffect(() => {
+    const onPop = (e: PopStateEvent): void => {
+      const s = useGameStore.getState();
+      if (s.status.kind !== 'playing') return;
+      const n = countPages(s.status.path);
+      if (n <= 1) return;
+      const raw = (e.state as { linkleWikiDepth?: unknown } | null)?.linkleWikiDepth;
+      const target = typeof raw === 'number' ? raw : 1;
+      if (target < n) goBack();
+    };
+    window.addEventListener('popstate', onPop);
+    return () => {
+      window.removeEventListener('popstate', onPop);
+    };
+  }, [goBack]);
+
+  // ─── early returns ────────────────────────────────────────────────────
 
   if (challengeQuery.isError) {
     return (
       <FullScreenStatus
         tone="error"
         title="오늘의 챌린지를 불러오지 못했어요"
-        detail={String(challengeQuery.error)}
+        detail={messageOf(challengeQuery.error)}
         onRetry={() => void challengeQuery.refetch()}
       />
     );
   }
 
-  if (!challenge) {
-    if (challengeQuery.isLoading || challengeQuery.data) {
-      return <FullScreenStatus tone="loading" title="챌린지를 불러오는 중…" />;
-    }
-    return <Navigate replace to="/" />;
+  if (!challenge || status.kind === 'idle') {
+    return <FullScreenStatus tone="loading" title="챌린지를 준비하는 중…" />;
   }
 
   if (status.kind === 'forcedEnd') {
@@ -301,92 +281,85 @@ export function PlayPage(): JSX.Element {
     );
   }
 
-  // ---- render ----------------------------------------------------------
+  const displayTitle = currentTitle ?? challenge.startPage;
 
-  const currentTitle = currentTitleOf(status) ?? challenge.startPage;
-  const previousPageTitle = previousDistinctPage(status);
-  const moveCount = statusMoveCount(status);
-  const { startPage, endPage } = challenge;
-
-  // Loading the very first Wikipedia page. This is the "stuck" state players
-  // previously complained about when something went wrong silently.
-  if (status.kind === 'idle' || !currentHtml) {
-    if (startPageQuery.isError) {
-      return (
-        <FullScreenStatus
-          tone="error"
-          title="위키피디아에서 시작 문서를 불러오지 못했어요"
-          detail={String(startPageQuery.error)}
-          onRetry={() => void startPageQuery.refetch()}
-        />
-      );
-    }
+  // First fetch still in flight and nothing cached yet → fill the screen.
+  if (status.kind === 'playing' && pageQuery.isPending && !sanitizedHtml) {
     return (
       <FullScreenStatus
         tone="loading"
         title="위키피디아 문서를 불러오는 중…"
-        detail={`"${startPage}" 여는 중`}
+        detail={`"${displayTitle}" 여는 중`}
       />
     );
   }
 
-  const isChromeBusy = status.kind === 'submitting';
+  if (status.kind === 'playing' && pageQuery.isError && !sanitizedHtml) {
+    return (
+      <FullScreenStatus
+        tone="error"
+        title="위키피디아 문서를 불러오지 못했어요"
+        detail={messageOf(pageQuery.error)}
+        onRetry={() => void pageQuery.refetch()}
+      />
+    );
+  }
+
+  // ─── render ───────────────────────────────────────────────────────────
 
   return (
     <div className="bg-background flex h-[100dvh] flex-col">
       <GameHeader
-        startPage={startPage}
-        endPage={endPage}
-        previousPageTitle={previousPageTitle}
-        canGoBack={status.kind === 'playing' && previousPageTitle !== null}
+        startPage={challenge.startPage}
+        endPage={challenge.endPage}
+        previousPageTitle={selectPreviousPageTitle(status)}
+        canGoBack={selectCanGoBack(status)}
         onGoBack={goBack}
         onHelp={() => {
           setHelpOpen(true);
         }}
-        disabled={isChromeBusy}
+        disabled={status.kind === 'submitting'}
       />
 
-      {linkLoadError ? (
-        <div
-          role="alert"
-          className="border-destructive/30 bg-destructive/5 text-destructive flex items-center gap-2 border-b px-4 py-2 text-sm md:px-6"
-        >
-          <TriangleAlert size={16} aria-hidden />
-          <span className="flex-1">{linkLoadError}</span>
-          <button
-            type="button"
-            className="font-semibold underline"
-            onClick={() => {
-              setLinkLoadError(null);
-            }}
-          >
-            닫기
-          </button>
-        </div>
+      {pageQuery.isError && sanitizedHtml ? (
+        <InlineError detail={messageOf(pageQuery.error)} onRetry={() => void pageQuery.refetch()} />
       ) : null}
 
       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
       <div
         ref={contentRef}
-        onClick={(e) => {
-          void handleContentClick(e);
-        }}
-        className="linkle-no-select bg-card flex-grow overflow-auto p-4"
+        onClick={handleContentClick}
+        className={cn(
+          'linkle-no-select bg-card flex-grow overflow-auto p-4',
+          pageQuery.isFetching && sanitizedHtml ? 'opacity-80' : undefined,
+        )}
       >
-        <div
-          className="wiki-content mx-auto max-w-3xl break-words"
-          dangerouslySetInnerHTML={{ __html: currentHtml }}
-        />
+        {sanitizedHtml ? (
+          <div
+            className="wiki-content mx-auto max-w-3xl break-words"
+            dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
+          />
+        ) : (
+          <div className="text-muted-foreground flex h-full items-center justify-center text-sm">
+            <Loader2 className="mr-2 size-4 animate-spin" aria-hidden />
+            불러오는 중…
+          </div>
+        )}
       </div>
 
-      <GameFooter currentTitle={currentTitle} elapsedMs={elapsedMs} moveCount={moveCount} />
+      <GameFooter
+        currentTitle={displayTitle}
+        elapsedMs={elapsedMs}
+        moveCount={selectMoveCount(status)}
+        fetchingBackground={pageQuery.isFetching && !!sanitizedHtml}
+      />
 
       <HelpDialog open={helpOpen} onOpenChange={setHelpOpen} />
     </div>
   );
 }
 
-// ─── Chrome ───────────────────────────────────────────────────────────────
+// ─── chrome ───────────────────────────────────────────────────────────────
 
 interface GameHeaderProps {
   startPage: string;
@@ -466,9 +439,15 @@ interface GameFooterProps {
   currentTitle: string;
   elapsedMs: number;
   moveCount: number;
+  fetchingBackground: boolean;
 }
 
-function GameFooter({ currentTitle, elapsedMs, moveCount }: GameFooterProps): JSX.Element {
+function GameFooter({
+  currentTitle,
+  elapsedMs,
+  moveCount,
+  fetchingBackground,
+}: GameFooterProps): JSX.Element {
   return (
     <footer
       className={cn(
@@ -481,6 +460,12 @@ function GameFooter({ currentTitle, elapsedMs, moveCount }: GameFooterProps): JS
         <p className="min-w-0 truncate text-[15px] md:text-[20px]">
           <span className="text-foreground/70">현재 문서: </span>
           <span className="text-linkle font-semibold">{currentTitle}</span>
+          {fetchingBackground ? (
+            <Loader2
+              className="text-muted-foreground ml-2 inline size-3 animate-spin"
+              aria-hidden
+            />
+          ) : null}
         </p>
         <div className="flex items-center justify-between gap-4 md:justify-end">
           <p className="text-[15px] md:text-[20px]">
@@ -499,7 +484,7 @@ function GameFooter({ currentTitle, elapsedMs, moveCount }: GameFooterProps): JS
   );
 }
 
-// ─── Full-screen loading/error ────────────────────────────────────────────
+// ─── full-screen + inline status ─────────────────────────────────────────
 
 interface FullScreenStatusProps {
   tone: 'loading' | 'error';
@@ -537,40 +522,43 @@ function FullScreenStatus({ tone, title, detail, onRetry }: FullScreenStatusProp
   );
 }
 
-// ─── helpers ──────────────────────────────────────────────────────────────
-
-function currentTitleOf(status: ReturnType<typeof useGameStore.getState>['status']): string | null {
-  if (status.kind === 'playing') return status.currentTitle;
-  return null;
+interface InlineErrorProps {
+  detail: string;
+  onRetry: () => void;
 }
 
-function previousDistinctPage(
-  status: ReturnType<typeof useGameStore.getState>['status'],
-): string | null {
-  if (status.kind !== 'playing') return null;
-  const pages = status.path.filter(
-    (p): p is Extract<PathEntry, { type: 'page' }> => p.type === 'page',
+function InlineError({ detail, onRetry }: InlineErrorProps): JSX.Element {
+  return (
+    <div
+      role="alert"
+      className={cn(
+        'border-destructive/30 bg-destructive/5 flex items-center gap-2 border-b',
+        'text-destructive px-4 py-2 text-sm md:px-6',
+      )}
+    >
+      <TriangleAlert size={16} aria-hidden />
+      <span className="flex-1">문서 새로고침 실패: {detail}</span>
+      <button type="button" onClick={onRetry} className="font-semibold underline">
+        다시 시도
+      </button>
+    </div>
   );
-  const prev = pages[pages.length - 2];
-  return prev?.title ?? null;
 }
 
-function statusMoveCount(status: ReturnType<typeof useGameStore.getState>['status']): number {
-  return status.kind === 'playing' || status.kind === 'submitting' || status.kind === 'completed'
-    ? status.moveCount
-    : 0;
-}
+// ─── helpers ─────────────────────────────────────────────────────────────
 
-function currentWikiDepth(status: ReturnType<typeof useGameStore.getState>['status']): number {
-  if (status.kind !== 'playing' && status.kind !== 'submitting' && status.kind !== 'completed') {
-    return 0;
-  }
-  return status.path.filter((p) => p.type === 'page').length;
+function countPages(path: Path): number {
+  return path.filter((p) => p.type === 'page').length;
 }
 
 function formatElapsed(ms: number): string {
-  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
-  const m = Math.floor(totalSeconds / 60);
-  const s = totalSeconds % 60;
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const m = Math.floor(total / 60);
+  const s = total % 60;
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
+function messageOf(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  return String(err);
 }

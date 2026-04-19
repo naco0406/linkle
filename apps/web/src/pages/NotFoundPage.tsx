@@ -1,17 +1,17 @@
 import type { JSX } from 'react';
 import { Link } from 'react-router-dom';
-import { Button, PageShell } from '@linkle/design-system';
+import { Button } from '@linkle/design-system';
 
 export function NotFoundPage(): JSX.Element {
   return (
-    <PageShell>
-      <div className="py-16 text-center">
-        <h1 className="text-foreground font-serif text-4xl">404</h1>
-        <p className="text-muted-foreground mt-2 text-sm">페이지를 찾을 수 없어요.</p>
+    <main className="bg-background grid min-h-dvh place-items-center px-4">
+      <div className="flex flex-col items-center gap-4 text-center">
+        <h1 className="text-foreground font-serif text-5xl">404</h1>
+        <p className="text-muted-foreground text-sm">페이지를 찾을 수 없어요.</p>
+        <Button asChild>
+          <Link to="/">홈으로</Link>
+        </Button>
       </div>
-      <Button asChild block>
-        <Link to="/">홈으로</Link>
-      </Button>
-    </PageShell>
+    </main>
   );
 }

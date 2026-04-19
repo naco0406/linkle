@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import {
   Card,
   CardContent,
-  PageShell,
+  SubPageHeader,
   Tabs,
   TabsContent,
   TabsList,
@@ -28,33 +28,30 @@ export function RankingPage(): JSX.Element {
   });
 
   return (
-    <PageShell>
-      <header>
-        <p className="text-muted-foreground font-mono text-xs uppercase tracking-widest">
-          {today} 랭킹
-        </p>
-        <h1 className="text-foreground font-serif text-3xl">오늘의 링클러들</h1>
-      </header>
-      <Tabs
-        value={sort}
-        onValueChange={(v) => {
-          setSort(v as RankingSort);
-        }}
-      >
-        <TabsList>
+    <>
+      <SubPageHeader title="오늘의 링클러들" subtitle={today} />
+      <main className="max-w-shell mx-auto w-full px-4 py-6 md:px-6">
+        <Tabs
+          value={sort}
+          onValueChange={(v) => {
+            setSort(v as RankingSort);
+          }}
+        >
+          <TabsList>
+            {SORT_TABS.map((t) => (
+              <TabsTrigger key={t.value} value={t.value}>
+                {t.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
           {SORT_TABS.map((t) => (
-            <TabsTrigger key={t.value} value={t.value}>
-              {t.label}
-            </TabsTrigger>
+            <TabsContent key={t.value} value={t.value}>
+              <RankingTable rankings={q.data ?? []} loading={q.isLoading} sort={t.value} />
+            </TabsContent>
           ))}
-        </TabsList>
-        {SORT_TABS.map((t) => (
-          <TabsContent key={t.value} value={t.value}>
-            <RankingTable rankings={q.data ?? []} loading={q.isLoading} sort={t.value} />
-          </TabsContent>
-        ))}
-      </Tabs>
-    </PageShell>
+        </Tabs>
+      </main>
+    </>
   );
 }
 

@@ -8,8 +8,8 @@ import {
   CardHeader,
   CardTitle,
   EmojiSquareLine,
-  PageShell,
   PathTrail,
+  SubPageHeader,
   type PathTrailEntry,
 } from '@linkle/design-system';
 import { getKstToday } from '@linkle/shared';
@@ -25,48 +25,50 @@ export function DonePage(): JSX.Element {
   );
 
   return (
-    <PageShell>
-      <header className="flex flex-col gap-2 text-center">
-        <p className="text-muted-foreground font-mono text-xs uppercase tracking-widest">{today}</p>
-        <h1 className="text-foreground font-serif text-3xl">도착했어요 🎉</h1>
-        {saved.rank !== null ? (
-          <Badge variant="muted" className="mx-auto">
-            오늘의 <strong className="mx-1">{saved.rank}번째</strong> 도착
-          </Badge>
-        ) : null}
-      </header>
+    <>
+      <SubPageHeader title="오늘의 결과" subtitle={today} />
+      <main className="max-w-shell mx-auto flex w-full flex-col gap-4 px-4 py-6 md:px-6">
+        <header className="flex flex-col items-center gap-2 text-center">
+          <h1 className="text-foreground font-serif text-3xl">도착했어요 🎉</h1>
+          {saved.rank !== null ? (
+            <Badge variant="muted">
+              오늘의 <strong className="mx-1">{saved.rank}번째</strong> 도착
+            </Badge>
+          ) : null}
+        </header>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>결과</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          <dl className="grid grid-cols-2 gap-3 text-sm">
-            <Stat label="이동" value={`${String(saved.moveCount)}회`} />
-            <Stat label="시간" value={formatSeconds(saved.timeSec)} />
-          </dl>
-          {saved.emojiResult ? (
-            <EmojiSquareLine result={saved.emojiResult} />
-          ) : (
-            <p className="text-muted-foreground text-center text-sm">
-              경로 유사도를 계산하는 중이에요. 잠시 후 홈에서 다시 확인해주세요.
-            </p>
-          )}
-          <section aria-label="이동 경로">
-            <PathTrail path={trail} highlightGoal />
-          </section>
-        </CardContent>
-      </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>결과</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            <dl className="grid grid-cols-2 gap-3 text-sm">
+              <Stat label="이동" value={`${String(saved.moveCount)}회`} />
+              <Stat label="시간" value={formatSeconds(saved.timeSec)} />
+            </dl>
+            {saved.emojiResult ? (
+              <EmojiSquareLine result={saved.emojiResult} />
+            ) : (
+              <p className="text-muted-foreground text-center text-sm">
+                경로 유사도를 계산하는 중이에요. 잠시 후 다시 확인해주세요.
+              </p>
+            )}
+            <section aria-label="이동 경로">
+              <PathTrail path={trail} highlightGoal />
+            </section>
+          </CardContent>
+        </Card>
 
-      <div className="flex gap-2">
-        <Button asChild block variant="outline">
-          <Link to="/">홈으로</Link>
-        </Button>
-        <Button asChild block>
-          <Link to="/ranking">랭킹 보러가기</Link>
-        </Button>
-      </div>
-    </PageShell>
+        <div className="flex gap-2">
+          <Button asChild block variant="outline">
+            <Link to="/">홈으로</Link>
+          </Button>
+          <Button asChild block>
+            <Link to="/ranking">랭킹 보러가기</Link>
+          </Button>
+        </div>
+      </main>
+    </>
   );
 }
 

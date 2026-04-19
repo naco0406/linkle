@@ -107,34 +107,6 @@ export const dailyStatisticsSchema = z.object({
 });
 export type DailyStatistics = z.infer<typeof dailyStatisticsSchema>;
 
-// ---------- Game status (client state machine) ----------
-
-export type GameStatus =
-  | { readonly kind: 'idle' }
-  | { readonly kind: 'loading' }
-  | {
-      readonly kind: 'playing';
-      readonly currentTitle: string;
-      readonly path: Path;
-      readonly moveCount: number;
-      readonly startedAt: number;
-    }
-  | {
-      readonly kind: 'submitting';
-      readonly path: Path;
-      readonly moveCount: number;
-      readonly timeSec: number;
-    }
-  | {
-      readonly kind: 'completed';
-      readonly rank: number;
-      readonly path: Path;
-      readonly moveCount: number;
-      readonly timeSec: number;
-      readonly emojiResult: string | null;
-    }
-  | { readonly kind: 'forcedEnd'; readonly reason: 'search-detected' };
-
 // ---------- LocalStorage state ----------
 
 export const localDailyStateSchema = z.object({

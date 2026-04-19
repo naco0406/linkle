@@ -15,7 +15,8 @@
     "db:migrate:local": "wrangler d1 migrations apply linkle-db --local",
     "db:migrate:remote": "wrangler d1 migrations apply linkle-db --remote",
     "db:create": "wrangler d1 create linkle-db",
-    "db:seed:local": "wrangler d1 execute linkle-db --local --file ./src/db/seed.sql"
+    "db:seed:local": "node ./scripts/seed-local.mjs",
+    "dev:local": "pnpm run db:migrate:local && pnpm run db:seed:local && pnpm run dev"
   },
   "dependencies": {
     "@linkle/shared": "workspace:*",

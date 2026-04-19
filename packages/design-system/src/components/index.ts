@@ -29,3 +29,4 @@ export {
   type AutocompleteWikipediaInputProps,
 } from './linkle/AutocompleteWikipediaInput.js';
 export { HelpDialog, type HelpDialogProps } from './linkle/HelpDialog.js';
+export { SubPageHeader, type SubPageHeaderProps } from './linkle/SubPageHeader.js';
