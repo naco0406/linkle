@@ -1,17 +1,10 @@
-import type { JSX } from 'react';
-import { useState } from 'react';
+import { useState, type JSX } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import {
-  Card,
-  CardContent,
-  SubPageHeader,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@linkle/design-system';
+import { Card, CardContent, Tabs, TabsContent, TabsList, TabsTrigger } from '@linkle/design-system';
 import { getKstToday, type Ranking, type RankingSort } from '@linkle/shared';
 import { fetchRankings } from '../lib/api.js';
+import { AppShell } from '../components/AppShell.js';
+import { PageTitle } from '../components/PageTitle.js';
 
 const SORT_TABS: { value: RankingSort; label: string }[] = [
   { value: 'fastest', label: '빠른 시간' },
@@ -28,30 +21,29 @@ export function RankingPage(): JSX.Element {
   });
 
   return (
-    <>
-      <SubPageHeader title="오늘의 링클러들" subtitle={today} />
-      <main className="max-w-shell mx-auto w-full px-4 py-6 md:px-6">
-        <Tabs
-          value={sort}
-          onValueChange={(v) => {
-            setSort(v as RankingSort);
-          }}
-        >
-          <TabsList>
-            {SORT_TABS.map((t) => (
-              <TabsTrigger key={t.value} value={t.value}>
-                {t.label}
-              </TabsTrigger>
-            ))}
-          </TabsList>
+    <AppShell>
+      <PageTitle title="랭킹" subtitle={`${today} · 오늘의 도전자`} />
+
+      <Tabs
+        value={sort}
+        onValueChange={(v) => {
+          setSort(v as RankingSort);
+        }}
+      >
+        <TabsList>
           {SORT_TABS.map((t) => (
-            <TabsContent key={t.value} value={t.value}>
-              <RankingTable rankings={q.data ?? []} loading={q.isLoading} sort={t.value} />
-            </TabsContent>
+            <TabsTrigger key={t.value} value={t.value}>
+              {t.label}
+            </TabsTrigger>
           ))}
-        </Tabs>
-      </main>
-    </>
+        </TabsList>
+        {SORT_TABS.map((t) => (
+          <TabsContent key={t.value} value={t.value}>
+            <RankingTable rankings={q.data ?? []} loading={q.isLoading} sort={t.value} />
+          </TabsContent>
+        ))}
+      </Tabs>
+    </AppShell>
   );
 }
 
@@ -77,7 +69,7 @@ function RankingTable({
     return (
       <Card>
         <CardContent className="text-muted-foreground py-10 text-center text-sm">
-          아직 기록이 없어요.
+          아직 기록이 없어요. 가장 먼저 도착해보세요.
         </CardContent>
       </Card>
     );
@@ -88,7 +80,13 @@ function RankingTable({
         <ol className="divide-border divide-y">
           {rankings.map((r, idx) => (
             <li key={r.id} className="flex items-center gap-3 py-3">
-              <span className="text-muted-foreground w-6 text-center font-mono text-sm">
+              <span
+                className={
+                  idx < 3
+                    ? 'text-linkle w-6 text-center font-mono text-sm font-semibold'
+                    : 'text-muted-foreground w-6 text-center font-mono text-sm'
+                }
+              >
                 {idx + 1}
               </span>
               <span className="flex-1 truncate font-semibold">{r.nickname}</span>

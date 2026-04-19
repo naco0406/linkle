@@ -1,28 +1,24 @@
 import { useState, type JSX } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { Button, EmojiSquareLine, HelpDialog, cn } from '@linkle/design-system';
-import { CircleHelp, Trophy } from 'lucide-react';
+import { Button, Card, CardContent, EmojiSquareLine, HelpDialog, cn } from '@linkle/design-system';
+import { CircleHelp, Trophy, type LucideIcon } from 'lucide-react';
 import { challengeDayNumber, getKstToday } from '@linkle/shared';
 import { fetchTodayChallenge } from '../lib/api.js';
 import { loadLocalDailyState } from '../lib/localDailyStore.js';
 
 /**
- * Home screen — the first surface a returning player sees each day.
+ * Home — the first surface every day. Full-bleed, hero-oriented: everything
+ * pulls the eye toward the brand mark, the day number, and a single primary
+ * action ("시작"). Cleared state collapses the decision into a compact
+ * result card rather than repeating the full /play/done screen.
  *
- * Mood follows the original wikirace's Start screen (big serif wordmark,
- * light subtitle, a single round-pill CTA). Differences vs. the old:
- *   - When the player has already cleared today we keep them on /play/done
- *     by directing them there; the home screen just acknowledges the
- *     win and offers the usual destinations, instead of duplicating the
- *     full result layout here.
- *   - The "continue vs start" copy is driven by LocalDailyState rather
- *     than separate booleans.
- *   - No admin shortcut here — admins use the dedicated admin app.
+ * Shares tokens with AppShell (brand wordmark, utility icons, button/card
+ * styles) but owns its own layout so the landing keeps its "hero" character.
  */
 export function HomePage(): JSX.Element {
   const today = getKstToday();
-  const savedState = loadLocalDailyState(today);
+  const saved = loadLocalDailyState(today);
   const challengeQuery = useQuery({
     queryKey: ['challenge', 'today'],
     queryFn: fetchTodayChallenge,
@@ -31,109 +27,118 @@ export function HomePage(): JSX.Element {
   const dayNumber = challengeDayNumber(today);
   const [helpOpen, setHelpOpen] = useState(false);
 
-  const hasStartedToday = savedState?.status === 'playing';
-  const hasClearedToday = savedState?.status === 'completed';
-  const ctaLabel = hasStartedToday ? '이어서 도전하기' : '시작';
-  const disableCta = !challengeQuery.data;
+  const hasStartedToday = saved?.status === 'playing';
+  const hasClearedToday = saved?.status === 'completed';
 
   return (
-    <main className="bg-background relative flex min-h-[calc(100dvh-72px)] w-full flex-col items-center justify-center overflow-hidden px-6">
-      {/* Top-right icon cluster — Trophy (yesterday), Help. */}
-      <div className="absolute right-2 top-0 flex h-[80px] items-center gap-1 px-2">
-        <Link
-          to="/yesterday"
-          aria-label="어제의 링클 보기"
-          className={cn(
-            'text-foreground/80 inline-flex size-10 items-center justify-center rounded-md',
-            'hover:bg-muted hover:text-foreground transition-colors',
-            'focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-2',
-          )}
-        >
-          <Trophy size={22} />
-        </Link>
-        <button
-          type="button"
+    <main className="bg-background relative flex min-h-dvh flex-col items-center justify-between px-6 pb-8 pt-5">
+      {/* Utility icons — mirror AppShell's right-side cluster. */}
+      <div className="absolute right-3 top-3 flex items-center gap-0.5 md:right-5 md:top-5">
+        <IconLink to="/yesterday" icon={Trophy} label="어제의 링클" />
+        <IconAction
           onClick={() => {
             setHelpOpen(true);
           }}
-          aria-label="게임 규칙 보기"
-          className={cn(
-            'text-foreground/80 inline-flex size-10 items-center justify-center rounded-md',
-            'hover:bg-muted hover:text-foreground transition-colors',
-            'focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-2',
-          )}
-        >
-          <CircleHelp size={22} />
-        </button>
-      </div>
-
-      <div className="flex flex-row items-end gap-2">
-        <h1 className="text-linkle font-serif text-6xl font-normal sm:text-8xl">Linkle</h1>
-        <span className="text-linkle mb-2 font-serif text-base sm:mb-4 sm:text-xl">
-          #{dayNumber}
-        </span>
-      </div>
-
-      {hasClearedToday ? (
-        <ClearedSummary
-          dayNumber={dayNumber}
-          moveCount={savedState.moveCount}
-          timeSec={savedState.timeSec}
-          rank={savedState.rank}
-          emojiResult={savedState.emojiResult}
+          icon={CircleHelp}
+          label="게임 규칙 보기"
         />
-      ) : (
-        <>
-          <p className="text-foreground/70 mb-10 mt-6 text-base sm:text-lg">
-            매일 위키피디아 탐험하기
-          </p>
-          <Button
-            asChild={!disableCta}
-            size="lg"
-            disabled={disableCta}
-            aria-disabled={disableCta}
-            className="h-14 rounded-full px-16 text-lg font-semibold"
-          >
-            {disableCta ? <span>{ctaLabel}</span> : <Link to="/play">{ctaLabel}</Link>}
-          </Button>
-          {challengeQuery.isError ? (
-            <p className="text-destructive mt-4 text-sm">
-              오늘의 챌린지를 불러오지 못했어요.{' '}
-              <button
-                type="button"
-                className="font-semibold underline"
-                onClick={() => void challengeQuery.refetch()}
-              >
-                다시 시도
-              </button>
-            </p>
-          ) : null}
-          {challengeQuery.data ? (
-            <p className="text-muted-foreground mt-6 text-xs">
-              {challengeQuery.data.totalCount > 0
-                ? `지금까지 ${String(challengeQuery.data.totalCount)}명이 도전했어요.`
-                : '오늘 첫 도전자가 되어보세요.'}
-            </p>
-          ) : null}
-        </>
-      )}
-
-      <div className="absolute bottom-8 left-0 right-0 text-center">
-        <p className="text-muted-foreground text-xs">
-          © {new Date().getFullYear()}{' '}
-          <Link to="/about" className="text-linkle font-semibold underline">
-            Linkle
-          </Link>
-          . All rights reserved.
-        </p>
       </div>
+
+      <div aria-hidden />
+
+      <section className="flex w-full max-w-md flex-col items-center gap-8">
+        <BrandMark dayNumber={dayNumber} />
+
+        {hasClearedToday ? (
+          <ClearedCard
+            dayNumber={dayNumber}
+            moveCount={saved.moveCount}
+            timeSec={saved.timeSec}
+            rank={saved.rank}
+            emojiResult={saved.emojiResult}
+          />
+        ) : (
+          <StartCta
+            label={hasStartedToday ? '이어서 도전하기' : '시작'}
+            disabled={!challengeQuery.data}
+            hasError={challengeQuery.isError}
+            totalCount={challengeQuery.data?.totalCount ?? null}
+            onRetry={() => void challengeQuery.refetch()}
+          />
+        )}
+      </section>
+
+      <p className="text-muted-foreground text-xs">
+        © {new Date().getFullYear()}{' '}
+        <Link to="/about" className="text-linkle font-medium underline-offset-4 hover:underline">
+          Linkle
+        </Link>
+      </p>
 
       <HelpDialog open={helpOpen} onOpenChange={setHelpOpen} />
     </main>
   );
 }
 
-interface ClearedSummaryProps {
+// ─── Brand ──────────────────────────────────────────────────────────────
+
+function BrandMark({ dayNumber }: { readonly dayNumber: number }): JSX.Element {
+  return (
+    <div className="flex flex-col items-center gap-3">
+      <div className="flex items-end gap-3">
+        <h1 className="text-linkle font-serif text-7xl font-normal sm:text-8xl">Linkle</h1>
+        <span className="text-muted-foreground mb-3 font-serif text-lg sm:mb-4 sm:text-xl">
+          #{dayNumber}
+        </span>
+      </div>
+      <p className="text-foreground/65 text-base sm:text-lg">매일 위키피디아 탐험하기</p>
+    </div>
+  );
+}
+
+// ─── Start CTA ─────────────────────────────────────────────────────────
+
+interface StartCtaProps {
+  label: string;
+  disabled: boolean;
+  hasError: boolean;
+  totalCount: number | null;
+  onRetry: () => void;
+}
+
+function StartCta({ label, disabled, hasError, totalCount, onRetry }: StartCtaProps): JSX.Element {
+  return (
+    <div className="flex w-full flex-col items-center gap-4">
+      <Button
+        asChild={!disabled}
+        size="lg"
+        disabled={disabled}
+        aria-disabled={disabled}
+        className="h-14 rounded-full px-16 text-base font-semibold tracking-tight"
+      >
+        {disabled ? <span>{label}</span> : <Link to="/play">{label}</Link>}
+      </Button>
+      {hasError ? (
+        <p className="text-destructive text-center text-sm">
+          오늘의 챌린지를 불러오지 못했어요.{' '}
+          <button type="button" onClick={onRetry} className="font-semibold underline">
+            다시 시도
+          </button>
+        </p>
+      ) : totalCount !== null ? (
+        <p className="text-muted-foreground text-xs">
+          {totalCount > 0
+            ? `지금까지 ${String(totalCount)}명이 도전했어요.`
+            : '오늘 첫 도전자가 되어보세요.'}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+// ─── Cleared card ──────────────────────────────────────────────────────
+
+interface ClearedCardProps {
   dayNumber: number;
   moveCount: number;
   timeSec: number | null;
@@ -141,59 +146,91 @@ interface ClearedSummaryProps {
   emojiResult: string | null;
 }
 
-function ClearedSummary({
+function ClearedCard({
   dayNumber,
   moveCount,
   timeSec,
   rank,
   emojiResult,
-}: ClearedSummaryProps): JSX.Element {
+}: ClearedCardProps): JSX.Element {
   return (
-    <div className="mt-8 flex w-full max-w-md flex-col items-center gap-6">
-      <div className="flex flex-col items-center gap-1 text-center">
-        <p className="text-foreground text-lg font-semibold">
-          {dayNumber}번째 링클을 클리어했습니다!
-        </p>
-        {rank !== null ? (
-          <p className="text-muted-foreground text-sm">
-            일일 순위 <span className="text-linkle font-semibold">{rank}</span>등
-          </p>
-        ) : null}
-      </div>
-
-      <dl className="grid w-full max-w-xs grid-cols-2 gap-3">
-        <Stat label="소요 시간" value={formatSeconds(timeSec)} />
-        <Stat label="이동 횟수" value={`${String(moveCount)}회`} />
-      </dl>
-
-      {emojiResult ? (
-        <div className="border-border bg-card w-full rounded-xl border px-4 py-4">
-          <EmojiSquareLine result={emojiResult} />
+    <Card className="w-full">
+      <CardContent className="flex flex-col items-center gap-5 py-6 text-center">
+        <div className="flex flex-col items-center gap-1">
+          <p className="text-foreground text-base font-semibold">{dayNumber}번째 링클 클리어 ✓</p>
+          {rank !== null ? (
+            <p className="text-muted-foreground text-sm">
+              일일 <span className="text-linkle font-semibold">{rank}</span>등
+            </p>
+          ) : null}
         </div>
-      ) : (
-        <p className="text-muted-foreground text-center text-xs">
-          경로 분석을 준비 중이에요. 잠시 후 새로고침하면 이모지 배열이 표시돼요.
-        </p>
-      )}
 
-      <div className="flex w-full gap-2">
-        <Button asChild block variant="outline">
-          <Link to="/play/done">결과 자세히</Link>
-        </Button>
-        <Button asChild block>
-          <Link to="/ranking">오늘 랭킹</Link>
-        </Button>
-      </div>
-    </div>
+        <div className="flex items-baseline gap-6 font-mono text-sm tabular-nums">
+          <span className="text-muted-foreground">
+            이동 <span className="text-foreground font-semibold">{moveCount}회</span>
+          </span>
+          <span className="text-muted-foreground">
+            시간 <span className="text-foreground font-semibold">{formatSeconds(timeSec)}</span>
+          </span>
+        </div>
+
+        {emojiResult ? (
+          <EmojiSquareLine result={emojiResult} />
+        ) : (
+          <p className="text-muted-foreground text-xs">경로 분석을 준비 중이에요.</p>
+        )}
+
+        <div className="flex w-full gap-2">
+          <Button asChild block variant="outline">
+            <Link to="/play/done">자세히</Link>
+          </Button>
+          <Button asChild block>
+            <Link to="/ranking">랭킹</Link>
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
-function Stat({ label, value }: { readonly label: string; readonly value: string }): JSX.Element {
+// ─── local utility icon components ─────────────────────────────────────
+
+const iconButtonClass = cn(
+  'inline-flex size-10 items-center justify-center rounded-full',
+  'text-foreground/80 transition-colors',
+  'hover:bg-muted hover:text-foreground',
+  'focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-2',
+);
+
+function IconLink({
+  to,
+  icon: Icon,
+  label,
+}: {
+  to: string;
+  icon: LucideIcon;
+  label: string;
+}): JSX.Element {
   return (
-    <div className="bg-muted flex flex-col items-center rounded-md px-3 py-2">
-      <dt className="text-muted-foreground text-xs">{label}</dt>
-      <dd className="text-foreground font-mono text-lg font-semibold tabular-nums">{value}</dd>
-    </div>
+    <Link to={to} aria-label={label} className={iconButtonClass}>
+      <Icon size={20} aria-hidden />
+    </Link>
+  );
+}
+
+function IconAction({
+  onClick,
+  icon: Icon,
+  label,
+}: {
+  onClick: () => void;
+  icon: LucideIcon;
+  label: string;
+}): JSX.Element {
+  return (
+    <button type="button" onClick={onClick} aria-label={label} className={iconButtonClass}>
+      <Icon size={20} aria-hidden />
+    </button>
   );
 }
 
