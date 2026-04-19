@@ -32,11 +32,13 @@ test.describe('game loop', () => {
     await expect(page.getByRole('heading', { name: /도착했어요/u })).toBeVisible();
   });
 
-  test('visiting /play without a challenge redirects home', async ({ page }) => {
+  test('surfaces an error with a retry when the challenge fetch fails', async ({ page }) => {
     await page.route('http://localhost:8787/v1/challenges/today', async (route) => {
       await route.fulfill({ status: 404, contentType: 'application/json', body: '{"error":"x"}' });
     });
     await page.goto('/play');
-    await expect(page).toHaveURL('/');
+    await expect(page.getByText('오늘의 챌린지를 불러오지 못했어요')).toBeVisible();
+    await expect(page.getByRole('button', { name: '다시 시도' })).toBeVisible();
+    await expect(page.getByRole('link', { name: '홈으로' })).toBeVisible();
   });
 });

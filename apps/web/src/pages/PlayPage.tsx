@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, type JSX } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Button, ForcedEndPanel, HelpDialog, cn } from '@linkle/design-system';
-import { ArrowLeft, CircleHelp, Loader2 } from 'lucide-react';
+import { ArrowLeft, CircleHelp, Loader2, TriangleAlert } from 'lucide-react';
 import {
   fetchWikiPage,
   formatPageTitle,
@@ -20,14 +20,24 @@ import { getOrCreateIdentity } from '../lib/userIdentity.js';
 import { loadLocalDailyState, saveLocalDailyState } from '../lib/localDailyStore.js';
 
 /**
- * Game play screen. Layout ported from the original wikirace's
- * `src/components/Game/Screen.tsx`:
- *   - Fixed header with: back button (left) · "목표: …" (center) · help (right)
- *   - Full-width white Wikipedia article in the middle, click-delegated so
- *     any internal <a> anchor advances the game
- *   - Footer with current doc + elapsed time + move count
- * Desktop vs mobile differences are driven by Tailwind's `md:` breakpoint
- * rather than a JS media-query hook, but the resulting visual is the same.
+ * Game play surface.
+ *
+ * Visual layout is the three-region chrome familiar from the original
+ * wikirace project:
+ *   header (back | goal | help) · article (click-delegated) · footer (stats)
+ *
+ * Two design policies worth noting:
+ *
+ * 1. The game lives entirely at `/play`; navigating between Wikipedia
+ *    articles does NOT change the URL. Instead, each article visit pushes
+ *    an entry onto the browser history so the native Back button can pop
+ *    the wiki stack the same way the on-screen back button does. That
+ *    matches the player's mental model ("I was on X, back should go to the
+ *    previous X") without leaking the game route to /play?title=… URLs.
+ *
+ * 2. In-article links and the chrome back button both route through the
+ *    Zustand store (`visitPage`, `goBack`). The store is the single source
+ *    of truth; the browser history only mirrors the wiki stack depth.
  */
 export function PlayPage(): JSX.Element {
   const navigate = useNavigate();
@@ -50,14 +60,15 @@ export function PlayPage(): JSX.Element {
     queryFn: fetchTodayChallenge,
   });
 
-  // Timer — must be unconditional (hooks rules).
+  // Timer — hooks rules: unconditional.
   const startedAtForTimer = status.kind === 'playing' ? status.startedAt : null;
   const timerRunning = status.kind === 'playing';
   const elapsedMs = useElapsedMs(startedAtForTimer, timerRunning);
 
   const [helpOpen, setHelpOpen] = useState(false);
+  const [linkLoadError, setLinkLoadError] = useState<string | null>(null);
 
-  // ---- bootstrap ---------------------------------------------------------
+  // ---- bootstrap --------------------------------------------------------
 
   const bootstrapped = useRef(false);
   useEffect(() => {
@@ -84,6 +95,7 @@ export function PlayPage(): JSX.Element {
       return fetchWikiPage(challenge.startPage);
     },
     enabled: challenge !== null,
+    retry: 1,
   });
   useEffect(() => {
     if (status.kind !== 'idle') return;
@@ -117,7 +129,7 @@ export function PlayPage(): JSX.Element {
     }, [forceEndDueToSearch]),
   );
 
-  // ---- submission --------------------------------------------------------
+  // ---- submission -------------------------------------------------------
 
   const submitMutation = useMutation({
     mutationFn: submitRanking,
@@ -158,6 +170,47 @@ export function PlayPage(): JSX.Element {
     [beginSubmit, submitMutation, today],
   );
 
+  // ---- browser-history mirroring ----------------------------------------
+  // Each successful wiki hop pushes a history entry tagged with the wiki
+  // depth. Browser-back pops the wiki stack instead of leaving the game
+  // (until we're at depth 1, at which point back exits to home).
+
+  const wikiDepth = currentWikiDepth(status);
+  const lastPushedDepth = useRef<number | null>(null);
+  useEffect(() => {
+    if (status.kind !== 'playing') return;
+    if (wikiDepth <= 1) {
+      // Mark the entry so popstate can tell we're at the root.
+      window.history.replaceState({ linkleWikiDepth: 1 }, '');
+      lastPushedDepth.current = 1;
+      return;
+    }
+    if (lastPushedDepth.current !== null && wikiDepth > lastPushedDepth.current) {
+      window.history.pushState({ linkleWikiDepth: wikiDepth }, '');
+    } else {
+      window.history.replaceState({ linkleWikiDepth: wikiDepth }, '');
+    }
+    lastPushedDepth.current = wikiDepth;
+  }, [wikiDepth, status.kind]);
+
+  useEffect(() => {
+    const onPopState = (e: PopStateEvent): void => {
+      const s = useGameStore.getState();
+      if (s.status.kind !== 'playing') return;
+      const pages = s.status.path.filter((p) => p.type === 'page');
+      if (pages.length <= 1) return; // let the navigation exit the game
+      const targetDepthRaw = (e.state as { linkleWikiDepth?: unknown } | null)?.linkleWikiDepth;
+      const targetDepth = typeof targetDepthRaw === 'number' ? targetDepthRaw : 1;
+      if (targetDepth < pages.length) {
+        goBack();
+      }
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => {
+      window.removeEventListener('popstate', onPopState);
+    };
+  }, [goBack]);
+
   // ---- link click delegation --------------------------------------------
 
   const contentRef = useRef<HTMLDivElement | null>(null);
@@ -188,15 +241,23 @@ export function PlayPage(): JSX.Element {
         return;
       }
 
+      setLinkLoadError(null);
       try {
         const page = await fetchWikiPage(raw);
         onPageLoaded(sanitizeWikipediaHtml(page.html), page.title);
         contentRef.current?.scrollTo({ top: 0, behavior: 'instant' });
       } catch (err) {
         console.error('failed to load next page', err);
+        setLinkLoadError(
+          err instanceof Error
+            ? `문서를 불러오지 못했어요: ${err.message}`
+            : '문서를 불러오지 못했어요.',
+        );
+        // Roll the visit back so the path doesn't record an unreachable page.
+        goBack();
       }
     },
-    [visitPage, onPageLoaded, submitIfReachedGoal],
+    [visitPage, onPageLoaded, submitIfReachedGoal, goBack],
   );
 
   useEffect(() => {
@@ -205,11 +266,22 @@ export function PlayPage(): JSX.Element {
     }
   }, [status.kind, navigate]);
 
-  // ---- guards that short-circuit the full chrome ------------------------
+  // ---- early-return guards ---------------------------------------------
+
+  if (challengeQuery.isError) {
+    return (
+      <FullScreenStatus
+        tone="error"
+        title="오늘의 챌린지를 불러오지 못했어요"
+        detail={String(challengeQuery.error)}
+        onRetry={() => void challengeQuery.refetch()}
+      />
+    );
+  }
 
   if (!challenge) {
     if (challengeQuery.isLoading || challengeQuery.data) {
-      return <FullScreenLoader label="챌린지를 불러오는 중…" />;
+      return <FullScreenStatus tone="loading" title="챌린지를 불러오는 중…" />;
     }
     return <Navigate replace to="/" />;
   }
@@ -229,13 +301,36 @@ export function PlayPage(): JSX.Element {
     );
   }
 
-  // ---- render ------------------------------------------------------------
+  // ---- render ----------------------------------------------------------
 
-  const isLoading = status.kind === 'loading' || status.kind === 'submitting' || !currentHtml;
   const currentTitle = currentTitleOf(status) ?? challenge.startPage;
   const previousPageTitle = previousDistinctPage(status);
   const moveCount = statusMoveCount(status);
   const { startPage, endPage } = challenge;
+
+  // Loading the very first Wikipedia page. This is the "stuck" state players
+  // previously complained about when something went wrong silently.
+  if (status.kind === 'idle' || !currentHtml) {
+    if (startPageQuery.isError) {
+      return (
+        <FullScreenStatus
+          tone="error"
+          title="위키피디아에서 시작 문서를 불러오지 못했어요"
+          detail={String(startPageQuery.error)}
+          onRetry={() => void startPageQuery.refetch()}
+        />
+      );
+    }
+    return (
+      <FullScreenStatus
+        tone="loading"
+        title="위키피디아 문서를 불러오는 중…"
+        detail={`"${startPage}" 여는 중`}
+      />
+    );
+  }
+
+  const isChromeBusy = status.kind === 'submitting';
 
   return (
     <div className="bg-background flex h-[100dvh] flex-col">
@@ -248,26 +343,41 @@ export function PlayPage(): JSX.Element {
         onHelp={() => {
           setHelpOpen(true);
         }}
-        disabled={isLoading}
+        disabled={isChromeBusy}
       />
 
-      {isLoading ? (
-        <LoadingBody currentTitle={currentTitle} />
-      ) : (
-        // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
+      {linkLoadError ? (
         <div
-          ref={contentRef}
-          onClick={(e) => {
-            void handleContentClick(e);
-          }}
-          className="linkle-no-select bg-card flex-grow overflow-auto p-4"
+          role="alert"
+          className="border-destructive/30 bg-destructive/5 text-destructive flex items-center gap-2 border-b px-4 py-2 text-sm md:px-6"
         >
-          <div
-            className="wiki-content mx-auto max-w-3xl break-words"
-            dangerouslySetInnerHTML={{ __html: currentHtml }}
-          />
+          <TriangleAlert size={16} aria-hidden />
+          <span className="flex-1">{linkLoadError}</span>
+          <button
+            type="button"
+            className="font-semibold underline"
+            onClick={() => {
+              setLinkLoadError(null);
+            }}
+          >
+            닫기
+          </button>
         </div>
-      )}
+      ) : null}
+
+      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
+      <div
+        ref={contentRef}
+        onClick={(e) => {
+          void handleContentClick(e);
+        }}
+        className="linkle-no-select bg-card flex-grow overflow-auto p-4"
+      >
+        <div
+          className="wiki-content mx-auto max-w-3xl break-words"
+          dangerouslySetInnerHTML={{ __html: currentHtml }}
+        />
+      </div>
 
       <GameFooter currentTitle={currentTitle} elapsedMs={elapsedMs} moveCount={moveCount} />
 
@@ -276,7 +386,7 @@ export function PlayPage(): JSX.Element {
   );
 }
 
-// ─── Header ───────────────────────────────────────────────────────────────
+// ─── Chrome ───────────────────────────────────────────────────────────────
 
 interface GameHeaderProps {
   startPage: string;
@@ -301,7 +411,7 @@ function GameHeader({
     <header
       className={cn(
         'flex shrink-0 items-center justify-between gap-2',
-        'bg-background border-border border-b',
+        'border-border bg-background border-b',
         'h-[60px] px-4 md:h-[80px] md:px-6',
       )}
     >
@@ -352,8 +462,6 @@ function GameHeader({
   );
 }
 
-// ─── Footer ───────────────────────────────────────────────────────────────
-
 interface GameFooterProps {
   currentTitle: string;
   elapsedMs: number;
@@ -364,7 +472,7 @@ function GameFooter({ currentTitle, elapsedMs, moveCount }: GameFooterProps): JS
   return (
     <footer
       className={cn(
-        'bg-background border-border shrink-0 border-t',
+        'border-border bg-background shrink-0 border-t',
         'px-4 py-3 md:px-6 md:py-5',
         'pb-[max(0.75rem,env(safe-area-inset-bottom))]',
       )}
@@ -391,24 +499,39 @@ function GameFooter({ currentTitle, elapsedMs, moveCount }: GameFooterProps): JS
   );
 }
 
-// ─── Loading body ─────────────────────────────────────────────────────────
+// ─── Full-screen loading/error ────────────────────────────────────────────
 
-function LoadingBody({ currentTitle }: { readonly currentTitle: string }): JSX.Element {
-  return (
-    <div className="bg-card flex flex-grow flex-col items-center justify-center px-4">
-      <Loader2 className="text-linkle mb-8 size-12 animate-spin" />
-      <p className="text-foreground mb-10 text-[18px]">로딩 중</p>
-      <p className="text-muted-foreground text-sm">{currentTitle}</p>
-    </div>
-  );
+interface FullScreenStatusProps {
+  tone: 'loading' | 'error';
+  title: string;
+  detail?: string;
+  onRetry?: () => void;
 }
 
-function FullScreenLoader({ label }: { readonly label: string }): JSX.Element {
+function FullScreenStatus({ tone, title, detail, onRetry }: FullScreenStatusProps): JSX.Element {
+  const Icon = tone === 'loading' ? Loader2 : TriangleAlert;
   return (
-    <div className="bg-background grid min-h-dvh place-items-center">
-      <div className="flex flex-col items-center gap-4">
-        <Loader2 className="text-linkle size-10 animate-spin" />
-        <p className="text-muted-foreground text-sm">{label}</p>
+    <div className="bg-background grid min-h-dvh place-items-center px-4">
+      <div className="flex max-w-sm flex-col items-center gap-4 text-center">
+        <Icon
+          className={cn(
+            'size-10',
+            tone === 'loading' ? 'text-linkle animate-spin' : 'text-destructive',
+          )}
+          aria-hidden
+        />
+        <p className="text-foreground text-base font-semibold">{title}</p>
+        {detail ? <p className="text-muted-foreground text-sm">{detail}</p> : null}
+        {onRetry ? (
+          <Button size="sm" variant="outline" onClick={onRetry}>
+            다시 시도
+          </Button>
+        ) : null}
+        {tone === 'error' ? (
+          <Button asChild size="sm" variant="ghost">
+            <a href="/">홈으로</a>
+          </Button>
+        ) : null}
       </div>
     </div>
   );
@@ -436,6 +559,13 @@ function statusMoveCount(status: ReturnType<typeof useGameStore.getState>['statu
   return status.kind === 'playing' || status.kind === 'submitting' || status.kind === 'completed'
     ? status.moveCount
     : 0;
+}
+
+function currentWikiDepth(status: ReturnType<typeof useGameStore.getState>['status']): number {
+  if (status.kind !== 'playing' && status.kind !== 'submitting' && status.kind !== 'completed') {
+    return 0;
+  }
+  return status.path.filter((p) => p.type === 'page').length;
 }
 
 function formatElapsed(ms: number): string {
