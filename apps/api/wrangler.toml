@@ -42,7 +42,7 @@ name = "linkle-api"
 # AI Gateway URL (`https://gateway.ai.cloudflare.com/v1/<account>/<gateway>/openai`)
 # once the gateway is provisioned, so scoring calls originate from a region
 # OpenAI allows. Leave blank to keep using the direct endpoint.
-vars = { ALLOWED_ORIGINS = "https://linkle.kr,https://admin.linkle.kr,https://linkle-web.pages.dev,https://linkle-admin.pages.dev", OPENAI_MODEL = "gpt-5.4-mini", OPENAI_BASE_URL = "" }
+vars = { ALLOWED_ORIGINS = "https://linkle.kr,https://admin.linkle.kr,https://linkle-web.pages.dev,https://linkle-admin.pages.dev", OPENAI_MODEL = "gpt-5.4-mini", OPENAI_BASE_URL = "https://gateway.ai.cloudflare.com/v1/707520b736099457d4810da8467ef973/default/openai" }
 
 [[env.production.d1_databases]]
 binding = "DB"
