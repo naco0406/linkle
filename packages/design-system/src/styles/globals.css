@@ -256,13 +256,16 @@
     text-align: center;
   }
 
-  /* Tables get a scroll wrapper via `display: block; overflow: auto` so they
-     do not blow up mobile width. Looks messy in theory but is the pragmatic
-     solution that Wikipedia's own mobile skin uses. */
+  /* Tables must fit the article column so every cell (and every link inside)
+     is visible without horizontal scrolling — the game's core interaction is
+     clicking wiki links, so any link hidden off-screen is a dead end. We let
+     the browser pick column widths (`table-layout: auto`) and force cell
+     content to wrap aggressively. Data-dense tables will look tall rather
+     than wide, which is the right trade-off here. */
   .wiki-content table {
-    display: block;
-    overflow-x: auto;
+    width: 100%;
     max-width: 100%;
+    table-layout: auto;
     border-collapse: collapse;
     margin: 1em 0;
     font-size: 0.9em;
@@ -272,6 +275,19 @@
     border: 1px solid hsl(var(--border));
     padding: 0.4em 0.7em;
     vertical-align: top;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+  /* Wikipedia frequently uses `<td style="white-space:nowrap">` on date/number
+     cells; override so they can still wrap when the column is narrow. */
+  .wiki-content table td[style*='nowrap'],
+  .wiki-content table th[style*='nowrap'] {
+    white-space: normal !important;
+  }
+  /* Images inside tables can force a minimum width that breaks wrapping. */
+  .wiki-content table img {
+    max-width: 100%;
+    height: auto;
   }
   .wiki-content table th {
     background: hsl(var(--muted) / 0.5);
