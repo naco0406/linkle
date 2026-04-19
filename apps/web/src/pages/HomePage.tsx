@@ -46,7 +46,12 @@ export function HomePage(): JSX.Element {
 
       <div aria-hidden />
 
-      <section className="flex w-full max-w-md flex-col items-center gap-8">
+      <section
+        className={cn(
+          'flex w-full max-w-md flex-col items-center gap-8',
+          '[animation:linkle-fade-slide_520ms_cubic-bezier(0.2,0.8,0.2,1)_both]',
+        )}
+      >
         <BrandMark dayNumber={dayNumber} />
 
         {hasClearedToday ? (

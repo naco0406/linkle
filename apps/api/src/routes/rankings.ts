@@ -4,20 +4,34 @@ import {
   isEndPage,
   rankingSortSchema,
   rankingSubmissionSchema,
+  renderPathEmoji,
   validatePath,
+  type OpenAiReasonEntry,
+  type Path,
+  type PathEntry,
+  type RankingSubmission,
 } from '@linkle/shared';
 import type { Env } from '../env.js';
 import { getChallenge } from '../db/challenges.js';
-import { insertRanking, listRankings } from '../db/rankings.js';
+import { insertRanking, listRankings, updateRankingEmoji } from '../db/rankings.js';
+import { scoreSimilarity } from '../lib/openai.js';
 
 export const rankingsRoute = new Hono<{ Bindings: Env }>();
 
 /**
- * Submit a completed run. Server-side validation:
+ * Submit a completed run.
+ *
+ * Server guarantees before writing:
  *   1. The challenge for `challengeDate` exists.
  *   2. The path starts with `startPage` and ends with `endPage` (isEndPage).
- *   3. Structural `validatePath` passes.
- *   4. Uniqueness of (challengeDate, userId) is enforced by a UNIQUE index.
+ *   3. `validatePath` structural invariants pass.
+ *   4. UNIQUE (challengeDate, userId) index rejects duplicate submissions.
+ *
+ * After insert we score the path synchronously via OpenAI. Players expect
+ * the emoji strip on the done screen immediately; asynchronous scoring via
+ * `ctx.waitUntil` forces them to refresh which isn't worth the marginal
+ * latency win here. If OpenAI errors or times out the row is persisted
+ * without an emoji and the client falls back to a "분석 준비 중" label.
  */
 rankingsRoute.post('/', async (c) => {
   const body: unknown = await c.req.json().catch(() => null);
@@ -44,7 +58,17 @@ rankingsRoute.post('/', async (c) => {
   const submittedAt = Date.now();
   try {
     const { rank } = await insertRanking(c.env.DB, id, submission, submittedAt);
-    return c.json({ rankingId: id, rank, emojiDeferred: true }, 201);
+
+    const { emojiResult, reason } = await maybeScoreSubmission(
+      c.env,
+      submission,
+      challenge.endPage,
+    );
+    if (emojiResult !== null) {
+      await updateRankingEmoji(c.env.DB, id, emojiResult, JSON.stringify(reason ?? []));
+    }
+
+    return c.json({ rankingId: id, rank, emojiResult, reason }, 201);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     if (message.includes('UNIQUE')) {
@@ -67,3 +91,44 @@ rankingsRoute.get('/:date', async (c) => {
   const rankings = await listRankings(c.env.DB, dateParse.data, sortParse.data, limit);
   return c.json({ rankings });
 });
+
+// ─── scoring pipeline ────────────────────────────────────────────────────
+
+interface ScoredResult {
+  emojiResult: string | null;
+  reason: OpenAiReasonEntry[] | null;
+}
+
+async function maybeScoreSubmission(
+  env: Env,
+  submission: RankingSubmission,
+  referenceWord: string,
+): Promise<ScoredResult> {
+  const apiKey = env.OPENAI_API_KEY;
+  if (!apiKey) return { emojiResult: null, reason: null };
+
+  const path: Path = submission.path;
+  const pageEntries = path.filter(
+    (p): p is Extract<PathEntry, { type: 'page' }> => p.type === 'page',
+  );
+  // Score every page except the last one (the goal). `renderPathEmoji`
+  // treats the terminal page as the flag emoji regardless of similarity.
+  const wordsToScore = pageEntries.slice(0, -1).map((p) => p.title);
+
+  if (wordsToScore.length === 0) {
+    return { emojiResult: renderPathEmoji(path, []), reason: [] };
+  }
+
+  try {
+    const reasons = await scoreSimilarity(referenceWord, wordsToScore, {
+      apiKey,
+      model: env.OPENAI_MODEL,
+      timeoutMs: 15_000,
+    });
+    const sims: (number | null)[] = [...reasons.map((r) => r.similarity), null];
+    return { emojiResult: renderPathEmoji(path, sims), reason: reasons };
+  } catch (err) {
+    console.warn('[rankings.post] similarity scoring failed', err);
+    return { emojiResult: null, reason: null };
+  }
+}

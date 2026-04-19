@@ -142,7 +142,7 @@ export function PlayPage(): JSX.Element {
   const submitMutation = useMutation({
     mutationFn: submitRanking,
     onSuccess: (res, variables) => {
-      onSubmitted({ rank: res.rank, emojiResult: null });
+      onSubmitted({ rank: res.rank, emojiResult: res.emojiResult });
       const identity = getOrCreateIdentity();
       saveLocalDailyState({
         date: today,
@@ -154,7 +154,7 @@ export function PlayPage(): JSX.Element {
         finishedAtMs: Date.now(),
         timeSec: variables.timeSec,
         status: 'completed',
-        emojiResult: null,
+        emojiResult: res.emojiResult,
         rank: res.rank,
       });
       void navigate('/play/done', { replace: true });
@@ -281,6 +281,16 @@ export function PlayPage(): JSX.Element {
     );
   }
 
+  if (status.kind === 'submitting') {
+    return (
+      <FullScreenStatus
+        tone="loading"
+        title="결과를 분석하는 중…"
+        detail="경로 유사도를 측정하고 있어요."
+      />
+    );
+  }
+
   const displayTitle = currentTitle ?? challenge.startPage;
 
   // First fetch still in flight and nothing cached yet → fill the screen.
@@ -318,7 +328,7 @@ export function PlayPage(): JSX.Element {
         onHelp={() => {
           setHelpOpen(true);
         }}
-        disabled={status.kind === 'submitting'}
+        disabled={false}
       />
 
       {pageQuery.isError && sanitizedHtml ? (

@@ -6,18 +6,28 @@ import { cn } from '../lib/cn.js';
 const buttonVariants = cva(
   [
     'inline-flex items-center justify-center gap-2 whitespace-nowrap',
-    'rounded-lg font-semibold transition-colors',
+    'rounded-lg font-semibold tracking-tight',
+    'transition-[background-color,border-color,color,box-shadow,transform] duration-150 ease-out',
     'focus-visible:ring-ring focus-visible:ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
     'disabled:pointer-events-none disabled:opacity-50',
+    // Subtle press feedback. `active:` triggers on click-hold (mouse + touch).
+    'active:translate-y-[0.5px] active:duration-75',
     '[&_svg]:pointer-events-none [&_svg]:shrink-0',
   ].join(' '),
   {
     variants: {
       variant: {
-        primary: 'bg-linkle text-linkle-foreground hover:bg-linkle/90 active:bg-linkle/95',
+        primary: [
+          'bg-linkle text-linkle-foreground',
+          'shadow-[0_1px_2px_rgba(26,34,54,0.08),0_4px_12px_rgba(51,102,204,0.2)]',
+          'hover:bg-linkle/92 hover:shadow-[0_2px_4px_rgba(26,34,54,0.1),0_8px_20px_rgba(51,102,204,0.25)]',
+          'active:bg-linkle',
+        ].join(' '),
         secondary: 'bg-accent text-accent-foreground hover:bg-accent/80',
-        outline:
-          'border-border bg-card text-foreground hover:bg-muted hover:text-foreground border',
+        outline: [
+          'border-border bg-card text-foreground border',
+          'hover:border-foreground/25 hover:bg-muted/60',
+        ].join(' '),
         ghost: 'text-foreground hover:bg-muted',
         destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
         link: 'text-linkle underline-offset-4 hover:underline',

@@ -51,10 +51,24 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    /* `ss10` enables Pretendard's ligature-friendly Korean set; `kern`
+       tightens Latin pairs so headings read like a typeset page. */
+    font-feature-settings: 'ss10', 'kern';
+    font-kerning: normal;
   }
 
   body {
     @apply bg-background text-foreground;
+    /* Prevent horizontal overflow from side-scrollable charts etc. */
+    text-wrap: pretty;
+  }
+
+  /* Serif headings get more generous optical sizing + no kerning overrides */
+  h1,
+  h2,
+  h3,
+  h4 {
+    text-wrap: balance;
   }
 
   /* Default focus ring — keyboard only */
@@ -82,6 +96,48 @@
     -webkit-user-select: none;
     -ms-user-select: none;
     user-select: none;
+  }
+}
+
+/* Named keyframes used by ad-hoc `[animation:linkle-*]` arbitrary classes.
+   Kept in one place so motion tokens stay consistent across screens.
+   Reduced-motion preferences are respected by the base @media rule above
+   (which neuters every animation to 0.001ms). */
+@keyframes linkle-fade-slide {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes linkle-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(6px) scale(0.82);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(-1px) scale(1.04);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes linkle-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(0.96);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 

@@ -41,7 +41,12 @@ export async function mockNoChallenge(page: Page): Promise<void> {
 
 export async function mockRankingSubmission(
   page: Page,
-  response: { rankingId?: string; rank?: number; status?: number } = {},
+  response: {
+    rankingId?: string;
+    rank?: number;
+    status?: number;
+    emojiResult?: string | null;
+  } = {},
 ): Promise<void> {
   await page.route(`${API_BASE}/v1/rankings`, async (route: Route) => {
     if (route.request().method() !== 'POST') {
@@ -57,7 +62,15 @@ export async function mockRankingSubmission(
         {
           rankingId: response.rankingId ?? 'rk_mock',
           rank: response.rank ?? 1,
-          emojiDeferred: true,
+          emojiResult: response.emojiResult ?? '🟨🟩🟦🏁',
+          reason:
+            response.emojiResult === null
+              ? null
+              : [
+                  { index: 0, word: '대한민국', similarity: 0.45, reason: '예시' },
+                  { index: 1, word: '국가', similarity: 0.72, reason: '예시' },
+                  { index: 2, word: '애국가', similarity: 0.9, reason: '예시' },
+                ],
         },
         { status: 201 },
       ),

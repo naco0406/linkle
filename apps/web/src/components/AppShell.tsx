@@ -1,4 +1,4 @@
-import { useState, type JSX, type ReactNode } from 'react';
+import { useEffect, useState, type JSX, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { HelpDialog, cn } from '@linkle/design-system';
 import { CircleHelp, Trophy, type LucideIcon } from 'lucide-react';
@@ -27,10 +27,31 @@ interface AppShellProps {
  */
 export function AppShell({ children, wide = false, className }: AppShellProps): JSX.Element {
   const [helpOpen, setHelpOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    // Kick in a subtle shadow under the sticky header once the user has
+    // scrolled past the initial viewport. Purely cosmetic — tells the eye
+    // that the top bar is floating above content.
+    const onScroll = (): void => {
+      setScrolled(window.scrollY > 4);
+    };
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+    };
+  }, []);
 
   return (
     <div className={cn('bg-background text-foreground flex min-h-dvh flex-col', className)}>
-      <header className="border-border bg-background/85 sticky top-0 z-20 border-b backdrop-blur-sm">
+      <header
+        className={cn(
+          'border-border bg-background/85 sticky top-0 z-20 border-b backdrop-blur-sm',
+          'transition-shadow duration-200',
+          scrolled && 'shadow-[0_1px_0_rgba(0,0,0,0.03),0_4px_12px_rgba(26,34,54,0.06)]',
+        )}
+      >
         <div className="mx-auto flex h-14 max-w-3xl items-center justify-between px-4 md:h-16 md:px-6">
           <Link
             to="/"

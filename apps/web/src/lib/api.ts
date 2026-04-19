@@ -4,9 +4,11 @@
 import {
   dailyChallengeSchema,
   dailyStatisticsSchema,
+  openAiReasonEntrySchema,
   rankingSchema,
   type DailyChallenge,
   type DailyStatistics,
+  type OpenAiReasonEntry,
   type Ranking,
   type RankingSort,
   type RankingSubmission,
@@ -75,13 +77,15 @@ export async function fetchChallenge(date: string): Promise<DailyChallenge> {
 const submissionResponseSchema = z.object({
   rankingId: z.string(),
   rank: z.number().int().positive(),
-  emojiDeferred: z.boolean(),
+  emojiResult: z.string().nullable(),
+  reason: z.array(openAiReasonEntrySchema).nullable(),
 });
 
 export async function submitRanking(body: RankingSubmission): Promise<{
   rankingId: string;
   rank: number;
-  emojiDeferred: boolean;
+  emojiResult: string | null;
+  reason: OpenAiReasonEntry[] | null;
 }> {
   return request('/v1/rankings', { method: 'POST', body: JSON.stringify(body) }, (raw) =>
     submissionResponseSchema.parse(raw),

@@ -1,6 +1,14 @@
 import { useState, type JSX } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, Tabs, TabsContent, TabsList, TabsTrigger } from '@linkle/design-system';
+import {
+  Card,
+  CardContent,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+  cn,
+} from '@linkle/design-system';
 import { getKstToday, type Ranking, type RankingSort } from '@linkle/shared';
 import { fetchRankings } from '../lib/api.js';
 import { AppShell } from '../components/AppShell.js';
@@ -79,16 +87,14 @@ function RankingTable({
       <CardContent className="py-0">
         <ol className="divide-border divide-y">
           {rankings.map((r, idx) => (
-            <li key={r.id} className="flex items-center gap-3 py-3">
-              <span
-                className={
-                  idx < 3
-                    ? 'text-linkle w-6 text-center font-mono text-sm font-semibold'
-                    : 'text-muted-foreground w-6 text-center font-mono text-sm'
-                }
-              >
-                {idx + 1}
-              </span>
+            <li
+              key={r.id}
+              className={cn(
+                '-mx-1 flex items-center gap-3 rounded-md px-1 py-3',
+                'hover:bg-muted/40 transition-colors',
+              )}
+            >
+              <RankingBadge rank={idx + 1} />
               <span className="flex-1 truncate font-semibold">{r.nickname}</span>
               <span className="text-foreground font-mono text-sm tabular-nums">
                 {sort === 'leastClicks' ? `${String(r.moveCount)}회` : formatSeconds(r.timeSec)}
@@ -99,6 +105,21 @@ function RankingTable({
       </CardContent>
     </Card>
   );
+}
+
+function RankingBadge({ rank }: { readonly rank: number }): JSX.Element {
+  if (rank === 1 || rank === 2 || rank === 3) {
+    const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : '🥉';
+    return (
+      <span
+        aria-label={`${String(rank)}위`}
+        className="inline-flex w-6 justify-center text-base leading-none"
+      >
+        {medal}
+      </span>
+    );
+  }
+  return <span className="text-muted-foreground w-6 text-center font-mono text-sm">{rank}</span>;
 }
 
 function formatSeconds(timeSec: number): string {
