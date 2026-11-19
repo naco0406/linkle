@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { averageMoves, emptyStats, moveDistribution, recordDaily, streakOn, weekOf, type Stats } from './index.ts'
+import { addDays, averageMoves, binMoves, emptyStats, moveDistribution, recordDaily, streakOn, weekOf, type Stats } from './index.ts'
 
-const play = (stats: Stats, ...days: [string, number][]) => days.reduce((s, [date, moves]) => recordDaily(s, { date, moves }), stats)
+const play = (stats: Stats, ...days: [string, number][]) => days.reduce((s, [date, moves]) => recordDaily(s, { date, moves, ms: moves * 10_000 }), stats)
 
 describe('내 기록', () => {
   it('매일 풀면 연속 일수가 늘고, 하루 건너뛰면 1부터 다시 센다', () => {
@@ -71,5 +71,32 @@ describe('이동 횟수', () => {
   it('평균', () => {
     expect(averageMoves(s)).toBeCloseTo(27 / 5)
     expect(averageMoves(emptyStats())).toBeNull()
+  })
+})
+
+describe('날짜별 결과', () => {
+  it('푼 날의 이동 횟수와 시간을 남긴다', () => {
+    const s = recordDaily(emptyStats(), { date: '2026-11-19', moves: 7, ms: 82_000 })
+    expect(s.recent).toEqual({ '2026-11-19': { moves: 7, ms: 82_000 } })
+  })
+  it('오래된 날은 함께 버린다', () => {
+    let s = emptyStats()
+    for (let i = 0; i < 70; i++) s = recordDaily(s, { date: addDays('2026-01-01', i), moves: 5, ms: 1 })
+    expect(Object.keys(s.recent)).toHaveLength(60)
+    expect(s.recent['2026-01-01']).toBeUndefined()
+    expect(s.recent[addDays('2026-01-01', 69)]).toBeDefined()
+  })
+})
+
+describe('날짜 더하기', () => {
+  it('달과 해를 넘긴다', () => {
+    expect(addDays('2026-11-30', 1)).toBe('2026-12-01')
+    expect(addDays('2027-01-01', -1)).toBe('2026-12-31')
+  })
+})
+
+describe('이동 횟수 칸', () => {
+  it('어떤 횟수 묶음이든 같은 일곱 칸으로 나눈다', () => {
+    expect(binMoves({ 3: 1, 5: 4, 11: 2 }).map(b => b.count)).toEqual([1, 0, 4, 0, 0, 0, 2])
   })
 })

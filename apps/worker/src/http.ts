@@ -9,11 +9,14 @@ export class HttpError extends Error {
   }
 }
 
-/** API 응답은 캐시하지 않는다. 서버 시각과 완료 인원이 매번 달라진다 */
-export const json = (body: unknown, status = 200) =>
+/**
+ * JSON 응답. 기본은 캐시하지 않는다: 서버 시각과 완료 인원이 매번 달라진다.
+ * 모두에게 같은 응답(어제의 기록)은 브라우저가 잠깐 들고 있게 해 요청 수를 아낀다.
+ */
+export const json = (body: unknown, status = 200, cache = 'no-store') =>
   new Response(JSON.stringify(body), {
     status,
-    headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
+    headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': cache },
   })
 
 /**

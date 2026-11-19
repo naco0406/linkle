@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { emptyStats, moveCount, recordDaily, type Run, type Stats } from '@linkle/core'
+import { elapsedMs, emptyStats, moveCount, recordDaily, type Run, type Stats } from '@linkle/core'
 
 /** 내 기록을 저장하는 키. 이 기기에만 남는다 */
 export const STATS_KEY = 'linkle:stats:v1'
@@ -22,7 +22,7 @@ export const useStats = create<StatsState>()(
       record: run => {
         if (run.mode !== 'daily' || run.phase !== 'finished' || !run.puzzle.date) return
         const before = get().stats
-        const after = recordDaily(before, { date: run.puzzle.date, moves: moveCount(run) })
+        const after = recordDaily(before, { date: run.puzzle.date, moves: moveCount(run), ms: elapsedMs(run, run.finishedAt ?? run.startedAt) })
         if (after !== before) set({ stats: after, celebrate: run.puzzle.date })
       },
       celebrated: () => set({ celebrate: null }),
@@ -34,7 +34,9 @@ export const useStats = create<StatsState>()(
       merge: (saved, current) => {
         const s = (saved ?? {}) as Partial<StatsState>
         const ok = s.stats && s.stats.v === 1 && Array.isArray(s.stats.days)
-        return { ...current, stats: ok ? s.stats! : emptyStats(), celebrate: typeof s.celebrate === 'string' ? s.celebrate : null }
+        // 날짜별 결과(recent)는 나중에 생긴 칸이라 없으면 빈 칸으로 채운다
+        const stats = ok ? { ...s.stats!, recent: s.stats!.recent ?? {} } : emptyStats()
+        return { ...current, stats, celebrate: typeof s.celebrate === 'string' ? s.celebrate : null }
       },
     },
   ),

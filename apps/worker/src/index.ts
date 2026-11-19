@@ -1,13 +1,20 @@
 import { kstDate, nextKstMidnight } from '@linkle/core'
 import { findDaily, findPuzzle, findRunForFinish, saveFinish, startRun } from './db.ts'
 import { HttpError, json, readJson } from './http.ts'
+import { toPublic } from './daily.ts'
+import { dailyJob, ensureStats, yesterdayOf } from './job.ts'
 import { runKindFor, settle } from './rules.ts'
 import { isUuid, LIMITS, parseFinishBody, parseStartBody, type Parsed } from './validate.ts'
+import { wikiApi } from './verify.ts'
 
 interface Env {
   ASSETS: Fetcher
   DB: D1Database
+  /** 위키백과에 보내는 User-Agent. 연락처를 넣으면 요청 제한이 넉넉해진다(설계 문서 4.1). 비우면 기본값 */
+  WIKI_USER_AGENT?: string
 }
+
+const DEFAULT_USER_AGENT = 'Linkle-daily-check/1.0'
 
 export default {
   async fetch(request, env): Promise<Response> {
@@ -21,6 +28,12 @@ export default {
       return json({ error: 'internal' }, 500)
     }
   },
+
+  /** 자정이 지나면 30분마다(wrangler.jsonc의 crons) 어제 것을 모으고 기록을 확인한다 */
+  async scheduled(controller, env, ctx): Promise<void> {
+    const api = wikiApi(env.WIKI_USER_AGENT || DEFAULT_USER_AGENT)
+    ctx.waitUntil(dailyJob(env.DB, api, controller.scheduledTime).then(result => console.log(`daily job ${result}`)))
+  },
 } satisfies ExportedHandler<Env>
 
 const FINISH_PATH = /^\/api\/runs\/([^/]+)\/finish$/
@@ -31,6 +44,10 @@ function route(request: Request, path: string, env: Env): Promise<Response> | Re
   if (path === '/api/today') {
     allow(request, 'GET')
     return today(env)
+  }
+  if (path === '/api/yesterday') {
+    allow(request, 'GET')
+    return yesterday(env)
   }
   if (path === '/api/runs') {
     allow(request, 'POST')
@@ -61,6 +78,19 @@ async function today(env: Env): Promise<Response> {
   // DB를 기다리는 동안 시간이 흘렀으므로 시각은 응답 직전에 다시 읽는다
   const serverNow = Date.now()
   return json({ date, number: daily.puzzle.number, resetsAt: nextKstMidnight(serverNow), serverNow, finishedCount: daily.clears })
+}
+
+/** 어제의 기록. 모두에게 같은 내용이라 브라우저가 잠깐 들고 있게 한다 */
+async function yesterday(env: Env): Promise<Response> {
+  const now = Date.now()
+  const date = yesterdayOf(now)
+  const stats = await ensureStats(env.DB, date, now)
+  if (stats === 'none') return json({ status: 'none', date }, 200, 'public, max-age=600')
+  if (stats === 'pending') {
+    const daily = await findDaily(env.DB, date)
+    return json({ status: 'pending', date, number: daily?.puzzle.number ?? 0 }, 200, 'public, max-age=60')
+  }
+  return json(toPublic(stats), 200, stats.done ? 'public, max-age=600' : 'public, max-age=60')
 }
 
 /** 한 판을 시작한다. 출발·도착 문서가 나가는 유일한 곳이다 */

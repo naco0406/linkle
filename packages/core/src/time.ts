@@ -11,6 +11,11 @@ export function nextKstMidnight(ms: number): number {
   return (Math.floor((ms + KST_OFFSET_MS) / DAY_MS) + 1) * DAY_MS - KST_OFFSET_MS
 }
 
+/** 한국 날짜에 n일을 더한다 (YYYY-MM-DD) */
+export function addDays(date: string, n: number): string {
+  return new Date(Date.parse(`${date}T00:00:00Z`) + n * DAY_MS).toISOString().slice(0, 10)
+}
+
 /** 두 한국 날짜 사이의 일수. to가 뒤면 양수 */
 export function daysBetween(from: string, to: string): number {
   return Math.round((Date.parse(to + 'T00:00:00Z') - Date.parse(from + 'T00:00:00Z')) / DAY_MS)

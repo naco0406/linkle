@@ -130,3 +130,27 @@ export function formatDateKo(date: string): string {
   const d = new Date(`${date}T00:00:00Z`)
   return `${d.getUTCMonth() + 1}월 ${d.getUTCDate()}일 ${'일월화수목금토'[d.getUTCDay()]}요일`
 }
+
+/** 숫자 타일. 값이 아직 없으면 줄표를 둔다 */
+export function StatTile({ label, value, unit, className = 'bg-white' }: { label: string; value: string | number | null; unit?: string; className?: string }) {
+  return (
+    <div className={`rounded-[14px] px-3 py-2.5 ${className}`}>
+      <dt className="text-[13px] leading-[18px] text-ink-2">{label}</dt>
+      <dd className="text-[20px] font-bold leading-7 tabular-nums text-primary">
+        {value === null ? <span className="text-[#c5ccd6]">–</span> : value}
+        {value !== null && unit && <span className="ml-px text-[14px] font-semibold">{unit}</span>}
+      </dd>
+    </div>
+  )
+}
+
+/** 경로의 한 줄: 유사도 칸, 문서 제목, 오른쪽 짧은 설명 */
+export function PathStep({ kind, title, note, strong, muted }: { kind: Parameters<typeof Sq>[0]['kind']; title: string; note?: string; strong?: boolean; muted?: boolean }) {
+  return (
+    <li className={`flex h-9 items-center gap-3 text-[15px] ${muted ? 'text-ink-2' : 'text-ink'}`}>
+      <Sq kind={kind} />
+      <span className={`min-w-0 truncate ${strong ? 'font-semibold text-primary' : 'font-medium'}`}>{title}</span>
+      {note && <span className="ml-auto flex-none text-[13px] text-ink-2">{note}</span>}
+    </li>
+  )
+}

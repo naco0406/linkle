@@ -4,7 +4,7 @@ import { elapsedMs, formatClock, kstDate, moveCount, type Run } from '@linkle/co
 import { useStats } from '../game/stats'
 import { now, useGame } from '../game/store'
 import { useEmoji } from '../game/useEmoji'
-import { Card, Countdown, Cta, formatDateKo, kindOfEmoji, Sq, TextButton } from '../ui/cards'
+import { Card, Countdown, Cta, formatDateKo, kindOfEmoji, PathStep as Step, Sq, StatTile as Tile, TextButton } from '../ui/cards'
 import { Spinner, Toast } from '../ui/parts'
 import { shareRun } from '../ui/share'
 import { StreakCelebration } from '../ui/Streak'
@@ -80,27 +80,5 @@ export function Arrival({ run }: { run: Run }) {
       </div>
       {toast && <Toast message={toast} onDone={clearToast} />}
     </div>
-  )
-}
-
-function Tile({ label, value, unit }: { label: string; value: string | number | null; unit?: string }) {
-  return (
-    <div className="rounded-[14px] bg-white px-3 py-2.5">
-      <dt className="text-[13px] leading-[18px] text-ink-2">{label}</dt>
-      <dd className="text-[20px] font-bold leading-7 tabular-nums text-primary">
-        {value === null ? <span className="text-[#c5ccd6]">–</span> : value}
-        {value !== null && unit && <span className="ml-px text-[14px] font-semibold">{unit}</span>}
-      </dd>
-    </div>
-  )
-}
-
-function Step({ kind, title, note, strong, muted }: { kind: Parameters<typeof Sq>[0]['kind']; title: string; note?: string; strong?: boolean; muted?: boolean }) {
-  return (
-    <li className={`flex h-9 items-center gap-3 text-[15px] ${muted ? 'text-ink-2' : 'text-ink'}`}>
-      <Sq kind={kind} />
-      <span className={`min-w-0 truncate ${strong ? 'font-semibold text-primary' : 'font-medium'}`}>{title}</span>
-      {note && <span className="ml-auto flex-none text-[13px] text-ink-2">{note}</span>}
-    </li>
   )
 }

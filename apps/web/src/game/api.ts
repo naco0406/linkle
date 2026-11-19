@@ -1,4 +1,4 @@
-import type { Puzzle, Run, RunMode } from '@linkle/core'
+import type { Puzzle, Run, RunMode, Yesterday } from '@linkle/core'
 import { playerId } from './player'
 
 // 서버(apps/worker)의 API를 부르는 곳. 응답의 모양은 설계 문서 3.8과 같다.
@@ -60,4 +60,9 @@ export function startDaily(): Promise<Started> {
 /** 끝난 판을 서버에 알린다. 여러 번 보내도 처음 저장된 결과가 온다 */
 export function finishRun(run: Run): Promise<Finished> {
   return call<Finished>(`/api/runs/${run.runId}/finish`, { playerId: playerId(), events: run.events, emoji: run.emoji, flags: run.flags })
+}
+
+/** 어제의 기록. 자정이 지나고 몇 분 동안은 모으는 중이다 */
+export function getYesterday(): Promise<Yesterday> {
+  return call<Yesterday>('/api/yesterday')
 }

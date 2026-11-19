@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev --local --port 8801",
+    "dev": "wrangler dev --local --port 8801 --test-scheduled",
     "deploy": "wrangler deploy",
     "db:migrate": "wrangler d1 migrations apply linkle --local",
     "db:seed": "node scripts/seed.ts && wrangler d1 execute linkle --local --file=.wrangler/seed.sql"

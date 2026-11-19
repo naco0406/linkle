@@ -9,6 +9,7 @@ import { Card, Countdown, Cta, formatDateKo, HowTo, kindOfEmoji, Route, Sq } fro
 import { Help, Spinner, Toast } from '../ui/parts'
 import { shareRun } from '../ui/share'
 import { StreakCard, StreakChip } from '../ui/Streak'
+import { YesterdayPreview } from './Yesterday'
 
 /**
  * 홈. 가운데의 "오늘의 링클" 카드 한 장이 시작 전과 끝난 뒤 두 모습으로 바뀐다.
@@ -43,6 +44,12 @@ export function Home({ run }: { run: Run | null }) {
       <div id="streak" className="mt-3">
         {stats.played > 0 ? <StreakCard stats={stats} today={date} /> : <HowTo />}
       </div>
+      {/* 오늘을 끝낸 사람에게만 어제의 링클을 권한다. 시작 전에는 오늘 문제에 집중하게 한다 */}
+      {finished && (
+        <div className="mt-3">
+          <YesterdayPreview />
+        </div>
+      )}
 
       {help && <Help onClose={() => setHelp(false)} />}
       {toast && <Toast message={toast} onDone={clearToast} />}

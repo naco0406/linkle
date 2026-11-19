@@ -1,10 +1,11 @@
-import { CalendarDays, Trophy, Users } from 'lucide-react'
+import { CalendarDays, Users } from 'lucide-react'
 import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation } from 'react-router'
 import { useGame } from './game/store'
 import { Arrival } from './screens/Arrival'
 import { Game } from './screens/Game'
 import { Home } from './screens/Home'
 import { Soon } from './screens/Soon'
+import { Yesterday } from './screens/Yesterday'
 import { TabBar } from './ui/TabBar'
 
 /** 오늘의 게임. 어느 화면을 보일지는 주소가 아니라 Run의 상태가 정한다 */
@@ -40,7 +41,7 @@ export function App() {
       <Routes>
         <Route element={<Shell />}>
           <Route path="/" element={<Daily />} />
-          <Route path="/yesterday" element={<Soon icon={Trophy} title="어제의 기록" body="어제 문제를 사람들이 어떻게 풀었는지 보여 드릴 예정이에요." />} />
+          <Route path="/yesterday" element={<Yesterday />} />
           <Route path="/archive" element={<Soon icon={CalendarDays} title="지난 문제" body="지나간 오늘의 문제를 다시 풀 수 있게 준비하고 있어요." />} />
           <Route path="/community" element={<Soon icon={Users} title="커뮤니티" body="서로 낸 문제를 풀고 기록을 겨루는 곳을 준비하고 있어요." />} />
         </Route>
