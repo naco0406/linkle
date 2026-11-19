@@ -1,0 +1,825 @@
+<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>링클 오늘의 게임 — 화면 시안 · 2026-11-19</title>
+<!-- 제품이 쓰는 글꼴을 그대로. 한국어 제품이면 보통 Pretendard -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rhodium+Libre&amp;display=swap">
+<style>
+/* ① 보드 틀 — assets/board.css 를 그대로 붙여 넣는다(고치지 않는다). 글꼴만 --bd-font 로 제품 것에 맞춘다. */
+/*
+  시안 보드의 "종이" — 제품과 무관한 보드 틀만 그린다.
+  화면 그림(.bd-frame 안)은 제품의 디자인 시스템 값으로 따로 그린다(kit.css, 제품마다 새로 만든다).
+
+  · 모든 보드 클래스는 bd- 로 시작한다 — 제품 kit 의 .card · .row · .btn 과 부딪히지 않게.
+  · 요소 선택자(h2, p, table …)는 bd- 컨테이너 바로 아래에만 건다 — 화면 그림 속으로 새지 않게.
+  · 값: 간격 4px 격자 · 모서리 6/8/12/16 · 정보 글자 12px 이상 · 색은 예외에만.
+  · --bd-font 는 제품의 글꼴로 바꿔 끼운다(보드와 그림이 한 집안으로 보이게).
+*/
+:root {
+  --bd-font: "Pretendard Variable", Pretendard, Inter, system-ui, sans-serif;
+  --bd-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  --bd-paper: oklch(.958 .002 286);
+  --bd-raised: oklch(1 0 0);
+  --bd-canvas: oklch(.985 0 0);
+  --bd-subtle: oklch(.967 .001 286);
+  --bd-emph: oklch(.935 .003 286);
+  --bd-ink-strong: oklch(.18 .007 286);
+  --bd-ink: oklch(.29 .008 286);
+  --bd-ink-subtle: oklch(.52 .014 286);
+  --bd-ink-disabled: oklch(.76 .008 286);
+  --bd-line: oklch(.92 .004 286);
+  --bd-line-soft: oklch(.95 .002 286);
+  --bd-line-strong: oklch(.84 .006 286);
+  --bd-warning: oklch(.78 .15 75);
+  --bd-destructive: oklch(.6 .22 25);
+  --bd-r-sm: 6px; --bd-r-md: 8px; --bd-r-lg: 12px; --bd-r-xl: 16px;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--bd-paper); color: var(--bd-ink); font-family: var(--bd-font); font-size: 14px; line-height: 22px; -webkit-font-smoothing: antialiased; }
+.bd-wrap a { color: inherit; }
+.bd-wrap b, .bd-wrap strong { font-weight: 600; color: var(--bd-ink-strong); }
+.bd-wrap code { font-family: var(--bd-mono); font-size: 12px; background: var(--bd-subtle); padding: 1px 6px; border-radius: 5px; color: var(--bd-ink); }
+.bd-muted { color: var(--bd-ink-subtle); }
+.bd-small { font-size: 13px; line-height: 20px; }
+.bd-mini { font-size: 12px; line-height: 18px; }
+
+/* ── 머리 내비 ── */
+.bd-nav { position: sticky; top: 0; z-index: 100; background: oklch(1 0 0 / .86); backdrop-filter: saturate(1.4) blur(12px); border-bottom: 1px solid var(--bd-line); }
+.bd-nav-inner { max-width: 1360px; margin: 0 auto; display: flex; gap: 2px; align-items: center; height: 52px; padding: 0 24px; overflow-x: auto; scrollbar-width: none; }
+.bd-nav-inner > b { margin-right: 16px; white-space: nowrap; font-weight: 700; color: var(--bd-ink-strong); }
+.bd-nav-inner > a { text-decoration: none; padding: 6px 10px; border-radius: var(--bd-r-md); color: var(--bd-ink-subtle); white-space: nowrap; font-size: 13px; }
+.bd-nav-inner > a:hover { background: var(--bd-subtle); color: var(--bd-ink-strong); }
+
+/* ── 장 ── */
+.bd-wrap { max-width: 1360px; margin: 0 auto; padding: 64px 24px 160px; }
+.bd-kicker { font-size: 12px; font-weight: 600; color: var(--bd-ink-subtle); }
+.bd-hero > h1 { font-size: 36px; line-height: 46px; font-weight: 700; color: var(--bd-ink-strong); margin: 12px 0 16px; letter-spacing: -.028em; max-width: 880px; }
+.bd-chapter { margin-top: 112px; scroll-margin-top: 72px; }
+.bd-chapter > h2 { font-size: 26px; line-height: 36px; font-weight: 700; color: var(--bd-ink-strong); margin: 8px 0 12px; letter-spacing: -.022em; }
+.bd-sub { font-size: 15px; line-height: 22px; font-weight: 650; color: var(--bd-ink-strong); margin: 56px 0 0; letter-spacing: -.008em; }
+.bd-lead { max-width: 760px; color: var(--bd-ink-subtle); margin: 0; font-size: 15px; line-height: 26px; }
+.bd-lead b { color: var(--bd-ink-strong); }
+.bd-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 28px; align-items: start; }
+.bd-grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 28px; align-items: start; }
+.bd-card { background: var(--bd-raised); border: 1px solid var(--bd-line); border-radius: var(--bd-r-lg); padding: 24px; }
+.bd-card > h3 { font-size: 15px; line-height: 22px; font-weight: 650; color: var(--bd-ink-strong); margin: 0 0 6px; letter-spacing: -.008em; }
+.bd-card > p { margin: 0; }
+.bd-card ul { margin: 8px 0 0; padding-left: 18px; }
+.bd-card li { margin: 6px 0; }
+
+/* ── 범례 · 표지 ── */
+.bd-legend { display: flex; gap: 12px 24px; flex-wrap: wrap; align-items: center; margin-top: 28px; padding: 14px 18px; border: 1px solid var(--bd-line); border-radius: var(--bd-r-lg); background: var(--bd-raised); width: fit-content; }
+.bd-legend > span { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--bd-ink); }
+.bd-tag { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 8px; border-radius: var(--bd-r-sm); font-size: 12px; font-weight: 600; color: var(--bd-ink-subtle); background: var(--bd-subtle); white-space: nowrap; }
+.bd-tag.pick { background: var(--bd-ink-strong); color: white; }
+.bd-proposed, .bd-decided { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--bd-ink-subtle); }
+.bd-proposed::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--bd-ink-strong); }
+.bd-decided::before { content: "✓"; font-size: 12px; font-weight: 800; color: var(--bd-ink-strong); }
+
+/* ── 방향 비교 ── */
+.bd-dir.pick { box-shadow: 0 0 0 2px var(--bd-ink-strong); border-color: transparent; }
+.bd-dir-head { display: flex; gap: 8px; align-items: center; }
+.bd-dir > h3 { margin-top: 12px; }
+.bd-pc { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+.bd-pc h4 { font-size: 12px; font-weight: 600; color: var(--bd-ink-subtle); margin: 0 0 4px; }
+.bd-pc ul { margin: 0; padding-left: 16px; font-size: 13px; line-height: 21px; }
+/* 방향 카드 속 뼈대 그림 — 세 방향을 "같은 화면, 다른 배치"로 그려 차이가 그림만으로 읽히게.
+   상자(.blk)에는 이름을 쓰고, 안에 내용 모양(.g-table · .g-bars · .g-list · .g-metrics · .g-input)을 넣는다.
+   그 방향만의 핵심 한 수는 .blk.key(검은 테두리)로 — 카드마다 key 는 하나. */
+.bd-wire { height: 260px; border: 1px solid var(--bd-line); border-radius: 10px; background: var(--bd-canvas); overflow: hidden; display: grid; grid-template-columns: 64px 1fr; margin: 12px 0 4px; }
+.bd-wire.nosb { grid-template-columns: 1fr; }
+.bd-wire .s { background: var(--bd-subtle); border-right: 1px solid var(--bd-line); padding: 10px 8px; display: grid; gap: 6px; align-content: start; }
+.bd-wire .s b { display: block; height: 6px; border-radius: 3px; background: var(--bd-emph); }
+.bd-wire .s b.on { background: var(--bd-ink-strong); opacity: .7; }
+.bd-wire .s b.card { height: 14px; background: var(--bd-raised); box-shadow: 0 0 0 1px var(--bd-line); }
+.bd-wire .m { padding: 12px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.bd-wire .cols { display: grid; gap: 8px; grid-template-columns: 1fr 1fr; }
+.bd-wire .blk { position: relative; border: 1px solid var(--bd-line); background: var(--bd-raised); border-radius: 6px; padding: 6px 8px 8px; display: flex; flex-direction: column; gap: 5px; min-height: 30px; overflow: hidden; }
+.bd-wire .blk > span { font-size: 12px; line-height: 14px; font-weight: 600; color: var(--bd-ink-subtle); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bd-wire .blk.key { border-color: transparent; box-shadow: 0 0 0 2px var(--bd-ink-strong); }
+.bd-wire .blk.key > span { color: var(--bd-ink-strong); }
+.bd-wire .blk.ghost { background: transparent; border-style: dashed; }
+.bd-wire .ln { height: 6px; border-radius: 3px; background: var(--bd-emph); }
+.bd-wire .ln.k { background: var(--bd-ink-strong); opacity: .75; }
+/* 내용 모양 */
+.bd-wire .g-table { flex: 1; min-height: 28px; background: repeating-linear-gradient(to bottom, transparent 0 9px, var(--bd-line) 9px 10px); }
+.bd-wire .g-list { flex: 1; min-height: 24px; background: repeating-linear-gradient(to bottom, var(--bd-emph) 0 5px, transparent 5px 12px); background-size: 80% 100%; background-repeat: no-repeat; }
+.bd-wire .g-bars { flex: 1; min-height: 28px; display: flex; align-items: flex-end; gap: 3px; }
+.bd-wire .g-bars > i { flex: 1; background: var(--bd-line-strong); border-radius: 2px 2px 0 0; }
+.bd-wire .g-bars > i.hot { background: var(--bd-ink-strong); }
+.bd-wire .g-metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+.bd-wire .g-metrics > i { height: 18px; border-radius: 4px; background: var(--bd-subtle); box-shadow: inset 0 0 0 1px var(--bd-line); }
+.bd-wire .g-input { height: 18px; border-radius: 5px; box-shadow: inset 0 0 0 1px var(--bd-line-strong); }
+.bd-wire .g-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--bd-warning); margin-right: 4px; }
+.bd-wire-cap { font-size: 12px; line-height: 18px; color: var(--bd-ink-subtle); margin-top: 6px; }
+.bd-wire-cap b { color: var(--bd-ink-strong); }
+.bd-prec { margin-top: 12px; font-size: 12px; line-height: 18px; color: var(--bd-ink-subtle); }
+.bd-prec a { color: var(--bd-ink); text-decoration: underline; text-decoration-color: var(--bd-line-strong); text-underline-offset: 3px; }
+
+/* ── 진단 ── */
+.bd-shots { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 28px; }
+.bd-shots figure { margin: 0; }
+.bd-shotbox { position: relative; }
+.bd-shot { width: 100%; display: block; border: 1px solid var(--bd-line); border-radius: var(--bd-r-lg); background: var(--bd-raised); }
+.bd-cap { font-size: 12px; line-height: 18px; color: var(--bd-ink-subtle); margin-top: 8px; }
+.bd-diag { list-style: none; padding: 0; margin: 28px 0 0; display: grid; grid-template-columns: 1fr 1fr; gap: 12px 40px; counter-reset: dg; }
+.bd-diag > li { position: relative; padding: 14px 0 14px 34px; border-top: 1px solid var(--bd-line); font-size: 14px; line-height: 23px; }
+.bd-diag > li::before { counter-increment: dg; content: counter(dg); position: absolute; left: 0; top: 15px; width: 22px; height: 22px; border-radius: var(--bd-r-sm); background: var(--bd-subtle); color: var(--bd-ink-subtle); font-size: 12px; font-weight: 700; display: grid; place-items: center; }
+.bd-src { display: block; font-size: 12px; line-height: 18px; color: var(--bd-ink-subtle); margin-top: 2px; font-family: var(--bd-mono); }
+
+/* ── 흐름 도식(새 기능) — explainer-diagram 의 PNG 를 흰 판 위에 놓는다(도식 모서리 바깥이 흰색이라 회색 종이에 바로 두면 틈이 보인다) ── */
+.bd-diagram { margin: 32px 0 0; background: var(--bd-raised); border: 1px solid var(--bd-line); border-radius: var(--bd-r-lg); padding: 24px; text-align: center; }
+.bd-diagram img { max-width: 100%; height: auto; display: inline-block; }
+.bd-diagram figcaption { margin-top: 12px; text-align: left; font-size: 13px; line-height: 20px; color: var(--bd-ink-subtle); }
+/* 1차 범위 — 넣을 것 / 미룰 것 */
+.bd-scope { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 28px; }
+.bd-scope h4 { margin: 0 0 8px; font-size: 13px; font-weight: 650; color: var(--bd-ink-strong); }
+.bd-scope li { font-size: 13px; line-height: 21px; margin: 6px 0; }
+.bd-scope li span { display: block; font-size: 12px; color: var(--bd-ink-subtle); }
+
+/* ── 화면 틀 ── */
+.bd-frame-wrap { margin-top: 32px; overflow-x: auto; padding: 4px 4px 16px; }
+.bd-frame { position: relative; width: 1282px; background: var(--bd-canvas); border: 1px solid var(--bd-line-strong); border-radius: var(--bd-r-xl); overflow: hidden; box-shadow: 0 1px 2px rgb(0 0 0 / .04), 0 32px 64px -32px rgb(0 0 0 / .22); flex: none; }
+.bd-frame.phone { width: 392px; border-radius: 36px; }
+.bd-chrome { height: 40px; background: var(--bd-raised); border-bottom: 1px solid var(--bd-line); display: flex; align-items: center; gap: 6px; padding: 0 16px; font-size: 12px; color: var(--bd-ink-subtle); font-family: var(--bd-font); }
+.bd-chrome i { width: 10px; height: 10px; border-radius: 50%; background: var(--bd-emph); display: inline-block; flex: none; }
+.bd-chrome .tab { margin-left: 12px; height: 26px; padding: 0 10px; display: flex; align-items: center; color: var(--bd-ink); white-space: nowrap; border-radius: 7px; background: var(--bd-subtle); }
+.bd-chrome .url { margin-left: 8px; flex: 1; max-width: 520px; height: 26px; border-radius: 7px; background: var(--bd-subtle); display: flex; align-items: center; padding: 0 10px; color: var(--bd-ink-subtle); font-family: var(--bd-mono); font-size: 12px; white-space: nowrap; overflow: hidden; }
+.bd-chrome .url b { color: var(--bd-ink-strong); font-weight: 600; }
+.bd-status { height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 28px; background: var(--bd-raised); font-size: 14px; font-weight: 600; color: var(--bd-ink-strong); }
+.bd-status .island { width: 96px; height: 26px; border-radius: 13px; background: var(--bd-ink-strong); }
+.bd-status .bat { width: 26px; height: 12px; border-radius: 3px; box-shadow: inset 0 0 0 1.5px var(--bd-ink); }
+/* 화면 칸: 그림의 실제 크기. 기본 1280×800, 휴대폰 390×800 */
+.bd-screen { position: relative; width: 1280px; height: 800px; overflow: hidden; }
+.bd-frame.phone .bd-screen { width: 390px; }
+.bd-screen > img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top left; }
+
+/* 번호 핀 — place_pins.mjs 가 좌표를 구워 넣는다(.bd-pin[data-auto]) */
+.bd-pin { position: absolute; z-index: 60; width: 22px; height: 22px; border-radius: 50%; background: var(--bd-ink-strong); color: white; font: 700 12px/1 var(--bd-font); font-variant-numeric: tabular-nums; display: grid; place-items: center; box-shadow: 0 0 0 3px oklch(1 0 0), 0 2px 8px rgb(0 0 0 / .18); pointer-events: none; }
+
+/* 강조 사각형 — 새로 생기는 영역의 경계가 핵심일 때만(data-pin-box). 그림 한 장에 하나까지. 핀은 글자를 덜 가리는 모서리에 */
+.bd-hl { position: absolute; z-index: 55; border: 2px solid var(--bd-ink-strong); border-radius: 6px; box-shadow: 0 0 0 3px oklch(1 0 0 / .7); pointer-events: none; }
+
+/* 번호 설명 — li 순서가 곧 핀 번호 */
+.bd-notes { counter-reset: n; list-style: none; padding: 0; margin: 28px 0 0; display: grid; grid-template-columns: 1fr 1fr; gap: 14px 48px; max-width: 1282px; }
+.bd-notes > li { position: relative; padding-left: 34px; font-size: 14px; line-height: 23px; color: var(--bd-ink); }
+.bd-notes > li::before { counter-increment: n; content: counter(n); position: absolute; left: 0; top: 1px; width: 22px; height: 22px; border-radius: 50%; background: var(--bd-ink-strong); color: white; font-size: 12px; line-height: 1; font-weight: 700; font-variant-numeric: tabular-nums; display: grid; place-items: center; }
+/* 지금 ↔ 시안 나란히 — 화면 장 맨 위에 반 크기 틀 두 개. 무엇이 바뀌는지 먼저 한눈에 보고, 아래 큰 틀에서 번호로 자세히 본다.
+   나란히 놓은 것만으로 차이가 보이니 여기엔 핀 · 사각형을 두지 않는다. */
+.bd-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 32px; align-items: start; }
+.bd-compare figure { margin: 0; min-width: 0; }
+.bd-compare figcaption { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--bd-ink-strong); margin-bottom: 10px; }
+.bd-compare figcaption span { font-weight: 450; color: var(--bd-ink-subtle); }
+.bd-compare .bd-frame { zoom: .5; box-shadow: 0 1px 2px rgb(0 0 0 / .04), 0 24px 48px -24px rgb(0 0 0 / .2); }
+
+.bd-row { display: flex; gap: 40px; align-items: flex-start; flex-wrap: wrap; margin-top: 32px; }
+.bd-row > .bd-cell { flex: none; }
+.bd-row > .bd-cell > .bd-notes { grid-template-columns: 1fr; max-width: 440px; }
+
+/* ── 규격 · 규칙 · 레퍼런스 · 순서 ── */
+.bd-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+.bd-table th { text-align: left; font-size: 12px; font-weight: 600; color: var(--bd-ink-subtle); padding: 10px 16px 10px 0; border-bottom: 1px solid var(--bd-line); white-space: nowrap; }
+.bd-table td { padding: 10px 16px 10px 0; border-bottom: 1px solid var(--bd-line-soft); vertical-align: top; font-size: 13px; line-height: 21px; }
+.bd-table tr:last-child td { border-bottom: 0; }
+.bd-ts { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 8px 0; border-top: 1px solid var(--bd-line-soft); font-size: 13px; }
+.bd-ts:first-of-type { border-top: 0; }
+.bd-ts .v { font-size: 12px; color: var(--bd-ink-subtle); font-variant-numeric: tabular-nums; }
+.bd-sw { display: flex; align-items: center; gap: 10px; font-size: 13px; padding: 6px 0; }
+.bd-sw i { width: 28px; height: 28px; border-radius: var(--bd-r-md); box-shadow: inset 0 0 0 1px rgb(0 0 0 / .06); flex: none; }
+.bd-sw span { flex: 1; }
+.bd-rule { display: grid; grid-template-columns: 32px 1fr; gap: 12px; padding: 16px 0; border-top: 1px solid var(--bd-line-soft); font-size: 14px; line-height: 22px; }
+.bd-rule:first-of-type { border-top: 0; padding-top: 4px; }
+.bd-rule.q { grid-template-columns: 1fr; }
+.bd-rule .no { width: 24px; height: 24px; border-radius: var(--bd-r-sm); background: var(--bd-subtle); color: var(--bd-ink-subtle); font-weight: 700; font-size: 12px; display: grid; place-items: center; }
+.bd-refs li { margin: 8px 0; font-size: 13px; line-height: 21px; }
+.bd-refs a { color: var(--bd-ink-strong); text-decoration: underline; text-decoration-color: var(--bd-line-strong); text-underline-offset: 3px; }
+.bd-foot { margin-top: 112px; padding-top: 24px; border-top: 1px solid var(--bd-line); font-size: 13px; color: var(--bd-ink-subtle); }
+
+</style>
+<style id="kit">
+/* 제품 키트 — apps/web 의 실측 값(shots/probe-*.json · tokens.json)으로 썼다. 이름은 apps/web/src 의 컴포넌트를 따른다. */
+.bd-screen { --primary: #3366cc; --primary-dark: #2957b3; --secondary: #f3f7ff; --ink: #444f5b; --line: #e5e5e5; --line-blue: #dbe8f9;
+  /* 새로 필요한 값(규격 장에 표시) */ --ink-2: #6b7682; --s1: #e5534b; --s2: #f0883e; --s3: #eab308; --s4: #57ab5a; --s5: #3366cc;
+  font-family: "Pretendard Variable", Pretendard, system-ui, sans-serif; font-size: 16px; line-height: 24px; color: var(--ink); background: var(--secondary); }
+.bd-screen svg, .k-ic { width: 20px; height: 20px; flex: none; }
+svg { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+.k-col { height: 100%; display: flex; flex-direction: column; }
+.k-num { font-variant-numeric: tabular-nums; }
+/* <PrimaryButton> — 높이 56 · 완전히 둥근 모서리 · 18/500 */
+.k-btn { height: 56px; border-radius: 28px; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 18px; font-weight: 500; }
+.k-btn.primary { background: var(--primary); color: #fff; }
+.k-btn.quiet { height: 48px; border-radius: 24px; font-size: 16px; color: var(--primary); background: #fff; box-shadow: inset 0 0 0 1.5px var(--line-blue); }
+.k-iconbtn { width: 40px; height: 40px; border-radius: 8px; display: grid; place-items: center; color: var(--ink); }
+.k-iconbtn svg { width: 24px; height: 24px; }
+/* 홈 */
+.k-home { height: 100%; display: flex; flex-direction: column; padding: 0 20px; }
+.k-top { height: 56px; margin: 0 -12px; display: flex; align-items: center; justify-content: space-between; flex: none; }
+.k-streak { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px 0 10px; margin-left: 4px; border-radius: 16px; background: #fff; box-shadow: inset 0 0 0 1.5px var(--line-blue); font-size: 14px; font-weight: 600; color: var(--primary); }
+.k-streak svg { width: 16px; height: 16px; }
+.k-top-r { display: flex; }
+.k-brand { text-align: center; padding: 12px 0 20px; flex: none; }
+.k-logo { font-family: "Rhodium Libre", Georgia, serif; font-size: 52px; line-height: 56px; color: var(--primary); }
+.k-tag { font-size: 16px; line-height: 24px; color: var(--ink); margin-top: 4px; }
+.k-card { background: #fff; border-radius: 20px; box-shadow: inset 0 0 0 2px var(--line-blue); padding: 20px; flex: none; }
+.k-card-h { display: flex; align-items: baseline; justify-content: space-between; }
+.k-kicker { font-size: 14px; line-height: 20px; font-weight: 600; color: var(--primary); }
+.k-no { font-family: "Rhodium Libre", Georgia, serif; font-size: 20px; line-height: 24px; color: var(--primary); }
+.k-date { font-size: 20px; line-height: 28px; font-weight: 600; color: var(--ink); margin-top: 2px; }
+.k-route { display: flex; align-items: center; gap: 8px; margin-top: 16px; }
+.k-slot { flex: 1; height: 44px; border-radius: 12px; border: 1.5px dashed #b8c9e6; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 14px; color: var(--ink-2); }
+.k-slot svg { width: 16px; height: 16px; }
+.k-slot.open { border: 0; background: var(--secondary); color: var(--primary); font-weight: 600; font-size: 15px; }
+.k-arrow { color: #9db4dd; }
+.k-meta { font-size: 14px; line-height: 20px; color: var(--ink-2); margin: 12px 0 16px; text-align: center; }
+.k-meta b { color: var(--ink); font-weight: 600; }
+.k-hint { font-size: 13px; line-height: 20px; color: var(--ink-2); text-align: center; margin-top: 8px; }
+.k-how { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 16px; flex: none; }
+.k-how > div { background: #fff; border-radius: 12px; padding: 12px 10px; font-size: 13px; line-height: 18px; color: var(--ink); }
+.k-how b { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 10px; background: var(--secondary); color: var(--primary); font-size: 12px; font-weight: 700; margin-bottom: 6px; }
+.k-nav3 { margin: auto -8px 0; padding: 8px 0 20px; display: grid; grid-template-columns: repeat(3, 1fr); flex: none; }
+.k-nav3 > div { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 0; font-size: 13px; line-height: 18px; color: var(--ink); }
+.k-nav3 svg { width: 22px; height: 22px; color: var(--primary); }
+/* 게임 */
+.k-header { height: 56px; flex: none; display: flex; align-items: center; padding: 0 8px 0 16px; background: var(--secondary); border-bottom: 1px solid var(--line); gap: 10px; }
+.k-goal { min-width: 0; flex: 1; display: flex; align-items: center; gap: 8px; }
+.k-goal small { font-size: 13px; line-height: 16px; color: var(--ink-2); }
+.k-goal b { font-size: 17px; line-height: 24px; font-weight: 600; color: var(--primary); }
+.k-flag { width: 28px; height: 28px; border-radius: 14px; background: var(--primary); color: #fff; display: grid; place-items: center; flex: none; }
+.k-flag svg { width: 16px; height: 16px; }
+.k-trail { height: 44px; flex: none; display: flex; align-items: center; gap: 4px; padding: 0 16px; background: #fff; border-bottom: 1px solid var(--line); font-size: 14px; white-space: nowrap; overflow: hidden; }
+.k-trail span { color: var(--ink-2); }
+.k-trail svg { width: 14px; height: 14px; color: #b3bcc6; }
+.k-trail .here { color: var(--primary); font-weight: 600; background: var(--secondary); border-radius: 8px; padding: 2px 8px; }
+.k-trail .fade { color: #a9b2bd; }
+.k-doc { flex: 1; min-height: 0; background: #fff url(shots/game.png) 0 -60px / 390px 800px no-repeat; position: relative; }
+.k-doc.dim::after { content: ""; position: absolute; inset: 0; background: rgb(255 255 255 / .6); }
+.k-bar { position: absolute; left: 0; top: 0; height: 3px; width: 58%; background: var(--primary); border-radius: 0 2px 2px 0; z-index: 2; }
+.k-opening { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 2; height: 40px; padding: 0 16px; border-radius: 20px; background: var(--ink); color: #fff; font-size: 14px; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+.k-opening b { font-weight: 600; }
+.k-spin { width: 14px; height: 14px; border-radius: 50%; border: 2px solid rgb(255 255 255 / .35); border-top-color: #fff; }
+.k-footer { height: 64px; flex: none; display: flex; align-items: center; justify-content: space-between; padding: 0 16px 0 12px; background: var(--secondary); border-top: 1px solid var(--line); }
+.k-back { height: 44px; padding: 0 16px 0 12px; border-radius: 22px; background: #fff; box-shadow: inset 0 0 0 1.5px var(--line-blue); display: flex; align-items: center; gap: 8px; font-size: 15px; color: var(--ink); max-width: 190px; }
+.k-back b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.k-stats { display: flex; align-items: center; gap: 16px; font-size: 16px; font-weight: 600; color: var(--primary); }
+.k-stats span { display: inline-flex; align-items: center; gap: 6px; }
+.k-stats svg { width: 18px; height: 18px; color: var(--ink-2); }
+/* 결과 */
+.k-result { height: 100%; display: flex; flex-direction: column; padding: 20px 20px 0; }
+.k-done { display: flex; align-items: center; gap: 12px; flex: none; }
+.k-done .k-flag { width: 44px; height: 44px; border-radius: 22px; }
+.k-done .k-flag svg { width: 22px; height: 22px; }
+.k-done h3 { margin: 0; font-size: 24px; line-height: 30px; font-weight: 700; color: var(--ink); letter-spacing: -.01em; }
+.k-done p { margin: 0; font-size: 14px; line-height: 20px; color: var(--ink-2); }
+.k-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 16px; flex: none; }
+.k-tiles > div { background: #fff; border-radius: 14px; padding: 10px 12px; }
+.k-tiles small { display: block; font-size: 13px; line-height: 18px; color: var(--ink-2); }
+.k-tiles b { display: block; font-size: 20px; line-height: 28px; font-weight: 700; color: var(--primary); font-variant-numeric: tabular-nums; }
+.k-tiles b i { font-style: normal; font-size: 14px; font-weight: 600; margin-left: 1px; }
+.k-path { margin-top: 12px; padding: 8px 16px 12px; flex: none; }
+.k-step { height: 35px; display: flex; align-items: center; gap: 12px; font-size: 15px; color: var(--ink); }
+.k-step.back { color: var(--ink-2); }
+.k-step.end b, .k-step.start b { color: var(--primary); }
+.k-step b { font-weight: 500; }
+.k-step.end b, .k-step.start b { font-weight: 600; }
+.k-step small { margin-left: auto; font-size: 13px; color: var(--ink-2); }
+.k-sq { width: 18px; height: 18px; border-radius: 5px; flex: none; display: grid; place-items: center; color: #fff; }
+.k-sq svg { width: 12px; height: 12px; stroke-width: 2.25; }
+.k-sq.l1 { background: var(--s1); } .k-sq.l2 { background: var(--s2); } .k-sq.l3 { background: var(--s3); } .k-sq.l4 { background: var(--s4); } .k-sq.l5 { background: var(--s5); }
+.k-sq.o { box-shadow: inset 0 0 0 1.5px #b8c9e6; } .k-sq.b { background: #c9d1da; } .k-sq.g { background: var(--ink); }
+.k-legend { display: flex; align-items: center; gap: 6px; margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--line); font-size: 13px; color: var(--ink-2); }
+.k-legend .k-sq { width: 14px; height: 14px; border-radius: 4px; }
+.k-legend span:last-child { margin-left: 2px; }
+.k-actions { margin-top: 16px; display: grid; gap: 8px; flex: none; }
+.k-next { margin-top: auto; padding: 12px 0 20px; text-align: center; font-size: 14px; color: var(--ink-2); flex: none; }
+.k-next b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+.k-strip { display: flex; gap: 4px; }
+.k-strip .k-sq { width: 24px; height: 24px; border-radius: 6px; }
+.k-strip .k-sq svg { width: 14px; height: 14px; }
+/* 내 기록 시트 */
+.k-scrim { position: absolute; inset: 0; background: rgb(20 30 50 / .38); }
+.k-sheet { position: absolute; left: 0; right: 0; bottom: 0; background: #fff; border-radius: 24px 24px 0 0; padding: 12px 20px 28px; }
+.k-grab { width: 36px; height: 4px; border-radius: 2px; background: #d5dbe3; margin: 0 auto 16px; }
+.k-sheet h3 { margin: 0 0 12px; font-size: 20px; line-height: 28px; font-weight: 700; color: var(--ink); }
+.k-sheet h4 { margin: 20px 0 10px; font-size: 14px; line-height: 20px; font-weight: 600; color: var(--ink); }
+.k-tiles.four { grid-template-columns: repeat(4, 1fr); margin-top: 0; }
+.k-tiles.four > div { background: var(--secondary); padding: 10px 8px; text-align: center; }
+.k-dist { display: grid; gap: 6px; }
+.k-dist > div { display: grid; grid-template-columns: 40px 1fr; align-items: center; font-size: 13px; color: var(--ink-2); }
+.k-dist i { display: flex; align-items: center; justify-content: flex-end; height: 22px; min-width: 22px; border-radius: 6px; background: #dfe6f3; padding: 0 8px; font-style: normal; font-size: 13px; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
+.k-dist .me i { background: var(--primary); color: #fff; }
+/* 더 풀기 목록 */
+.k-sec { font-size: 14px; line-height: 20px; font-weight: 600; color: var(--ink); margin: 20px 0 8px; }
+.k-list { background: #fff; border-radius: 16px; padding: 0 16px; flex: none; }
+.k-row { height: 56px; display: flex; align-items: center; gap: 12px; border-top: 1px solid #eef1f5; }
+.k-row:first-child { border-top: 0; }
+.k-row > svg:first-child { color: var(--primary); width: 22px; height: 22px; }
+.k-row div { min-width: 0; flex: 1; }
+.k-row b { display: block; font-size: 15px; line-height: 20px; font-weight: 600; color: var(--ink); }
+.k-row small { display: block; font-size: 13px; line-height: 18px; color: var(--ink-2); }
+.k-row > svg:last-child { color: #b3bcc6; width: 18px; height: 18px; }
+/* 아이콘 장 (화면 틀 밖) */
+.k-appicon { width: 96px; height: 96px; border-radius: 22px; background: #3366cc; position: relative; display: grid; place-items: center; color: #fff; font-family: "Rhodium Libre", Georgia, serif; font-size: 64px; line-height: 1; flex: none; }
+.k-appicon.sm { width: 48px; height: 48px; border-radius: 11px; font-size: 32px; }
+.k-appicon.xs { width: 24px; height: 24px; border-radius: 6px; font-size: 16px; }
+.k-appicon.u::after { content: ""; position: absolute; left: 26%; right: 26%; bottom: 17%; height: 5%; border-radius: 3px; background: #fff; }
+.k-appicon.inv { background: #f3f7ff; color: #3366cc; box-shadow: inset 0 0 0 1.5px #dbe8f9; }
+.k-appicon.inv.u::after { background: #3366cc; }
+.k-appicon span { transform: translateY(-4%); }
+.k-icons { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; margin-top: 12px; }
+.k-icons div { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 4px; font-size: 12px; line-height: 16px; color: #6b7682; text-align: center; }
+.k-icons svg { width: 24px; height: 24px; color: #3366cc; }
+.k-sim { display: flex; gap: 10px; align-items: center; margin-top: 12px; flex-wrap: wrap; }
+.k-sim > div { display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 12px; line-height: 16px; color: #6b7682; width: 72px; text-align: center; white-space: nowrap; }
+.k-sim i { width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; color: #fff; }
+.k-sim i svg { width: 18px; height: 18px; stroke-width: 2.25; }
+.k-iconrow { display: flex; align-items: flex-end; gap: 20px; margin-top: 16px; }
+.k-iconrow figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 12px; line-height: 16px; color: #6b7682; }
+/* 방향 뼈대: 휴대폰 모양 */
+.bd-wire.ph { grid-template-columns: 1fr; height: 300px; width: 170px; margin-left: auto; margin-right: auto; border-radius: 18px; }
+.bd-wire.ph .m { padding: 10px; gap: 6px; }
+.bd-wire.ph .tab { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+.bd-wire.ph .tab i { height: 14px; border-radius: 4px; background: var(--bd-emph); }
+.bd-wire.ph .tab i.on { background: var(--bd-ink-strong); opacity: .7; }
+</style>
+</head>
+<body>
+<!-- bd:icons --><svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="i-arrow-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></symbol>
+<symbol id="i-calendar-days" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v3"></path><path d="M16 2v3"></path><rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M3 9h18"></path><path d="M8 13h.01"></path><path d="M12 13h.01"></path><path d="M16 13h.01"></path><path d="M8 17h.01"></path><path d="M12 17h.01"></path><path d="M16 17h.01"></path></symbol>
+<symbol id="i-chart-column" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v16a2 2 0 0 0 2 2h16"></path><path d="M18 17V9"></path><path d="M13 17V5"></path><path d="M8 17v-3"></path></symbol>
+<symbol id="i-chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></symbol>
+<symbol id="i-circle-question-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9 9.5a3 2.5 0 016 0c0 2-2 2-3 3.5"></path><path d="M12 17h.01"></path></symbol>
+<symbol id="i-flag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.333 2q2 0 3.067-.8A1 1 0 0 1 20 4v10a1 1 0 0 1-.4.8A6 6 0 0 1 16 16c-3 0-5-2-8-2a6 6 0 0 0-4 1.528"></path></symbol>
+<symbol id="i-flame" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3q1 4 4 6.5t3 5.5a1 1 0 0 1-14 0 5 5 0 0 1 1-3 1 1 0 0 0 5 0c0-2-1.5-3-1.5-5q0-2 2.5-4"></path></symbol>
+<symbol id="i-footprints" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16v-2.38C4 11.5 2.97 10.5 3 8c.03-2.72 1.49-6 4.5-6C9.37 2 10 3.8 10 5.5c0 3.11-2 5.66-2 8.68V16a2 2 0 1 1-4 0Z"></path><path d="M20 20v-2.38c0-2.12 1.03-3.12 1-5.62-.03-2.72-1.49-6-4.5-6C14.63 6 14 7.8 14 9.5c0 3.11 2 5.66 2 8.68V20a2 2 0 1 0 4 0Z"></path><path d="M16 17h4"></path><path d="M4 13h4"></path></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></symbol>
+<symbol id="i-share-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"></line><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"></line></symbol>
+<symbol id="i-timer" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="10" x2="14" y1="2" y2="2"></line><line x1="12" x2="15" y1="14" y2="11"></line><circle cx="12" cy="14" r="8"></circle></symbol>
+<symbol id="i-trophy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14.66V17a1 1 0 0 1-1 1 2 2 0 0 0-2 2v2"></path><path d="M14 14.66V17a1 1 0 0 0 1 1 2 2 0 0 1 2 2v2"></path><path d="M17.916 10H19.5A2.5 2.5 0 0 0 22 7.5V5a1 1 0 0 0-1-1h-3"></path><path d="M4 22h16"></path><path d="M6 9a6 6 0 0 0 12 0V3a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1z"></path><path d="M6.084 10H4.5A2.5 2.5 0 0 1 2 7.5V5a1 1 0 0 1 1-1h3"></path></symbol>
+<symbol id="i-undo-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"></path><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"></path></symbol>
+<symbol id="i-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><path d="M16 3.128a4 4 0 0 1 0 7.744"></path><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><circle cx="9" cy="7" r="4"></circle></symbol>
+</defs></svg><!-- /bd:icons -->
+
+<nav class="bd-nav"><div class="bd-nav-inner"><b>링클 오늘의 게임 시안</b>
+  <a href="#dirs">방향</a><a href="#diag">지금 화면</a><a href="#s-home">홈</a><a href="#s-game">게임</a><a href="#s-result">도착</a><a href="#s-after">끝난 뒤</a><a href="#s-icons">아이콘</a><a href="#spec">규격</a><a href="#rules">규칙</a><a href="#refs">레퍼런스</a><a href="#next">순서 · 질문</a>
+</div></nav>
+
+<main class="bd-wrap">
+
+<section class="bd-hero">
+  <div class="bd-kicker">링클 · 오늘의 게임 화면 시안 v1 · 2026-11-19 · 기준: main bce0deb</div>
+  <h1>매일 들르는 한 장의 카드로 시작해, 지나온 길이 보이는 게임으로 끝나요</h1>
+  <p class="bd-lead">기존 링클의 색과 글꼴, 여백은 그대로 두고 화면이 하는 말을 다시 정리했어요. 시작 전에는 오늘에 대해 알려 주고, 게임 중에는 어디를 지나왔는지 보여 주고, 끝나면 내일 다시 올 이유를 남겨요. <b>아직 구현 전</b>이고, 화면 속 이름 · 숫자는 예시예요.</p>
+  <div class="bd-legend">
+    <span><i class="k-sq l1" style="display:inline-block"></i><i class="k-sq l2" style="display:inline-block"></i><i class="k-sq l3" style="display:inline-block"></i><i class="k-sq l4" style="display:inline-block"></i><i class="k-sq l5" style="display:inline-block"></i> 목표와 먼 문서 → 가까운 문서</span>
+    <span><i class="k-sq b" style="display:inline-grid"><svg><use href="#i-undo-2"></use></svg></i> 되돌아감</span>
+    <span><i class="k-sq g" style="display:inline-grid"><svg><use href="#i-flag"></use></svg></i> 도착</span>
+    <span class="bd-muted">공유 문구의 🟥🟧🟨🟩🟦⏪🏁와 1:1로 대응해요</span>
+  </div>
+  <div class="bd-grid3" style="margin-top:48px">
+    <div class="bd-card"><span class="bd-proposed">제안</span><h3 style="margin-top:10px">시작 전에 오늘을 알려 줘요</h3><p class="bd-small bd-muted">몇 번째 문제인지, 몇 명이 도착했는지, 시작하면 무슨 일이 생기는지를 카드 한 장에 담아요. 규칙은 물음표 뒤가 아니라 화면에 있어요.</p></div>
+    <div class="bd-card"><span class="bd-proposed">제안</span><h3 style="margin-top:10px">지나온 길과 색을 한 줄로 묶어요</h3><p class="bd-small bd-muted">게임 중에는 경로 띠가, 끝난 뒤에는 문서마다 색이 붙은 경로가 보여요. 색의 뜻을 따로 설명하지 않아도 읽혀요.</p></div>
+    <div class="bd-card"><span class="bd-decided">결정됨</span><h3 style="margin-top:10px">색 · 글꼴 · 로그인 없음 · 랭킹 없음</h3><p class="bd-small bd-muted">#3366CC와 #F3F7FF, Pretendard와 Rhodium Libre, 스포 없는 이모지 공유는 그대로예요. 오늘의 문제에는 실시간 순위를 두지 않아요.</p></div>
+  </div>
+</section>
+
+<section class="bd-chapter" id="dirs">
+  <div class="bd-kicker">00 · 방향</div>
+  <h2>홈이 "오늘 한 판"만 말할지, 여러 놀이의 입구가 될지가 갈림길이에요</h2>
+  <p class="bd-lead">무한 모드(지난 문제 · 커뮤니티)가 생기면서 홈이 할 일이 늘었어요. 매일 한 번 들르는 사람이 가장 많을 화면이라, 무엇을 가장 크게 둘지를 기준으로 셋을 그려 봤고 <b>A를 추천해요</b>.</p>
+  <div class="bd-grid3">
+    <div class="bd-card bd-dir pick">
+      <div class="bd-dir-head"><span class="bd-tag pick">A · 오늘 카드</span><span class="bd-proposed">추천</span></div>
+      <h3>카드 한 장이 시작 → 진행 → 결과로 바뀌어요</h3>
+      <div class="bd-wire ph"><div class="m">
+        <div class="blk" style="min-height:26px"><span>로고</span></div>
+        <div class="blk key" style="height:118px"><span>오늘의 링클 · 번호 · 시작</span><div class="g-metrics" style="grid-template-columns:1fr 1fr"><i></i><i></i></div><div class="g-input" style="height:22px"></div></div>
+        <div class="blk"><span>게임 방법 3단계</span><div class="g-metrics" style="grid-template-columns:repeat(3,1fr)"><i></i><i></i><i></i></div></div>
+        <div class="blk ghost"><span>어제 · 지난 문제 · 커뮤니티</span></div>
+      </div></div>
+      <p class="bd-wire-cap"><b>핵심 한 수</b> · 홈의 주인은 오늘의 문제 카드 하나예요. 나머지는 아래 조용한 바로가기예요</p>
+      <div class="bd-pc"><div><h4>좋은 점</h4><ul><li>처음 온 사람도 무엇을 누를지 고민하지 않아요</li><li>"하루 한 번"이라는 정체성이 화면에 그대로 보여요</li><li>지금 구조(주소 하나, 상태로 화면 결정)와 맞아요</li></ul></div><div><h4>대가</h4><ul><li>무한 모드는 한 번 더 눌러야 보여요</li><li>오늘 문제를 푼 뒤에는 카드가 비어 보이지 않게 따로 설계해야 해요</li></ul></div></div>
+      <p class="bd-prec">선례 · <a href="#refs">Krillion 시작 화면</a> · <a href="#refs">Wordle 시작 화면(2차)</a> · <a href="#refs">Contexto 오늘 카드</a></p>
+    </div>
+    <div class="bd-card bd-dir">
+      <div class="bd-dir-head"><span class="bd-tag">B · 허브</span></div>
+      <h3>아래 탭으로 오늘 · 지난 문제 · 커뮤니티 · 기록을 오가요</h3>
+      <div class="bd-wire ph"><div class="m">
+        <div class="blk" style="height:64px"><span>오늘의 링클</span><div class="g-input"></div></div>
+        <div class="blk" style="height:62px"><span>지난 문제</span><div class="g-list"></div></div>
+        <div class="blk" style="height:62px"><span>커뮤니티</span><div class="g-list"></div></div>
+        <div class="blk key" style="margin-top:auto"><span>아래 탭 4개</span><div class="tab"><i class="on"></i><i></i><i></i><i></i></div></div>
+      </div></div>
+      <p class="bd-wire-cap"><b>핵심 한 수</b> · 늘 보이는 아래 탭이 네 곳을 같은 무게로 놓아요</p>
+      <div class="bd-pc"><div><h4>좋은 점</h4><ul><li>무한 모드가 한눈에 보여 오래 머물러요</li><li>놀이가 더 늘어도 탭만 더하면 돼요</li></ul></div><div><h4>대가</h4><ul><li>오늘의 문제가 여러 타일 중 하나가 돼요</li><li>게임 화면의 고정 Header · Footer에 탭까지 겹치면 문서가 좁아져요</li><li>커뮤니티가 열리기 전(1단계)에는 탭이 비어요</li></ul></div></div>
+      <p class="bd-prec">선례 · <a href="#refs">Contexto</a>가 오늘 카드와 Unlimited 카드를 한 화면에 쌓아요. 아래 탭을 쓰는 데일리 게임은 직접 확인한 것이 없어요</p>
+    </div>
+    <div class="bd-card bd-dir">
+      <div class="bd-dir-head"><span class="bd-tag">C · 문서부터</span></div>
+      <h3>홈 없이 문서 위에 시작 시트를 띄워요</h3>
+      <div class="bd-wire ph"><div class="m">
+        <div class="blk ghost" style="height:120px"><span>출발 문서(흐리게)</span><div class="g-list"></div></div>
+        <div class="blk key" style="margin-top:auto;height:126px"><span>시작 시트</span><div class="g-list" style="min-height:30px"></div><div class="g-input" style="height:22px"></div></div>
+      </div></div>
+      <p class="bd-wire-cap"><b>핵심 한 수</b> · 들어오자마자 게임판이 보이고, 시트를 내리면 바로 시작돼요</p>
+      <div class="bd-pc"><div><h4>좋은 점</h4><ul><li>한 번 누르면 바로 플레이예요</li><li>결과도 같은 시트로 올라와 흐름이 하나예요</li></ul></div><div><h4>대가</h4><ul><li>시작 전에 출발 문서를 받아야 해서 "시작해야 공개"라는 규칙과 부딪혀요</li><li>흐린 문서도 제목과 그림이 비쳐 스포가 돼요</li><li>무한 모드로 갈 자리가 없어요</li></ul></div></div>
+      <p class="bd-prec">선례 · <a href="#refs">꼬맨틀</a>은 첫 화면이 곧 게임이에요. 문서 위에 시트를 띄우는 위키 게임은 찾지 못했어요</p>
+    </div>
+  </div>
+</section>
+
+<section class="bd-chapter" id="diag">
+  <div class="bd-kicker">01 · 지금 화면 진단</div>
+  <h2>화면은 깔끔한데, 꼭 알려 줘야 할 것이 빠져 있어요</h2>
+  <p class="bd-lead">지금 링클(main bce0deb)을 빌드해 휴대폰 크기로 찍었어요. 기존 디자인을 그대로 옮긴 상태라 모양은 정돈돼 있지만, 시작 전 · 게임 중 · 끝난 뒤 세 순간 모두 사용자가 궁금해할 것이 화면에 없어요.</p>
+  <div class="bd-shots" style="grid-template-columns:repeat(3,1fr);max-width:1240px">
+    <figure><div class="bd-shotbox"><img class="bd-shot" src="shots/home.png" data-pins="shots/pins.json#home" alt=""><span class="bd-pin" data-auto="" style="left: calc(50% - 11px); top: calc(52.75% - 11px);">1</span><span class="bd-pin" data-auto="" style="left: calc(80.5128% - 11px); top: calc(5% - 11px);">2</span><span class="bd-pin" data-auto="" style="left: calc(78.7179% - 11px); top: calc(94% - 11px);">3</span></div><figcaption class="bd-cap">시작 전 — 로고와 버튼뿐이에요(진단 1 · 2 · 3)</figcaption></figure>
+    <figure><div class="bd-shotbox"><img class="bd-shot" src="shots/game.png" data-pins="shots/pins.json#game" alt=""><span class="bd-pin" data-auto="" style="left: calc(66.9231% - 11px); top: calc(3.625% - 11px);">4</span><span class="bd-pin" data-auto="" style="left: calc(20% - 11px); top: calc(88.75% - 11px);">5</span><span class="bd-pin" data-auto="" style="left: calc(17.4359% - 11px); top: calc(3.75% - 11px);">6</span></div><figcaption class="bd-cap">게임 중 — 다섯 번 이동한 상태예요(진단 4 · 5 · 6)</figcaption></figure>
+    <figure><div class="bd-shotbox"><img class="bd-shot" src="shots/result.png" data-pins="shots/pins.json#result" alt=""><span class="bd-pin" data-auto="" style="left: calc(50% - 11px); top: calc(33.25% - 11px);">7</span><span class="bd-pin" data-auto="" style="left: calc(77.1795% - 11px); top: calc(67% - 11px);">8</span><span class="bd-pin" data-auto="" style="left: calc(87.1795% - 11px); top: calc(76.5% - 11px);">9</span></div><figcaption class="bd-cap">끝난 뒤 — 홈에 결과가 덧붙어요(진단 7 · 8 · 9)</figcaption></figure>
+  </div>
+  <ol class="bd-diag">
+    <li><b>오늘에 대해 아무것도 알려 주지 않아요.</b> 문제 번호는 로고 옆 작은 글자뿐이고, 날짜, 도착한 사람 수, 시작하면 시간이 흐른다는 사실이 없어요. <span class="bd-src">apps/web/src/screens/Home.tsx — 로고 · 문구 · PrimaryButton</span></li>
+    <li><b>규칙이 물음표 뒤에 숨어 있어요.</b> 처음 온 사람은 규칙을 모른 채 시작을 누르고, 그 순간부터 시간이 흘러요. <span class="bd-src">apps/web/src/ui/parts.tsx — Help(Modal)</span></li>
+    <li><b>갈 곳이 없어요.</b> 화면 아래는 저작권 문구가 차지하고, 어제의 기록이나 지난 문제로 가는 길이 없어요. <span class="bd-src">apps/web/src/screens/Home.tsx — 바닥 문구 / App.tsx — 경로가 "/" 하나</span></li>
+    <li><b>지나온 길이 보이지 않아요.</b> 머리에는 목표 이름만 있고, 휴대폰에서는 출발 문서도 가려져요. 몇 번째 문서인지, 어디서 왔는지를 기억에 맡겨요. <span class="bd-src">apps/web/src/screens/Game.tsx — header "목표:" (출발은 sm 이상에서만)</span></li>
+    <li><b>위치를 두 번 말해요.</b> 아래 "현재 문서"는 바로 위 문서 제목과 같은 말이에요. 그 한 줄 때문에 Footer가 두 줄(89px)이 돼 문서가 좁아져요. <span class="bd-src">apps/web/src/screens/Game.tsx — footer 첫 줄</span></li>
+    <li><b>되돌아가기가 손에서 가장 멀어요.</b> 왼쪽 위에 화살표만 있고, 휴대폰에서는 어느 문서로 돌아가는지 글자가 없어요. <span class="bd-src">apps/web/src/screens/Game.tsx — header 왼쪽 버튼(제목은 sm 이상에서만)</span></li>
+    <li><b>도착한 순간이 없어요.</b> 목표에 닿으면 곧바로 홈으로 바뀌고 결과가 로고 아래에 덧붙어요. 숫자는 글줄로 나열돼요. <span class="bd-src">apps/web/src/App.tsx — Daily / Home.tsx — Result</span></li>
+    <li><b>경로와 색이 따로 놀아요.</b> 경로는 상자 안에, 색은 그 아래 한 줄에 있어서 어느 문서가 어느 색인지 짝을 맞춰 세어야 해요. 색의 뜻도 화면에 없어요. <span class="bd-src">apps/web/src/screens/Home.tsx — PathTrail · 이모지 줄</span></li>
+    <li><b>끝난 뒤 할 일이 하나뿐이에요.</b> 공유를 하고 나면 다음 문제까지 얼마나 남았는지, 내 기록이 어떤지, 더 풀 것이 있는지 알 수 없어요. <span class="bd-src">apps/web/src/screens/Home.tsx — Result의 버튼 하나</span></li>
+    <li><b>아이콘이 임시예요.</b> 파비콘은 시스템 세리프로 쓴 L이고, 홈 화면에 추가했을 때의 앱 아이콘과 공유 미리보기 그림이 없어요. <span class="bd-src">apps/web/public/favicon.svg · index.html</span></li>
+  </ol>
+</section>
+
+<section class="bd-chapter" id="s-home">
+  <div class="bd-kicker">02 · 홈 — 시작 전</div>
+  <h2>오늘의 문제가 카드 한 장으로 말을 걸어요</h2>
+  <p class="bd-lead">지금은 로고와 시작 버튼만 있어요. 가운데에 "오늘의 링클" 카드를 두고 번호, 날짜, 도착한 사람 수, 시작하면 생기는 일을 담아요. 처음 온 사람이 규칙을 읽고 누를 수 있게 세 단계 설명을 화면에 꺼내 놓아요.</p>
+  <div class="bd-row">
+    <div class="bd-cell">
+      <h3 class="bd-sub" style="margin-top:0">지금</h3>
+      <div class="bd-frame-wrap"><div class="bd-frame phone"><div class="bd-status"><span>9:41</span><span class="island"></span><span class="bat"></span></div><div class="bd-screen" style="height:800px"><img src="shots/home.png" alt=""></div></div></div>
+    </div>
+    <div class="bd-cell">
+      <h3 class="bd-sub" style="margin-top:0">시안</h3>
+      <div class="bd-frame-wrap"><div class="bd-frame phone" id="f-home"><div class="bd-status"><span>9:41</span><span class="island"></span><span class="bat"></span></div>
+        <div class="bd-screen" style="height:800px"><div class="k-home">
+          <div class="k-top"><span class="k-streak" data-pin="5"><svg><use href="#i-flame"></use></svg>4일 연속</span><span class="k-top-r"><span class="k-iconbtn"><svg><use href="#i-chart-column"></use></svg></span><span class="k-iconbtn"><svg><use href="#i-circle-question-mark"></use></svg></span></span></div>
+          <div class="k-brand" style="padding:28px 0 32px"><div class="k-logo">Linkle</div><div class="k-tag">매일 위키피디아 탐험하기</div></div>
+          <div class="k-card">
+            <div class="k-card-h"><span class="k-kicker" data-pin="1">오늘의 링클</span><span class="k-no">#128</span></div>
+            <div class="k-date">11월 19일 목요일</div>
+            <div class="k-route" data-pin="2"><span class="k-slot"><svg><use href="#i-lock"></use></svg>출발 문서</span><svg class="k-arrow"><use href="#i-arrow-right"></use></svg><span class="k-slot"><svg><use href="#i-lock"></use></svg>목표 문서</span></div>
+            <div class="k-meta">지금까지 <b>1,204명</b>이 도착했어요</div>
+            <div class="k-btn primary">시작</div>
+            <div class="k-hint" data-pin="3">누르면 두 문서가 공개되고 시간이 흐르기 시작해요</div>
+          </div>
+          <div class="k-how" data-pin="4">
+            <div><b>1</b>문서 속 링크만 눌러 이동해요</div>
+            <div><b>2</b>목표 문서에 도착하면 끝나요</div>
+            <div><b>3</b>지나온 길을 색으로 공유해요</div>
+          </div>
+          <div class="k-nav3" data-pin="6">
+            <div><svg><use href="#i-trophy"></use></svg>어제의 기록</div>
+            <div><svg><use href="#i-calendar-days"></use></svg>지난 문제</div>
+            <div><svg><use href="#i-users"></use></svg>커뮤니티</div>
+          </div>
+        </div></div>
+      <span class="bd-pin" data-auto="" style="left: 47px; top: 97px;">5</span><span class="bd-pin" data-auto="" style="left: 61px; top: 237px;">1</span><span class="bd-pin" data-auto="" style="left: 359px; top: 345px;">2</span><span class="bd-pin" data-auto="" style="left: 363px; top: 489px;">3</span><span class="bd-pin" data-auto="" style="left: 184px; top: 641px;">4</span><span class="bd-pin" data-auto="" style="left: 348px; top: 782px;">6</span></div></div>
+      <ol class="bd-notes">
+        <li><b>카드 머리에 번호와 날짜를 크게 써요.</b> 로고 옆 작은 "#1" 대신 "오늘의 링클 #128 · 11월 19일 목요일"이 카드의 제목이에요. 공유받고 온 사람이 같은 문제인지 바로 확인해요.</li>
+        <li><b>출발과 목표는 잠긴 칸으로 보여 줘요.</b> 무엇이 숨겨져 있는지, 시작하면 무엇이 열리는지가 그림으로 읽혀요. "시작 전에는 공개하지 않는다"는 원칙은 그대로예요.</li>
+        <li><b>시작 버튼 아래에 결과를 미리 말해요.</b> 누르는 순간 시간이 흐른다는 것을 버튼 바로 아래 한 줄로 알려요. 지금은 도움말을 열어야 알 수 있어요.</li>
+        <li><b>규칙 세 단계를 화면에 꺼내요.</b> 처음 온 날에만 보이고, 한 번 끝까지 풀면 접혀요. 물음표는 그대로 남아 다시 볼 수 있어요. Contexto가 같은 방식이에요.</li>
+        <li><b>연속 일수는 작게, 왼쪽 위에 둬요.</b> 기록이 있을 때만 보여요. 누르면 내 기록 시트(05장)가 열려요.</li>
+        <li><b>다른 곳으로 가는 길은 아래 세 개예요.</b> 저작권 문구 자리에 어제의 기록 · 지난 문제 · 커뮤니티를 둬요. 저작권과 만든 사람은 도움말 아래로 옮겨요.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<section class="bd-chapter" id="s-game">
+  <div class="bd-kicker">03 · 게임 화면</div>
+  <h2>지나온 길은 위에, 되돌아가기는 엄지 아래에 있어요</h2>
+  <p class="bd-lead">지금은 머리에 목표 이름, 바닥에 현재 문서 · 시간 · 횟수가 두 줄로 있어요. 머리 아래에 경로 띠를 새로 두고, 바닥은 한 줄로 줄여 되돌아가기를 왼쪽 아래로 내려요. Header와 Footer가 늘 함께 보인다는 원칙은 그대로이고, 문서가 보이는 높이는 지금과 같아요(651 → 636px).</p>
+  <div class="bd-row">
+    <div class="bd-cell">
+      <h3 class="bd-sub" style="margin-top:0">시안 — 읽는 중</h3>
+      <div class="bd-frame-wrap"><div class="bd-frame phone" id="f-game"><div class="bd-status"><span>9:41</span><span class="island"></span><span class="bat"></span></div>
+        <div class="bd-screen" style="height:800px"><div class="k-col">
+          <div class="k-header"><div class="k-goal" data-pin="1"><span class="k-flag"><svg><use href="#i-flag"></use></svg></span><small>목표</small><b>뉴발란스</b></div><span class="k-iconbtn"><svg><use href="#i-circle-question-mark"></use></svg></span></div>
+          <div class="k-trail" data-pin="2"><span class="fade">불고기</span><svg><use href="#i-chevron-right"></use></svg><span>대한민국</span><svg><use href="#i-chevron-right"></use></svg><span>축구</span><svg><use href="#i-chevron-right"></use></svg><span class="here">라리가</span></div>
+          <div class="k-doc"></div>
+          <div class="k-footer"><div class="k-back" data-pin="3"><svg><use href="#i-undo-2"></use></svg><b>축구</b></div><div class="k-stats" data-pin="4"><span><svg><use href="#i-timer"></use></svg><span class="k-num">01:14</span></span><span><svg><use href="#i-footprints"></use></svg><span class="k-num">5</span></span></div></div>
+        </div></div>
+      <span class="bd-pin" data-auto="" style="left: 150px; top: 61px;">1</span><span class="bd-pin" data-auto="" style="left: 184px; top: 153px;">2</span><span class="bd-pin" data-auto="" style="left: 103px; top: 802px;">3</span><span class="bd-pin" data-auto="" style="left: 223px; top: 801px;">4</span></div></div>
+      <ol class="bd-notes">
+        <li><b>목표는 깃발과 함께 머리의 주인이에요.</b> "목표: 뉴발란스"라는 글줄 대신 깃발 표시와 이름이에요. 같은 깃발이 결과 화면의 도착 표시로 다시 나와요.</li>
+        <li><b>경로 띠가 지나온 문서를 보여 줘요.</b> 출발부터 지금 문서까지 한 줄로 이어지고, 길어지면 앞쪽이 흐려지며 밀려요. 바닥의 "현재 문서"는 이 띠의 마지막 칸이 대신해요. Wikispeedia의 "지금까지 누른 링크" 줄을 한 줄 띠로 바꾼 거예요. 띠의 문서는 누를 수 없어요. 이동은 문서 속 링크와 되돌아가기뿐이에요.</li>
+        <li><b>되돌아가기는 왼쪽 아래, 갈 곳의 이름과 함께예요.</b> 엄지가 닿는 자리이고, 누르기 전에 어디로 가는지 보여요. Wiki Speedruns도 조작을 아래 띠에 둬요. 되돌아가도 횟수가 느는 것은 지금과 같아요.</li>
+        <li><b>시간과 횟수는 아이콘과 숫자만 남겨요.</b> "소요 시간:", "이동 횟수:"라는 이름표를 빼서 한 줄이 돼요. 숫자 폭이 고정돼 초가 바뀌어도 흔들리지 않아요.</li>
+      </ol>
+    </div>
+    <div class="bd-cell">
+      <h3 class="bd-sub" style="margin-top:0">시안 — 다음 문서를 여는 중</h3>
+      <div class="bd-frame-wrap"><div class="bd-frame phone" id="f-game-loading"><div class="bd-status"><span>9:41</span><span class="island"></span><span class="bat"></span></div>
+        <div class="bd-screen" style="height:800px"><div class="k-col">
+          <div class="k-header"><div class="k-goal"><span class="k-flag"><svg><use href="#i-flag"></use></svg></span><small>목표</small><b>뉴발란스</b></div><span class="k-iconbtn"><svg><use href="#i-circle-question-mark"></use></svg></span></div>
+          <div class="k-trail"><span class="fade">불고기</span><svg><use href="#i-chevron-right"></use></svg><span>대한민국</span><svg><use href="#i-chevron-right"></use></svg><span>축구</span><svg><use href="#i-chevron-right"></use></svg><span class="here">라리가</span></div>
+          <div class="k-doc dim"><div class="k-bar"></div><div class="k-opening" data-pin="1"><span class="k-spin"></span><b>세비야 FC</b> 여는 중</div></div>
+          <div class="k-footer"><div class="k-back" style="opacity:.45"><svg><use href="#i-undo-2"></use></svg><b>축구</b></div><div class="k-stats"><span><svg><use href="#i-timer"></use></svg><span class="k-num">01:16</span></span><span><svg><use href="#i-footprints"></use></svg><span class="k-num">5</span></span></div></div>
+        </div></div>
+      <span class="bd-pin" data-auto="" style="left: 284px; top: 733px;">1</span></div></div>
+      <ol class="bd-notes">
+        <li><b>문서를 여는 동안 무엇을 여는지 말해요.</b> 지금은 2px 선과 흐려짐뿐이에요. 누른 링크의 이름을 알약으로 띄워, 잘못 눌렀는지 바로 알 수 있게 해요. 실패하면 같은 자리에서 이유를 알려요.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<section class="bd-chapter" id="s-result">
+  <div class="bd-kicker">04 · 도착</div>
+  <h2>도착하면 지나온 길이 색과 함께 한 장에 펼쳐져요</h2>
+  <p class="bd-lead">지금은 목표에 닿는 순간 홈으로 바뀌고 숫자가 글줄로 나와요. 도착 전용 화면을 두고, 숫자는 타일 세 개로, 경로는 문서마다 색이 붙은 세로 목록으로 보여 줘요. 공유하기 전에 무엇이 공유되는지 눈으로 확인할 수 있어요.</p>
+  <div class="bd-row">
+    <div class="bd-cell">
+      <h3 class="bd-sub" style="margin-top:0">지금</h3>
+      <div class="bd-frame-wrap"><div class="bd-frame phone"><div class="bd-status"><span>9:41</span><span class="island"></span><span class="bat"></span></div><div class="bd-screen" style="height:800px"><img src="shots/result.png" alt=""></div></div></div>
+    </div>
+    <div class="bd-cell">
+      <h3 class="bd-sub" style="margin-top:0">시안</h3>
+      <div class="bd-frame-wrap"><div class="bd-frame phone" id="f-result"><div class="bd-status"><span>9:41</span><span class="island"></span><span class="bat"></span></div>
+        <div class="bd-screen" style="height:800px"><div class="k-result">
+          <div class="k-done" data-pin="1"><span class="k-flag"><svg><use href="#i-flag"></use></svg></span><div><h3>뉴발란스에 도착!</h3><p>128번째 링클 · 11월 19일</p></div></div>
+          <div class="k-tiles" data-pin="2">
+            <div><small>이동</small><b>7<i>번</i></b></div>
+            <div><small>시간</small><b>01:22</b></div>
+            <div><small>도착 순서</small><b>37<i>번째</i></b></div>
+          </div>
+          <div class="k-card k-path">
+            <div class="k-step start"><i class="k-sq o"></i><b>불고기</b><small>출발</small></div>
+            <div class="k-step" data-pin="3"><i class="k-sq l1"></i><b>돼지고기</b></div>
+            <div class="k-step back"><i class="k-sq b"><svg><use href="#i-undo-2"></use></svg></i><b>불고기</b><small>되돌아감</small></div>
+            <div class="k-step"><i class="k-sq l1"></i><b>대한민국</b></div>
+            <div class="k-step"><i class="k-sq l3"></i><b>축구</b></div>
+            <div class="k-step"><i class="k-sq l1"></i><b>라리가</b></div>
+            <div class="k-step"><i class="k-sq l2"></i><b>세비야 FC</b></div>
+            <div class="k-step end"><i class="k-sq g"><svg><use href="#i-flag"></use></svg></i><b>뉴발란스</b><small>도착</small></div>
+            <div class="k-legend"><span>목표와 멀어요</span><i class="k-sq l1"></i><i class="k-sq l2"></i><i class="k-sq l3"></i><i class="k-sq l4"></i><i class="k-sq l5"></i><span>가까워요</span></div>
+          </div>
+          <div class="k-actions"><div class="k-btn primary" data-pin="4"><svg><use href="#i-share-2"></use></svg>결과 공유</div><div class="k-btn quiet"><svg><use href="#i-trophy"></use></svg>어제의 기록 보기</div></div>
+          <div class="k-next" data-pin="5">다음 링클까지 <b>07:41:12</b></div>
+        </div></div>
+      <span class="bd-pin" data-auto="" style="left: 241px; top: 77px;">1</span><span class="bd-pin" data-auto="" style="left: 184px; top: 207px;">2</span><span class="bd-pin" data-auto="" style="left: 127px; top: 260px;">3</span><span class="bd-pin" data-auto="" style="left: 363px; top: 530px;">4</span><span class="bd-pin" data-auto="" style="left: 275px; top: 801px;">5</span></div></div>
+      <ol class="bd-notes">
+        <li><b>"어디에 도착했는지"가 제목이에요.</b> "N번째 링클을 클리어했습니다!"는 공유 문구에 그대로 남고, 화면에서는 목표 이름과 깃발로 도착을 말해요. 게임 화면의 깃발이 그대로 커져서 올라와요.</li>
+        <li><b>숫자 셋은 타일로 나란히 둬요.</b> 이동, 시간, 도착 순서를 같은 크기로 놓아요. 도착 순서는 서버 응답이 오면 채워지고, 그 전에는 칸만 비워 둬요. 결과 화면은 응답을 기다리지 않아요.</li>
+        <li><b>문서마다 색이 붙고, 색의 뜻은 바로 아래 한 줄이에요.</b> 경로와 색을 한 줄로 묶어서 어느 문서가 목표와 가까웠는지 세지 않아도 읽혀요. 되돌아간 줄은 회색 화살표로 구분하고, 가장 가까운 색은 링클의 파랑이에요. Six Degrees of Wikipedia의 경로 카드가 같은 읽기 방식이에요.</li>
+        <li><b>공유는 이 화면의 하나뿐인 주 행동이에요.</b> 누르면 기존과 같은 문구가 복사돼요. 문서 제목은 들어가지 않고 색만 들어가요. 그 아래 흰 버튼은 다음에 갈 곳 하나만 권해요.</li>
+        <li><b>다음 문제까지 남은 시간을 맨 아래에 둬요.</b> 자정 기준으로 줄어들어요. 내일 다시 올 이유를 숫자 하나로 남겨요. Framed와 Krillion이 끝난 화면 아래에 같은 것을 둬요.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<section class="bd-chapter" id="s-after">
+  <div class="bd-kicker">05 · 끝난 뒤의 홈과 내 기록</div>
+  <h2>오늘을 끝낸 사람에게는 기록과 더 풀 것을 보여 줘요</h2>
+  <p class="bd-lead">지금은 끝난 뒤 다시 들어와도 같은 결과가 로고 아래에 붙어 있어요. 오늘의 카드가 "도착 완료" 모습으로 바뀌고, 그 아래에 지난 문제와 커뮤니티로 가는 목록이 나와요. 내 기록은 기기에 저장된 값으로 그려요. 로그인은 없어요.</p>
+  <div class="bd-row">
+    <div class="bd-cell">
+      <h3 class="bd-sub" style="margin-top:0">시안 — 오늘을 끝낸 뒤의 홈</h3>
+      <div class="bd-frame-wrap"><div class="bd-frame phone" id="f-after"><div class="bd-status"><span>9:41</span><span class="island"></span><span class="bat"></span></div>
+        <div class="bd-screen" style="height:800px"><div class="k-home">
+          <div class="k-top"><span class="k-streak"><svg><use href="#i-flame"></use></svg>5일 연속</span><span class="k-top-r"><span class="k-iconbtn"><svg><use href="#i-chart-column"></use></svg></span><span class="k-iconbtn"><svg><use href="#i-circle-question-mark"></use></svg></span></span></div>
+          <div class="k-brand" style="padding:4px 0 16px"><div class="k-logo" style="font-size:40px;line-height:44px">Linkle</div></div>
+          <div class="k-card">
+            <div class="k-card-h"><span class="k-kicker" data-pin="1">오늘의 링클 · 도착 완료</span><span class="k-no">#128</span></div>
+            <div class="k-route"><span class="k-slot open">불고기</span><svg class="k-arrow"><use href="#i-arrow-right"></use></svg><span class="k-slot open">뉴발란스</span></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin:16px 0" data-pin="2">
+              <div class="k-strip"><i class="k-sq l1"></i><i class="k-sq b"><svg><use href="#i-undo-2"></use></svg></i><i class="k-sq l1"></i><i class="k-sq l3"></i><i class="k-sq l1"></i><i class="k-sq l2"></i><i class="k-sq g"><svg><use href="#i-flag"></use></svg></i></div>
+              <span style="font-size:14px;color:var(--ink-2)" class="k-num">7번 · 01:22</span>
+            </div>
+            <div class="k-btn primary"><svg><use href="#i-share-2"></use></svg>결과 공유</div>
+            <div class="k-hint" data-pin="3">다음 링클까지 <b style="color:var(--ink);font-weight:600" class="k-num">07:38:05</b></div>
+          </div>
+          <div class="k-sec" data-pin="4">더 풀기</div>
+          <div class="k-list">
+            <div class="k-row"><svg><use href="#i-trophy"></use></svg><div><b>어제의 기록</b><small>#127 · 2,310명 도착 · 최단 3번</small></div><svg><use href="#i-chevron-right"></use></svg></div>
+            <div class="k-row"><svg><use href="#i-calendar-days"></use></svg><div><b>지난 문제</b><small>127개 중 9개를 풀었어요</small></div><svg><use href="#i-chevron-right"></use></svg></div>
+            <div class="k-row"><svg><use href="#i-users"></use></svg><div><b>커뮤니티</b><small>링클이 낸 문제 24개 · 문제별 순위</small></div><svg><use href="#i-chevron-right"></use></svg></div>
+          </div>
+          <p style="margin:auto 0 0;padding:0 0 24px;text-align:center;font-size:13px;line-height:20px;color:var(--ink-2)">문서 출처 · 한국어 위키백과 (CC BY-SA 4.0)</p>
+        </div></div>
+      <span class="bd-pin" data-auto="" style="left: 9px; top: 185px;">1</span><span class="bd-pin" data-auto="" style="left: 359px; top: 285px;">2</span><span class="bd-pin" data-auto="" style="left: 184px; top: 414px;">3</span><span class="bd-pin" data-auto="" style="left: 29px; top: 419px;">4</span></div></div>
+      <ol class="bd-notes">
+        <li><b>같은 카드가 "도착 완료"로 바뀌어요.</b> 시작 전의 잠긴 칸이 출발과 목표 이름으로 열려요. 카드의 자리와 크기가 같아서 오늘 한 일이 그 자리에 채워진 것처럼 보여요.</li>
+        <li><b>색 띠와 숫자가 결과를 한 줄로 요약해요.</b> 자세한 경로는 카드를 누르면 04장의 도착 화면으로 다시 열려요.</li>
+        <li><b>남은 시간이 시작 안내 자리를 대신해요.</b> 시작 전에 "누르면 시간이 흘러요"가 있던 자리예요. 자정이 지나면 카드는 새 번호의 시작 전 모습으로 돌아가요.</li>
+        <li><b>오늘을 끝낸 사람에게만 "더 풀기"를 크게 보여 줘요.</b> 시작 전에는 아래 바로가기 세 개였던 것이 설명이 붙은 목록이 돼요. 오늘의 문제보다 앞에 나오지 않아요.</li>
+      </ol>
+    </div>
+    <div class="bd-cell">
+      <h3 class="bd-sub" style="margin-top:0">시안 — 내 기록</h3>
+      <div class="bd-frame-wrap"><div class="bd-frame phone" id="f-stats"><div class="bd-status"><span>9:41</span><span class="island"></span><span class="bat"></span></div>
+        <div class="bd-screen" style="height:800px"><div class="k-home" style="filter:saturate(.9)">
+          <div class="k-top"><span class="k-streak"><svg><use href="#i-flame"></use></svg>5일 연속</span><span class="k-top-r"><span class="k-iconbtn"><svg><use href="#i-chart-column"></use></svg></span><span class="k-iconbtn"><svg><use href="#i-circle-question-mark"></use></svg></span></span></div>
+          <div class="k-brand" style="padding:4px 0 16px"><div class="k-logo" style="font-size:40px;line-height:44px">Linkle</div></div>
+          <div class="k-card" style="height:180px"></div>
+        </div>
+        <div class="k-scrim"></div>
+        <div class="k-sheet">
+          <div class="k-grab"></div>
+          <h3>내 기록</h3>
+          <div class="k-tiles four" data-pin="1">
+            <div><small>플레이</small><b>24</b></div>
+            <div><small>연속</small><b>5<i>일</i></b></div>
+            <div><small>최고 연속</small><b>11<i>일</i></b></div>
+            <div><small>평균 이동</small><b>6.2</b></div>
+          </div>
+          <h4 data-pin="2">이동 횟수</h4>
+          <div class="k-dist">
+            <div><span>3번</span><i style="width:14%">1</i></div>
+            <div><span>4번</span><i style="width:36%">3</i></div>
+            <div><span>5번</span><i style="width:72%">6</i></div>
+            <div><span>6번</span><i style="width:60%">5</i></div>
+            <div class="me"><span>7번</span><i style="width:60%">5</i></div>
+            <div><span>8번</span><i style="width:25%">2</i></div>
+            <div><span>9번+</span><i style="width:25%">2</i></div>
+          </div>
+          <p style="margin:16px 0 0;font-size:13px;line-height:20px;color:var(--ink-2)" data-pin="3">기록은 이 기기에만 저장돼요. 로그인은 필요 없어요.</p>
+        </div></div>
+      <span class="bd-pin" data-auto="" style="left: 184px; top: 535px;">1</span><span class="bd-pin" data-auto="" style="left: 81px; top: 545px;">2</span><span class="bd-pin" data-auto="" style="left: 291px; top: 795px;">3</span></div></div>
+      <ol class="bd-notes">
+        <li><b>내 기록은 숫자 넷이에요.</b> 플레이 수, 연속 일수, 최고 연속, 평균 이동이에요. 승률은 두지 않아요. 링클에는 실패가 없기 때문이에요.</li>
+        <li><b>이동 횟수 분포에서 오늘이 파랑이에요.</b> NYT 도움말에 나온 Wordle 기록 화면과 같은 읽기 방식이에요. 다른 사람과 비교하지 않고 내 평소와 비교해요.</li>
+        <li><b>기기에만 저장된다는 것을 적어 둬요.</b> 브라우저를 바꾸면 기록이 없는 이유를 미리 알려요.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<section class="bd-chapter" id="s-icons">
+  <div class="bd-kicker">06 · 아이콘과 표시</div>
+  <h2>밑줄 그은 L 하나로 "링크"를 말해요</h2>
+  <p class="bd-lead">지금 파비콘은 시스템 글꼴로 쓴 임시 L이에요. 워드마크와 같은 Rhodium Libre의 L 아래에 하이퍼링크 밑줄을 그어 앱 아이콘을 만들고, 화면 속 아이콘과 유사도 색을 한 벌로 정해요. 운영체제마다 모양이 다른 이모지는 공유 문구에만 쓰고, 화면에서는 직접 그린 칸을 써요.</p>
+  <div class="bd-grid2" style="margin-top:28px">
+    <div class="bd-card">
+      <h3>앱 아이콘</h3>
+      <p class="bd-small bd-muted">링클의 파랑은 하이퍼링크 색에서 왔어요. 그 뜻을 밑줄로 한 번 더 말해요. 16px까지 줄여도 L과 밑줄이 남아요.</p>
+      <div class="k-iconrow">
+        <figure><div class="k-appicon u"><span>L</span></div>앱 아이콘 · 추천</figure>
+        <figure><div class="k-appicon sm u"><span>L</span></div>48</figure>
+        <figure><div class="k-appicon xs u"><span>L</span></div>파비콘</figure>
+        <figure><div class="k-appicon inv u"><span>L</span></div>밝은 바탕용</figure>
+        <figure><div class="k-appicon"><span>L</span></div>지금(밑줄 없음)</figure>
+      </div>
+      <p class="bd-small bd-muted" style="margin-top:16px">같은 그림으로 홈 화면 추가용 아이콘(192 · 512, 가장자리 여백 포함)과 공유 미리보기 그림(1200×630, 연한 파랑 바탕에 워드마크와 "매일 위키피디아 탐험하기")을 만들어요.</p>
+    </div>
+    <div class="bd-card">
+      <h3>유사도 표시 — 화면용</h3>
+      <p class="bd-small bd-muted">공유 문구의 이모지와 1:1로 대응해요. 가장 가까운 단계가 링클의 파랑이에요.</p>
+      <div class="k-sim">
+        <div><i style="background:#e5534b"></i>🟥 멀어요</div>
+        <div><i style="background:#f0883e"></i>🟧</div>
+        <div><i style="background:#eab308"></i>🟨</div>
+        <div><i style="background:#57ab5a"></i>🟩</div>
+        <div><i style="background:#3366cc"></i>🟦 가까워요</div>
+        <div><i style="background:#c9d1da"><svg><use href="#i-undo-2"></use></svg></i>⏪ 되돌아감</div>
+        <div><i style="background:#444f5b"><svg><use href="#i-flag"></use></svg></i>🏁 도착</div>
+      </div>
+      <p class="bd-small bd-muted" style="margin-top:16px">색만으로 구분하지 않게, 되돌아감과 도착에는 그림을 넣고 경로 목록에는 늘 문서 이름이 함께 나와요.</p>
+    </div>
+  </div>
+  <div class="bd-card" style="margin-top:20px">
+    <h3>화면 아이콘 한 벌</h3>
+    <p class="bd-small bd-muted">이미 쓰고 있는 lucide에서 고르고, 선 굵기를 1.75로 맞춰요(지금은 기본 2). 뜻 하나에 그림 하나예요. 깃발은 늘 목표와 도착, 굽은 화살표는 늘 되돌아가기예요.</p>
+    <div class="k-icons">
+      <div><svg><use href="#i-flag"></use></svg>목표 · 도착</div>
+      <div><svg><use href="#i-undo-2"></use></svg>되돌아가기</div>
+      <div><svg><use href="#i-timer"></use></svg>시간</div>
+      <div><svg><use href="#i-footprints"></use></svg>이동 횟수</div>
+      <div><svg><use href="#i-share-2"></use></svg>공유</div>
+      <div><svg><use href="#i-circle-question-mark"></use></svg>게임 방법</div>
+      <div><svg><use href="#i-chart-column"></use></svg>내 기록</div>
+      <div><svg><use href="#i-flame"></use></svg>연속 일수</div>
+      <div><svg><use href="#i-trophy"></use></svg>어제의 기록</div>
+      <div><svg><use href="#i-calendar-days"></use></svg>지난 문제</div>
+      <div><svg><use href="#i-users"></use></svg>커뮤니티</div>
+      <div><svg><use href="#i-lock"></use></svg>아직 공개 전</div>
+    </div>
+  </div>
+</section>
+
+<section class="bd-chapter" id="spec">
+  <div class="bd-kicker">07 · 시각 규격</div>
+  <h2>색 둘과 글꼴 둘은 그대로, 새 값은 보조 글자색과 유사도 색뿐이에요</h2>
+  <div class="bd-grid2" style="margin-top:28px">
+    <div class="bd-card"><h3>색</h3><table class="bd-table"><tbody><tr><th>쓰임</th><th>값</th><th>출처</th></tr>
+      <tr><td>주 색 · 링크 · 강조 숫자</td><td><code>#3366CC</code></td><td><code>--color-primary</code></td></tr>
+      <tr><td>바탕 · Header · Footer</td><td><code>#F3F7FF</code></td><td><code>--color-secondary</code></td></tr>
+      <tr><td>본문 글자</td><td><code>#444F5B</code></td><td><code>--color-ink</code></td></tr>
+      <tr><td>카드 테두리</td><td><code>#DBE8F9</code> 2px</td><td><code>--color-line-blue</code></td></tr>
+      <tr><td>구분선</td><td><code>#E5E5E5</code></td><td><code>--color-line</code></td></tr>
+      <tr><td>보조 글자 (새로 필요)</td><td><code>#6B7682</code></td><td>이름표와 설명을 본문보다 한 단계 낮추려면 필요해요. 흰 바탕 대비 4.6:1</td></tr>
+      <tr><td>유사도 5단계 (새로 필요)</td><td><code>#E5534B</code> <code>#F0883E</code> <code>#EAB308</code> <code>#57AB5A</code> <code>#3366CC</code></td><td>이모지 색에 맞췄고 마지막은 주 색이에요</td></tr>
+    </tbody></table></div>
+    <div class="bd-card"><h3>글자와 크기</h3>
+      <div class="bd-ts"><span>워드마크</span><span class="v">Rhodium Libre 52/56 · 끝난 뒤 40/44</span></div>
+      <div class="bd-ts"><span>카드 날짜 · 도착 제목</span><span class="v">20/28 · 600 · 도착 제목 24/30 · 700</span></div>
+      <div class="bd-ts"><span>본문 · 문구</span><span class="v">16/24 · 400</span></div>
+      <div class="bd-ts"><span>타일 숫자</span><span class="v">20/28 · 700 · 고정 폭 숫자</span></div>
+      <div class="bd-ts"><span>이름표 · 설명</span><span class="v">13~14/18~20 · 보조 글자색</span></div>
+      <table class="bd-table" style="margin-top:12px"><tbody><tr><th>칸</th><th>값</th></tr>
+        <tr><td>주 버튼 <code>PrimaryButton</code></td><td>높이 56 · 완전히 둥근 모서리 · 18/500 (지금과 같음)</td></tr>
+        <tr><td>오늘 카드 (새 컴포넌트)</td><td>흰 바탕 · 모서리 20 · 테두리 2 · 안쪽 20</td></tr>
+        <tr><td>게임 Header · 경로 띠 · Footer</td><td>56 · 44 · 64 (지금 Header 60 · Footer 89)</td></tr>
+        <tr><td>되돌아가기 (새 모양)</td><td>높이 44 알약 · 최대 폭 190 · 넘치면 말줄임</td></tr>
+        <tr><td>아이콘</td><td>lucide · 화면 20~24 · 선 1.75</td></tr>
+      </tbody></table>
+    </div>
+  </div>
+</section>
+
+<section class="bd-chapter" id="rules">
+  <div class="bd-kicker">08 · 설계 규칙</div>
+  <h2>구현할 때 지킬 것</h2>
+  <div class="bd-grid2" style="margin-top:28px">
+    <div class="bd-card"><h3>화면 말 대응표</h3><p class="bd-small bd-muted">코드의 이름은 화면에 쓰지 않아요.</p><table class="bd-table"><tbody><tr><th>코드</th><th>화면</th></tr>
+      <tr><td><code>puzzle.end</code></td><td>목표 (끝난 뒤에는 "도착")</td></tr>
+      <tr><td><code>back</code> 이벤트</td><td>되돌아가기 · 되돌아감</td></tr>
+      <tr><td><code>moves</code></td><td>이동 · 이동 횟수</td></tr>
+      <tr><td><code>finish_order</code></td><td>도착 순서 (공유 문구에서는 "일일 순위")</td></tr>
+      <tr><td><code>archive</code></td><td>지난 문제</td></tr>
+      <tr><td><code>stats</code></td><td>내 기록</td></tr>
+      <tr><td><code>level</code> 0~4</td><td>목표와 멀어요 → 가까워요</td></tr>
+    </tbody></table></div>
+    <div class="bd-card"><h3>규칙</h3>
+      <div class="bd-rule"><span class="no">1</span><div><b>시작 전에는 출발과 목표를 어떤 모양으로도 보여 주지 않아요.</b> 잠긴 칸의 글자는 "출발 문서", "목표 문서"예요. 기존 기획 원칙이에요.</div></div>
+      <div class="bd-rule"><span class="no">2</span><div><b>게임 중에는 유사도 색을 보여 주지 않아요.</b> 경로 띠는 이름만 보여 줘요. 색은 도착한 뒤에만 나와요. 길 찾기 힌트가 되기 때문이에요.</div></div>
+      <div class="bd-rule"><span class="no">3</span><div><b>Header · 경로 띠 · Footer는 스크롤되지 않아요.</b> 문서만 스크롤돼요. 화면 높이는 dvh로 잡아요. 기존 구현에서 가장 고생한 지점이에요.</div></div>
+      <div class="bd-rule"><span class="no">4</span><div><b>화면마다 주 버튼은 하나예요.</b> 홈은 시작, 도착은 결과 공유예요. 나머지는 흰 알약이나 목록이에요.</div></div>
+      <div class="bd-rule"><span class="no">5</span><div><b>파랑은 누를 수 있는 것과 강조 숫자에만 써요.</b> 위키백과 문서 안의 링크와 같은 색이라, 장식에 쓰면 누를 수 있는 것처럼 보여요.</div></div>
+      <div class="bd-rule"><span class="no">6</span><div><b>공유 문구는 바꾸지 않아요.</b> 기존 문구와 이모지를 그대로 써요. 화면의 색 칸은 그 이모지를 그린 것일 뿐이에요.</div></div>
+      <div class="bd-rule"><span class="no">7</span><div><b>사람을 줄 세우는 말을 쓰지 않아요.</b> 오늘의 문제에서는 "도착 순서"와 "몇 명이 도착"까지만 말해요. 순위표는 커뮤니티 문제에만 있어요.</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="bd-chapter" id="refs">
+  <div class="bd-kicker">09 · 레퍼런스</div>
+  <h2>참고한 제품과 문서</h2>
+  <div class="bd-grid2 bd-refs" style="margin-top:28px">
+    <div class="bd-card"><h3>시작 화면</h3><ul>
+  <li><a href="https://krillion.io">Krillion · 시작 화면 (2026-11)</a> — <span class="bd-muted">한 줄 규칙, 큰 시작 버튼, 바로 아래 "DIVE #127", 접히는 게임 방법. 오늘 카드의 구성을 가져왔어요. 픽셀 아트와 아래 광고 띠는 가져오지 않아요.</span></li>
+  <li><a href="https://ixd.prattsi.org/2025/09/design-critique-wordle-website/">Wordle 시작 화면 비평 (2025-09) (2차)</a> — <span class="bd-muted">로고 → 한 줄 설명 → Play → 날짜 · 번호 순서. NYT 사이트는 열리지 않아 직접 확인하지 못했어요.</span></li>
+  <li><a href="https://contexto.me/en/">Contexto · 첫 화면 (2026-11)</a> — <span class="bd-muted">"Daily game · 날짜 · Play" 카드와 그 아래 Unlimited 카드. 게임 방법이 처음에만 화면 안에 보이다가 사라지는 방식을 규칙 세 단계에 가져왔어요.</span></li>
+  <li><a href="https://www.thewikigame.com">The Wiki Game · 시작 카드 (2026-11)</a> — <span class="bd-muted">START와 GOAL을 나란히 놓는 배치만 가져왔어요. 링클은 시작 전에 두 문서를 숨기므로 잠긴 칸으로 바꿨어요.</span></li>
+</ul></div>
+<div class="bd-card"><h3>게임 중</h3><ul>
+  <li><a href="https://wikispeedruns.com">Wiki Speedruns · 게임 화면 (2026-11)</a> — <span class="bd-muted">목표와 시간을 아래에 고정한 띠. 엄지 자리에 조작을 두는 근거예요. 이 게임은 게임 중에 경로와 횟수를 보여 주지 않아서 그 부분은 더했어요.</span></li>
+  <li><a href="https://dlab.epfl.ch/wikispeedia/play/">Wikispeedia · 게임 화면 (2026-11)</a> — <span class="bd-muted">"지금까지 누른 링크: A, B …"를 늘 보여 주는 방식이 경로 띠의 출발점이에요. 글줄이 휴대폰에서 가로로 잘리는 것은 한 줄 띠와 흐려지는 앞쪽으로 풀었어요.</span></li>
+  <li><a href="https://www.thewikigame.com/play">The Wiki Game · 게임 화면 (2026-11)</a> — <span class="bd-muted">머리 아래에 목표를 늘 붙여 두는 것. 본문을 가리는 광고와 실시간 순위는 가져오지 않아요.</span></li>
+</ul></div>
+<div class="bd-card"><h3>끝난 뒤</h3><ul>
+  <li><a href="https://www.sixdegreesofwikipedia.com">Six Degrees of Wikipedia · 경로 결과 (2026-11)</a> — <span class="bd-muted">문서마다 색 띠를 붙여 세로로 쌓는 경로 카드. 색이 붙은 경로 목록의 선례예요.</span></li>
+  <li><a href="https://framed.wtf">Framed · 끝난 화면 (2026-11)</a> — <span class="bd-muted">정답 → 색 칸과 공유 → 분포 → "Next Movie: 05:37:51" 순서. 공유 다음에 남은 시간을 두는 배치를 가져왔어요.</span></li>
+  <li><a href="https://krillion.io">Krillion · 끝난 화면 (2026-11)</a> — <span class="bd-muted">"STREAK · PLAYED · AVG · BEST" 한 줄과 "NEXT DIVE IN". 그 아래 길게 이어지는 홍보 묶음은 공유 버튼을 밀어내서 가져오지 않아요.</span></li>
+</ul></div>
+<div class="bd-card"><h3>기록과 지난 문제</h3><ul>
+  <li><a href="https://thenewyorktimeshelpcenter.helpjuice.com/360011158491-New-York-Times-Games/24611727334932-Wordle">NYT 도움말 · Wordle (2026-11)</a> — <span class="bd-muted">숫자 넷과 시도 횟수 분포로 된 기록 화면, 그리고 지난 문제는 기록에는 들어가되 연속 일수에는 들어가지 않는다는 규칙. 링클은 지난 문제를 내 기록에도 넣지 않아요.</span></li>
+  <li><a href="https://contexto.me/en/">Contexto · 지난 게임 (2026-11)</a> — <span class="bd-muted">오늘이 강조된 주간 띠와 월 달력. 지난 문제 화면을 그릴 때 쓸 선례예요. 이번 시안에는 그 화면이 없어요.</span></li>
+  <li><a href="https://semantle-ko.newsjel.ly">꼬맨틀 (2026-11)</a> — <span class="bd-muted">공유 문구에 무엇을 넣을지 고르는 설정. 링클은 기존 문구를 유지하기로 해서 가져오지 않았어요.</span></li>
+</ul></div>
+
+  </div>
+</section>
+
+<section class="bd-chapter" id="next">
+  <div class="bd-kicker">10 · 나눠 올릴 순서와 열린 질문</div>
+  <h2>게임 화면부터 바꾸고, 홈과 도착 화면은 서버가 붙은 뒤에 올려요</h2>
+  <div class="bd-grid2" style="margin-top:28px">
+    <div class="bd-card"><h3>나눠 올릴 순서</h3>
+      <div class="bd-rule"><span class="no">1</span><div><b>토큰과 아이콘</b> — 보조 글자색, 유사도 색, 아이콘 선 굵기, 앱 아이콘과 파비콘. 화면 구조는 바뀌지 않아요.</div></div>
+      <div class="bd-rule"><span class="no">2</span><div><b>게임 화면</b> — 목표 머리, 경로 띠, 한 줄 Footer, 여는 중 알약. 서버와 무관해서 먼저 올릴 수 있어요.</div></div>
+      <div class="bd-rule"><span class="no">3</span><div><b>도착 화면</b> — 타일, 색이 붙은 경로, 남은 시간. 도착 순서는 서버 응답을 쓰므로 서버 API 뒤에 올려요.</div></div>
+      <div class="bd-rule"><span class="no">4</span><div><b>홈의 오늘 카드</b> — 시작 전과 끝난 뒤 두 모습, 규칙 세 단계. 도착한 사람 수는 <code>/api/today</code>의 값을 써요.</div></div>
+      <div class="bd-rule"><span class="no">5</span><div><b>내 기록</b> — 기기 저장소에 기록을 쌓기 시작하고 시트를 붙여요. 연속 일수 칩도 여기서 켜요.</div></div>
+      <div class="bd-rule"><span class="no">6</span><div><b>바로가기와 더 풀기</b> — 어제의 기록, 지난 문제, 커뮤니티 화면이 생기는 순서대로 하나씩 켜요. 화면이 없는 항목은 보여 주지 않아요.</div></div>
+    </div>
+    <div class="bd-card"><h3>열린 질문</h3>
+      <div class="bd-rule q"><div><b>Q1 · 홈의 방향</b> — (가) 오늘 카드 (나) 아래 탭 허브 (다) 문서부터. 시안은 (가)로 그렸어요.</div></div>
+      <div class="bd-rule q"><div><b>Q2 · 최단 횟수를 보여 줄지</b> — 도착 화면에 "최단 3번"을 함께 보여 주면 내 기록을 평가할 기준이 생기지만, 아직 풀지 않은 친구에게 난이도가 새요. 시안은 오늘 화면에는 넣지 않고 어제의 기록에만 넣었어요.</div></div>
+      <div class="bd-rule q"><div><b>Q3 · 연속 일수</b> — 매일 오게 하는 힘이 크지만 끊겼을 때 떠나는 이유가 되기도 해요. 시안은 작은 칩으로만 보여 주고 끊겨도 알리지 않아요.</div></div>
+      <div class="bd-rule q"><div><b>Q4 · 앱 아이콘</b> — (가) 밑줄 그은 L (나) 지금처럼 L만. 시안은 (가)예요.</div></div>
+      <div class="bd-rule q"><div><b>Q5 · 도착한 사람 수를 시작 전에 보여 줄지</b> — 함께 하는 느낌을 주지만, 숫자가 작은 초기에는 썰렁해 보일 수 있어요. 시안은 보여 주는 것으로 그렸고, 일정 수 아래에서는 숨기는 방법도 있어요.</div></div>
+      <div class="bd-rule q"><div><b>Q6 · 다크 모드</b> — 이번 시안에는 없어요. 위키백과 문서도 함께 어두워져야 해서 따로 다뤄야 해요. 1차에는 넣지 않는 것으로 가정했어요.</div></div>
+    </div>
+  </div>
+</section>
+
+<footer class="bd-foot">기준 main bce0deb · 2026-11-19. 화면 속 이름 · 숫자는 예시예요.</footer>
+</main>
+
+
+</body></html>
