@@ -1,0 +1,14 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "linkle",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "../web/dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    // 무료 요금제에서는 Worker를 거치는 요청만 하루 한도에 들어간다. API만 Worker로 보낸다.
+    "run_worker_first": ["/api/*"]
+  },
+  "observability": { "enabled": true }
+}

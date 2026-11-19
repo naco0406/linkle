@@ -1,0 +1,23 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "web",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "web", "dev"],
+      "port": 5200
+    },
+    {
+      "name": "worker",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "worker", "dev"],
+      "port": 8801
+    },
+    {
+      "name": "wikirace-legacy",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "../wikirace", "run", "dev"],
+      "port": 3000
+    }
+  ]
+}

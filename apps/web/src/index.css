@@ -1,0 +1,33 @@
+@import 'tailwindcss';
+
+/* 브랜드 색은 위키백과 하이퍼링크 색에서 왔다 */
+@theme {
+  --color-primary: #3366cc;
+  --color-primary-dark: #2957b3;
+  --color-secondary: #f3f7ff;
+  --color-ink: #444f5b;
+  --color-line: #e5e5e5;
+  --color-line-blue: #dbe8f9;
+  --font-sans: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-brand: 'Rhodium Libre', Georgia, serif;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  color: var(--color-ink);
+  background: var(--color-secondary);
+  -webkit-text-size-adjust: 100%;
+  overscroll-behavior: none;
+}
+
+button {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: default;
+}
