@@ -1,0 +1,62 @@
+# 문제 채우기: 한 달에 한 번, 위키백과 덤프로 링크 지도를 만들어 다음 달 치 문제를 대기열에 넣는다.
+# 출제는 Worker가 매일 대기열에서 하나씩 꺼내 한다(apps/worker/src/schedule.ts). 이 작업은 대기열만 채운다.
+#
+# 처음 한 번 설정할 것 (저장소 Settings → Secrets and variables → Actions)
+#   secrets.CLOUDFLARE_API_TOKEN   D1 편집 권한이 있는 Cloudflare API 토큰
+#   secrets.CLOUDFLARE_ACCOUNT_ID  Cloudflare 계정 id
+#   vars.WIKI_USER_AGENT           (선택) 연락처가 담긴 User-Agent. 있으면 위키백과 요청 제한이 넉넉해진다
+# 토큰이 없으면 후보만 만들고 대기열에는 넣지 않는다(결과는 실행 기록의 첨부 파일로 남는다).
+name: 문제 채우기
+
+on:
+  schedule:
+    # 매달 3일 03:00 KST. 위키백과 덤프는 매달 1일 무렵 새로 나온다
+    - cron: '0 18 2 * *'
+  workflow_dispatch:
+    inputs:
+      count:
+        description: 만들 문제 수
+        default: '40'
+
+jobs:
+  fill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: 덤프 받기 (약 540 MB)
+        run: pnpm --filter puzzle-gen download
+        env:
+          WIKI_USER_AGENT: ${{ vars.WIKI_USER_AGENT }}
+      - name: 링크 지도 만들기
+        run: pnpm --filter puzzle-gen build-graph
+      - name: 후보 고르기와 게임 규칙으로 길 확인
+        run: pnpm --filter puzzle-gen generate --count ${{ inputs.count || '40' }}
+        env:
+          WIKI_USER_AGENT: ${{ vars.WIKI_USER_AGENT }}
+          WIKI_INTERVAL_MS: ${{ vars.WIKI_USER_AGENT && '1000' || '3000' }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: puzzle-candidates
+          path: tools/puzzle-gen/out/
+
+      - name: 대기열에 넣기
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "Cloudflare 토큰이 없어 대기열에 넣지 않습니다."
+            exit 0
+          fi
+          cd apps/worker
+          pnpm exec wrangler d1 migrations apply linkle --remote
+          pnpm exec wrangler d1 execute linkle --remote --file ../../tools/puzzle-gen/out/queue.sql

@@ -1,0 +1,16 @@
+{
+  "name": "puzzle-gen",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "download": "node src/main.ts download",
+    "build-graph": "node --max-old-space-size=6144 src/main.ts build",
+    "generate": "node --max-old-space-size=6144 src/main.ts generate"
+  },
+  "dependencies": {
+    "@linkle/core": "workspace:*",
+    "@linkle/embed": "workspace:*",
+    "@linkle/wiki": "workspace:*",
+    "linkedom": "^0.18.15"
+  }
+}

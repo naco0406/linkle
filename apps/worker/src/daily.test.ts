@@ -3,6 +3,7 @@ import type { MoveEvent, Puzzle } from '@linkle/core'
 import { cleanEmoji, initialStats, isDone, nextToCheck, pathOf, toPublic, winners, type Candidate, type StoredStats } from './daily.ts'
 import { canAggregate, yesterdayOf } from './job.ts'
 import { hopsOf, normalizeTitle, resolveTitles, verifyPath, WikiUnavailable, type WikiApi } from './verify.ts'
+import { chooseOrder, solutionEvents, wantedDifficulty } from './schedule.ts'
 
 const P = (id: number, title: string) => ({ id, title })
 const START = P(7761, '불고기'), END = P(1043098, '뉴발란스')
@@ -141,5 +142,23 @@ describe('모으는 시각', () => {
   it('어제는 한국 날짜 기준이다', () => {
     expect(yesterdayOf(kst('2026-11-20T00:10:00'))).toBe('2026-11-19')
     expect(yesterdayOf(kst('2026-12-01T08:00:00'))).toBe('2026-11-30')
+  })
+})
+
+describe('출제 순서', () => {
+  const row = (id: number, s: number, e: number, difficulty: 'easy' | 'normal' | 'hard' | null) => ({ id, start_id: s, start_title: `s${s}`, end_id: e, end_title: `e${e}`, par: 3, difficulty, solution: null })
+  it('요일마다 난이도: 월·화 쉬움, 수~금 보통, 주말 어려움', () => {
+    // 2026-11-16 월요일
+    expect(['2026-11-16', '2026-11-17', '2026-11-18', '2026-11-20', '2026-11-21', '2026-11-22'].map(wantedDifficulty)).toEqual(['easy', 'easy', 'normal', 'normal', 'hard', 'hard'])
+  })
+  it('원하는 난이도를 먼저, 최근 30일에 나온 문서는 건너뛴다', () => {
+    const q = [row(1, 10, 11, 'normal'), row(2, 12, 13, 'hard'), row(3, 14, 15, 'hard'), row(4, 16, 99, 'hard')]
+    expect(chooseOrder(q, new Set([14, 99]), 'hard').map(r => r.id)).toEqual([2, 1])
+  })
+  it('정답 예시를 이동 로그로 바꾼다', () => {
+    expect(solutionEvents('[{"id":2,"title":"커피","via":"커피"}]')).toEqual([{ type: 'link', to: { id: 2, title: '커피' }, via: '커피', at: 0 }])
+    expect(solutionEvents(null)).toBeNull()
+    expect(solutionEvents('not json')).toBeNull()
+    expect(solutionEvents('[]')).toBeNull()
   })
 })

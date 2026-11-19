@@ -95,6 +95,21 @@ importers:
 
   packages/wiki: {}
 
+  tools/puzzle-gen:
+    dependencies:
+      '@linkle/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@linkle/embed':
+        specifier: workspace:*
+        version: link:../../packages/embed
+      '@linkle/wiki':
+        specifier: workspace:*
+        version: link:../../packages/wiki
+      linkedom:
+        specifier: ^0.18.15
+        version: 0.18.15
+
 packages:
 
   '@cloudflare/kv-asset-handler@0.5.1':

@@ -4,6 +4,7 @@ import { HttpError, json, readJson } from './http.ts'
 import { toPublic } from './daily.ts'
 import { dailyJob, ensureStats, yesterdayOf } from './job.ts'
 import { runKindFor, settle } from './rules.ts'
+import { fillUpcoming } from './schedule.ts'
 import { isUuid, LIMITS, parseFinishBody, parseStartBody, type Parsed } from './validate.ts'
 import { wikiApi } from './verify.ts'
 
@@ -29,10 +30,16 @@ export default {
     }
   },
 
-  /** 자정이 지나면 30분마다(wrangler.jsonc의 crons) 어제 것을 모으고 기록을 확인한다 */
+  /**
+   * 자정이 지나면 30분마다(wrangler.jsonc의 crons):
+   * 오늘·내일 문제를 대기열에서 채우고, 어제 것을 모으고 기록을 확인한다.
+   * 한쪽이 실패해도 다른 쪽은 한다.
+   */
   async scheduled(controller, env, ctx): Promise<void> {
     const api = wikiApi(env.WIKI_USER_AGENT || DEFAULT_USER_AGENT)
-    ctx.waitUntil(dailyJob(env.DB, api, controller.scheduledTime).then(result => console.log(`daily job ${result}`)))
+    const now = controller.scheduledTime
+    const run = (name: string, job: Promise<string>) => job.then(r => console.log(`${name}: ${r}`)).catch(e => console.error(`${name} 실패`, e))
+    ctx.waitUntil(Promise.all([run('puzzles', fillUpcoming(env.DB, api, now)), run('yesterday', dailyJob(env.DB, api, now))]))
   },
 } satisfies ExportedHandler<Env>
 

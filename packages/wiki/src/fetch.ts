@@ -3,14 +3,17 @@ import type { Policy } from './policy.ts'
 
 export type WikiErrorKind = 'missing' | 'rate_limited' | 'http' | 'parse'
 
+// 매개변수 속성(constructor(readonly x))은 쓰지 않는다. Node가 타입만 지우고 바로 실행할 수 있게 하기 위해서다(문제 생성 도구)
 export class WikiError extends Error {
-  constructor(
-    readonly kind: WikiErrorKind,
-    readonly status?: number,
-    /** 429일 때 서버가 알려 준 대기 시간(초) */
-    readonly retryAfter?: number,
-  ) {
+  readonly kind: WikiErrorKind
+  readonly status?: number
+  /** 429일 때 서버가 알려 준 대기 시간(초) */
+  readonly retryAfter?: number
+  constructor(kind: WikiErrorKind, status?: number, retryAfter?: number) {
     super(`wiki: ${kind}${status ? ` (${status})` : ''}`)
+    this.kind = kind
+    this.status = status
+    this.retryAfter = retryAfter
   }
 }
 
