@@ -1,28 +1,26 @@
 import { useCallback, useEffect, useState } from 'react'
 import { CircleHelp } from 'lucide-react'
 import { createRun, elapsedMs, formatDurationKo, moveCount, pathOf, shareText, type Run } from '@linkle/core'
-import { getToday, startDaily } from '../game/api'
+import { startDaily } from '../game/api'
 import { computeEmoji } from '../game/emoji'
 import { useGame } from '../game/store'
 import { Help, PathTrail, PrimaryButton, Spinner, Stat, Toast } from '../ui/parts'
 
 /** 게임 화면이 아닐 때의 화면. 시작 전이면 시작 버튼을, 끝났으면 결과를 보여 준다 */
 export function Home({ run }: { run: Run | null }) {
-  const [number, setNumber] = useState<number | null>(run?.puzzle.number ?? null)
+  // 번호는 서버가 알려 준 오늘의 것이다. 날짜가 넘어가면 sync가 다시 받아 와 여기도 바뀐다
+  const today = useGame(s => s.today)
+  const number = run?.puzzle.number ?? today?.number ?? null
   const [starting, setStarting] = useState(false)
   const [help, setHelp] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
   const clearToast = useCallback(() => setToast(null), [])
 
-  useEffect(() => {
-    if (number === null) void getToday().then(t => setNumber(t.number))
-  }, [number])
-
   const start = async () => {
     setStarting(true)
     try {
       const s = await startDaily()
-      useGame.getState().begin(createRun({ mode: 'daily', puzzle: s.puzzle, runId: s.runId, startedAt: s.startedAt }), s.serverNow)
+      useGame.getState().begin(createRun({ mode: s.mode, puzzle: s.puzzle, runId: s.runId, startedAt: s.startedAt }), s.serverNow)
     } catch {
       setToast('시작하지 못했습니다. 잠시 뒤에 다시 시도해 주세요.')
       setStarting(false)

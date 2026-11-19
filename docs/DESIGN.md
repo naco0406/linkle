@@ -657,8 +657,8 @@ par는 게임에도 쓸 수 있다. 결과 화면에 "최단 3번, 나는 5번"�
 2. **core**: 이동 로그 리듀서, 파생 값, 이모지·공유 문구. 단위 테스트로 고정. (완료)
 3. **wiki**: 문서 요청과 정리 규칙, 첫 문단 뽑기. 실제 문서를 고정 자료로 저장해 테스트. (완료)
 4. **embed**: 초소형 모델의 계산 코드. 파이썬 결과와 같은지 고정 예시로 테스트(완료). 남은 것: 게임 문단으로 보정 계수 다시 구하기, 예시를 사람 눈으로 확인. 3번 뒤에 한다.
-5. **게임 화면**: 고정 문제 하나로 idle → playing → finished가 로컬에서 끝까지 도는 것. Header/Footer, Shadow DOM 렌더, 새로고침·재진입 복원, 이모지와 공유. 여기까지는 서버 없이 동작한다. (완료. 문제는 `apps/web/src/game/api.ts`의 로컬 대역이 준다)
-6. **Worker와 D1**: `/api/today`, `/api/runs`, `/api/runs/:id/finish`. 서버 시각 기준 타이머.
+5. **게임 화면**: 고정 문제 하나로 idle → playing → finished가 로컬에서 끝까지 도는 것. Header/Footer, Shadow DOM 렌더, 새로고침·재진입 복원, 이모지와 공유. 여기까지는 서버 없이 동작한다. (완료)
+6. **Worker와 D1**: `/api/today`, `/api/runs`, `/api/runs/:id/finish`. 서버 시각 기준 타이머. (완료. 문제 출제가 생기기 전까지 로컬 문제는 `pnpm db:seed`가 넣는다. 완료 순서는 `puzzles.clears`에서 뽑는다. 로컬 D1에서 잰 한 판의 쓰기는 처음 온 기기 8행, 다시 온 기기 6행이다)
 7. **어제의 기록**: Cron 집계와 GitHub Actions의 후보 검증.
 8. **문제 출제**: `tools/puzzle-gen`, 큐, `/admin`, 위키 문서 검색 입력.
 9. **무한 모드 1단계**: `/archive`, `/community`(링클 출제 문제), 문제별 순위표, 자동 닉네임.

@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { addFlag, applyBack, applyLink, kstDate, RUN_VERSION, type Page, type Run } from '@linkle/core'
+import type { Today } from './api'
 
 /** 오늘의 Run을 저장하는 키. 형식이 바뀌면 버전을 올리고 이전 저장분은 버린다 */
 export const RUN_KEY = 'linkle:run:v1'
@@ -9,7 +10,13 @@ type GameState = {
   run: Run | null
   /** 서버 시각 - 기기 시각 */
   clockOffset: number
+  /** 서버가 알려 준 오늘. 저장하지 않고 앱을 열 때마다 다시 받는다 */
+  today: Today | null
   begin(run: Run, serverNow: number): void
+  /** 서버의 오늘을 반영한다. 날짜가 넘어갔으면 끝난 지난 판을 치운다 */
+  setToday(today: Today): void
+  /** 완료 제출을 마무리한다. result가 null이면 서버가 받지 않은 판이다(더 보내지 않는다) */
+  settle(runId: string, result: Run['result']): void
   link(move: { to: Page; via: string; lead: string }): void
   back(): void
   flag(name: string): void
@@ -30,7 +37,18 @@ export const useGame = create<GameState>()(
     (set, get) => ({
       run: null,
       clockOffset: 0,
+      today: null,
       begin: (run, serverNow) => set({ run, clockOffset: serverNow - Date.now() }),
+      setToday: today => {
+        const { run } = get()
+        // 진행 중인 판은 자정을 넘겨도 끝까지 풀 수 있게 둔다. 치우는 것은 끝난 판뿐이다
+        const stale = run?.mode === 'daily' && run.phase === 'finished' && run.puzzle.date !== today.date
+        set({ today, clockOffset: today.serverNow - Date.now(), ...(stale ? { run: null } : null) })
+      },
+      settle: (runId, result) => {
+        const { run } = get()
+        if (run && run.runId === runId && run.phase === 'finished') set({ run: { ...run, result, outbox: 'none' } })
+      },
       link: move => {
         const { run } = get()
         if (run) set({ run: applyLink(run, { ...move, at: now() - run.startedAt }) })

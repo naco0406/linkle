@@ -3,14 +3,18 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "pnpm --filter web dev",
+    "dev": "mkdir -p apps/web/dist && pnpm db:migrate && pnpm db:seed && concurrently -k -n api,web \"pnpm --filter worker dev\" \"pnpm --filter web dev\"",
+    "dev:web": "pnpm --filter web dev",
     "dev:worker": "pnpm --filter worker dev",
+    "db:migrate": "pnpm --filter worker db:migrate",
+    "db:seed": "pnpm --filter worker db:seed",
     "build": "pnpm --filter web build",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit -p packages/core/tsconfig.json && tsc --noEmit -p packages/embed/tsconfig.json && tsc --noEmit -p packages/wiki/tsconfig.json && tsc --noEmit -p apps/web/tsconfig.json && tsc --noEmit -p apps/worker/tsconfig.json"
+    "typecheck": "tsc --noEmit -p packages/core/tsconfig.json && tsc --noEmit -p packages/embed/tsconfig.json && tsc --noEmit -p packages/wiki/tsconfig.json && tsc --noEmit -p apps/web/tsconfig.json && tsc --noEmit -p apps/worker/tsconfig.json && tsc --noEmit -p apps/worker/scripts/tsconfig.json"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",
+    "concurrently": "^10.0.6",
     "linkedom": "^0.18.15",
     "typescript": "^7.0.2",
     "vitest": "^5.0.5"

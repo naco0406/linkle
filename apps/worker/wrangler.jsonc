@@ -10,5 +10,14 @@
     // 무료 요금제에서는 Worker를 거치는 요청만 하루 한도에 들어간다. API만 Worker로 보낸다.
     "run_worker_first": ["/api/*"]
   },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "linkle",
+      // 자리 표시다. 배포 전에 `wrangler d1 create linkle`가 알려 주는 id로 바꾼다. 로컬 개발은 이 값과 무관하게 동작한다.
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ],
   "observability": { "enabled": true }
 }
