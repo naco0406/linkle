@@ -28,7 +28,7 @@ export function Home({ run }: { run: Run | null }) {
   }
 
   return (
-    <div className="relative flex min-h-full w-full flex-col items-center justify-center overflow-hidden bg-secondary px-4 py-24">
+    <div className="relative flex w-full flex-1 flex-col items-center justify-center overflow-hidden bg-secondary px-4 py-20">
       <header className="absolute right-0 top-0 flex h-20 items-center px-4">
         <button onClick={() => setHelp(true)} aria-label="게임 방법" className="rounded-full p-2 text-ink hover:bg-white/70">
           <CircleHelp className="h-6 w-6" />
@@ -51,9 +51,6 @@ export function Home({ run }: { run: Run | null }) {
         </>
       )}
 
-      <p className="absolute bottom-10 text-center text-xs text-ink">
-        © 2024 <span className="font-semibold text-primary">Linkle</span>. All rights reserved.
-      </p>
       {help && <Help onClose={() => setHelp(false)} />}
       {toast && <Toast message={toast} onDone={clearToast} />}
     </div>

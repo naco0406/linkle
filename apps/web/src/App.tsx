@@ -1,7 +1,10 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router'
+import { CalendarDays, Trophy, Users } from 'lucide-react'
+import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation } from 'react-router'
 import { useGame } from './game/store'
 import { Game } from './screens/Game'
 import { Home } from './screens/Home'
+import { Soon } from './screens/Soon'
+import { TabBar } from './ui/TabBar'
 
 /** 오늘의 게임. 어느 화면을 보일지는 주소가 아니라 Run의 상태가 정한다 */
 function Daily() {
@@ -9,11 +12,32 @@ function Daily() {
   return run?.phase === 'playing' ? <Game run={run} /> : <Home run={run} />
 }
 
+/**
+ * 탭이 있는 화면들의 바깥 틀. 게임 중에는 탭을 치운다:
+ * 게임 화면은 Header와 Footer가 자리를 다 쓰고, 문서에 집중해야 한다.
+ */
+function Shell() {
+  const playing = useGame(s => s.run?.phase === 'playing')
+  const { pathname } = useLocation()
+  const tabs = !(playing && pathname === '/')
+  return (
+    <div className="shell" data-tabs={tabs ? 'on' : 'off'}>
+      <Outlet />
+      {tabs && <TabBar />}
+    </div>
+  )
+}
+
 export function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Daily />} />
+        <Route element={<Shell />}>
+          <Route path="/" element={<Daily />} />
+          <Route path="/yesterday" element={<Soon icon={Trophy} title="어제의 기록" body="어제 문제를 사람들이 어떻게 풀었는지 보여 드릴 예정이에요." />} />
+          <Route path="/archive" element={<Soon icon={CalendarDays} title="지난 문제" body="지나간 오늘의 문제를 다시 풀 수 있게 준비하고 있어요." />} />
+          <Route path="/community" element={<Soon icon={Users} title="커뮤니티" body="서로 낸 문제를 풀고 기록을 겨루는 곳을 준비하고 있어요." />} />
+        </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

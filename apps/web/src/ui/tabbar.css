@@ -1,0 +1,203 @@
+/*
+ * 아래 탭 — 떠 있는 유리 알약.
+ *
+ * 화면 모양에 따라 두 가지로 놓인다.
+ *   바(bar)   세로로 긴 화면: 아래 가운데에 가로로. 엄지가 닿는 자리다.
+ *   레일(rail) 넓은 화면, 그리고 가로로 눕힌 휴대폰: 왼쪽 가운데에 세로로.
+ *              눕힌 휴대폰은 세로가 400px 안팎이라 아래에 두면 내용이 거의 안 남는다.
+ *
+ * 내용이 탭에 가리지 않도록 .shell 이 같은 조건으로 여백을 비워 둔다.
+ */
+
+:root {
+  --tab-size: 64px; /* 바의 높이, 레일의 한 칸 높이 */
+  --tab-gap: 12px; /* 화면 가장자리와의 거리 */
+  --tab-pad: 6px;
+  --tab-rail-width: 76px;
+}
+
+.tabbar {
+  position: fixed;
+  z-index: 40;
+  display: grid;
+  padding: var(--tab-pad);
+  border-radius: calc((var(--tab-size) + 0px) / 2);
+  isolation: isolate;
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.74), rgb(255 255 255 / 0.5));
+  -webkit-backdrop-filter: blur(18px) saturate(1.8);
+  backdrop-filter: blur(18px) saturate(1.8);
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.8),
+    inset 0 1.5px 0 rgb(255 255 255),
+    0 12px 32px -10px rgb(51 102 204 / 0.32),
+    0 2px 6px rgb(30 50 90 / 0.07);
+
+  /* 바: 아래 가운데. 홈 표시줄과 둥근 모서리를 피한다 */
+  left: 50%;
+  bottom: max(var(--tab-gap), env(safe-area-inset-bottom));
+  translate: -50% 0;
+  width: min(100vw - 2 * var(--tab-gap) - env(safe-area-inset-left) - env(safe-area-inset-right), 420px);
+  height: var(--tab-size);
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+}
+
+/* 뒤 흐림을 못 쓰거나 투명 효과를 줄이도록 설정한 기기에서는 불투명한 흰 알약 */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .tabbar {
+    background: #fff;
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .tabbar {
+    background: #fff;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+.tabbar__item {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+  border-radius: calc((var(--tab-size) - 2 * var(--tab-pad)) / 2);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  color: var(--color-ink-2);
+  transition: color 0.2s;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
+}
+.tabbar__item svg {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  transition: scale 0.2s;
+}
+.tabbar__item:active svg {
+  scale: 0.9;
+}
+.tabbar__item[aria-current='page'] {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+.tabbar__item:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}
+
+/* 고른 칸을 따라 미끄러지는 흰 알약 */
+.tabbar__thumb {
+  position: absolute;
+  z-index: 0;
+  top: var(--tab-pad);
+  left: var(--tab-pad);
+  width: calc((100% - 2 * var(--tab-pad)) / var(--tab-count));
+  height: calc(100% - 2 * var(--tab-pad));
+  border-radius: calc((var(--tab-size) - 2 * var(--tab-pad)) / 2);
+  background: linear-gradient(180deg, #fff, rgb(255 255 255 / 0.86));
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.9),
+    0 1px 2px rgb(30 50 90 / 0.08),
+    0 6px 14px -6px rgb(51 102 204 / 0.3);
+  translate: calc(var(--tab-index) * 100%) 0;
+  transition: translate 0.38s cubic-bezier(0.3, 1.25, 0.45, 1);
+}
+.tabbar[data-none='true'] .tabbar__thumb {
+  opacity: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tabbar__thumb,
+  .tabbar__item svg {
+    transition: none;
+  }
+}
+
+/* 아주 좁은 휴대폰(320px 안팎): 가장자리 여백을 줄여 네 칸의 글자가 잘리지 않게 한다 */
+@media (max-width: 359px) {
+  :root {
+    --tab-gap: 8px;
+    --tab-pad: 4px;
+  }
+  .tabbar__item {
+    letter-spacing: -0.03em;
+  }
+  .tabbar__item svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+/* 레일: 넓은 화면(태블릿 가로, 데스크톱)과 가로로 눕힌 휴대폰 */
+@media (min-width: 900px), (orientation: landscape) and (max-height: 520px) {
+  .tabbar {
+    left: max(16px, env(safe-area-inset-left));
+    top: 50%;
+    bottom: auto;
+    translate: 0 -50%;
+    width: var(--tab-rail-width);
+    height: auto;
+    grid-auto-flow: row;
+    grid-auto-rows: var(--tab-size);
+    grid-auto-columns: auto;
+  }
+  .tabbar__thumb {
+    width: calc(100% - 2 * var(--tab-pad));
+    height: var(--tab-size);
+    translate: 0 calc(var(--tab-index) * 100%);
+  }
+}
+
+/* 눕힌 휴대폰은 세로가 모자라다. 칸을 낮추고 글자는 숨긴다(읽어 주는 이름은 남는다) */
+@media (orientation: landscape) and (max-height: 520px) {
+  :root {
+    --tab-size: 48px;
+    --tab-rail-width: 60px;
+  }
+  .tabbar__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+}
+
+/* 탭이 있는 화면의 바깥 틀. 탭이 놓이는 쪽을 비워 둔다 */
+.shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  padding-bottom: calc(var(--tab-size) + var(--tab-gap) + max(var(--tab-gap), env(safe-area-inset-bottom)));
+}
+.shell[data-tabs='off'] {
+  padding: 0;
+}
+@media (min-width: 900px), (orientation: landscape) and (max-height: 520px) {
+  .shell {
+    padding-bottom: 0;
+    padding-left: calc(var(--tab-rail-width) + 16px + max(16px, env(safe-area-inset-left)));
+    padding-right: env(safe-area-inset-right);
+  }
+  .shell[data-tabs='off'] {
+    padding: 0;
+  }
+}
+/* 넓은 화면에서는 내용을 화면 한가운데에 둔다. 레일만큼 오른쪽도 비워 균형을 맞춘다 */
+@media (min-width: 900px) {
+  .shell {
+    padding-right: calc(var(--tab-rail-width) + 32px);
+  }
+  .shell[data-tabs='off'] {
+    padding: 0;
+  }
+}
