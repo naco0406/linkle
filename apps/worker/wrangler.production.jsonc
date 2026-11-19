@@ -1,0 +1,30 @@
+// 운영 설정. 로컬 개발은 wrangler.jsonc를 쓴다(DB id가 자리 표시라 원격에 닿지 않는다).
+// 배포: 저장소 맨 위에서 `pnpm run deploy`
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "linkle",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "../web/dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    // 무료 요금제에서는 Worker를 거치는 요청만 하루 한도에 들어간다. API만 Worker로 보낸다.
+    "run_worker_first": ["/api/*"]
+  },
+  // 사용자 지정 도메인(linkle.naco.im)은 naco.im이 Cloudflare로 다시 위임되면 붙인다.
+  // 그때 아래 줄을 살린다: "routes": [{ "pattern": "linkle.naco.im", "custom_domain": true }],
+  "workers_dev": true,
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "linkle",
+      "database_id": "dcddc731-97ec-419f-a6b1-b75ccdb5ce10",
+      "migrations_dir": "migrations"
+    }
+  ],
+  // 매시 5분: 오늘·내일 문제가 비어 있으면 대기열에서 채우고, 어제의 기록을 모으고 확인한다.
+  // 할 일이 없으면 DB를 한 번 읽고 끝난다. 위키백과가 잠시 막혀도 다음 시간에 이어서 한다. 무료 요금제는 계정당 예약이 5개까지라 하나로 묶었다.
+  "triggers": { "crons": ["5 * * * *"] },
+  "observability": { "enabled": true }
+}

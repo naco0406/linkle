@@ -13,6 +13,8 @@ type GameState = {
   clockOffset: number
   /** 서버가 알려 준 오늘. 저장하지 않고 앱을 열 때마다 다시 받는다 */
   today: Today | null
+  /** 오늘의 문제가 아직 없다고 서버가 답했다(출제 대기열이 비었을 때) */
+  noPuzzle: boolean
   begin(run: Run, serverNow: number): void
   /** 서버의 오늘을 반영한다. 날짜가 넘어갔으면 끝난 지난 판을 치운다 */
   setToday(today: Today): void
@@ -42,6 +44,7 @@ export const useGame = create<GameState>()(
       run: null,
       clockOffset: 0,
       today: null,
+      noPuzzle: false,
       arrivalSeen: null,
       showArrival: (runId, show) => set({ arrivalSeen: show ? null : runId }),
       begin: (run, serverNow) => set({ run, clockOffset: serverNow - Date.now() }),
@@ -49,7 +52,7 @@ export const useGame = create<GameState>()(
         const { run } = get()
         // 진행 중인 판은 자정을 넘겨도 끝까지 풀 수 있게 둔다. 치우는 것은 끝난 판뿐이다
         const stale = run?.mode === 'daily' && run.phase === 'finished' && run.puzzle.date !== today.date
-        set({ today, clockOffset: today.serverNow - Date.now(), ...(stale ? { run: null } : null) })
+        set({ today, noPuzzle: false, clockOffset: today.serverNow - Date.now(), ...(stale ? { run: null } : null) })
       },
       settle: (runId, result) => {
         const { run } = get()

@@ -55,8 +55,9 @@ export async function refreshToday(): Promise<void> {
   try {
     useGame.getState().setToday(await getToday())
     checkedAt = Date.now()
-  } catch {
+  } catch (e) {
     // 서버에 닿지 못해도 진행 중인 판은 영향이 없다. 다음 기회에 다시 묻는다
+    if (e instanceof ApiError && e.code === 'no_puzzle') useGame.setState({ noPuzzle: true })
   } finally {
     checking = false
   }

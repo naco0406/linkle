@@ -58,5 +58,5 @@ jobs:
             exit 0
           fi
           cd apps/worker
-          pnpm exec wrangler d1 migrations apply linkle --remote
-          pnpm exec wrangler d1 execute linkle --remote --file ../../tools/puzzle-gen/out/queue.sql
+          pnpm exec wrangler d1 migrations apply linkle --remote -c wrangler.production.jsonc
+          pnpm exec wrangler d1 execute linkle --remote -c wrangler.production.jsonc --file ../../tools/puzzle-gen/out/queue.sql

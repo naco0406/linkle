@@ -24,6 +24,7 @@ export function Home({ run }: { run: Run | null }) {
   const clearToast = useCallback(() => setToast(null), [])
   const date = today?.date ?? kstDate(now())
   const finished = run?.phase === 'finished' ? run : null
+  const noPuzzle = useGame(s => s.noPuzzle)
 
   return (
     <div className="mx-auto flex w-full max-w-[440px] flex-1 flex-col justify-center px-5 pb-6">
@@ -39,7 +40,15 @@ export function Home({ run }: { run: Run | null }) {
         <p className="mt-1 text-[16px] leading-6 text-ink">매일 위키피디아 탐험하기</p>
       </div>
 
-      {finished ? <DoneCard run={finished} onToast={setToast} /> : <TodayCard number={run?.puzzle.number ?? today?.number ?? null} date={date} finishedCount={today?.finishedCount ?? null} onToast={setToast} />}
+      {finished ? (
+        <DoneCard run={finished} onToast={setToast} />
+      ) : noPuzzle && !run ? (
+        <Card lift aria-label="오늘의 링클">
+          <span className="text-[15px] font-semibold leading-[22px] text-primary">오늘의 링클</span>
+          <p className="mt-0.5 text-[22px] font-bold leading-[31px] text-ink">{formatDateKo(date)}</p>
+          <p className="mt-3 text-[15px] leading-[22px] text-ink-2">오늘 문제를 준비하고 있어요. 조금 뒤에 다시 와 주세요.</p>
+        </Card>
+      ) : <TodayCard number={run?.puzzle.number ?? today?.number ?? null} date={date} finishedCount={today?.finishedCount ?? null} onToast={setToast} />}
 
       <div id="streak" className="mt-3">
         {stats.played > 0 ? <StreakCard stats={stats} today={date} /> : <HowTo />}

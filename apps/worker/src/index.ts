@@ -31,7 +31,7 @@ export default {
   },
 
   /**
-   * 자정이 지나면 30분마다(wrangler.jsonc의 crons):
+   * 매시 5분(wrangler.jsonc의 crons):
    * 오늘·내일 문제를 대기열에서 채우고, 어제 것을 모으고 기록을 확인한다.
    * 한쪽이 실패해도 다른 쪽은 한다.
    */

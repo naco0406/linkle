@@ -10,7 +10,8 @@
     "db:seed": "pnpm --filter worker db:seed",
     "build": "pnpm --filter web build",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit -p packages/core/tsconfig.json && tsc --noEmit -p packages/embed/tsconfig.json && tsc --noEmit -p packages/wiki/tsconfig.json && tsc --noEmit -p apps/web/tsconfig.json && tsc --noEmit -p apps/worker/tsconfig.json && tsc --noEmit -p apps/worker/scripts/tsconfig.json && tsc --noEmit -p tools/puzzle-gen/tsconfig.json"
+    "typecheck": "tsc --noEmit -p packages/core/tsconfig.json && tsc --noEmit -p packages/embed/tsconfig.json && tsc --noEmit -p packages/wiki/tsconfig.json && tsc --noEmit -p apps/web/tsconfig.json && tsc --noEmit -p apps/worker/tsconfig.json && tsc --noEmit -p apps/worker/scripts/tsconfig.json && tsc --noEmit -p tools/puzzle-gen/tsconfig.json",
+    "deploy": "pnpm build && pnpm --filter worker run deploy"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",

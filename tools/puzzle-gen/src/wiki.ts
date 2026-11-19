@@ -6,6 +6,9 @@ import { fetchPage, WikiError, type CleanPage } from '@linkle/wiki'
  * Wikimedia는 연락처 없는 요청을 분당 10회 안팎으로 제한한다(설계 문서 4.1).
  * 연락처가 담긴 User-Agent를 WIKI_USER_AGENT로 주면 간격을 줄여도 된다(WIKI_INTERVAL_MS).
  */
+/** 응답을 기다리는 상한. 넘기면 끊고 다시 한다 */
+const TIMEOUT_MS = 30_000
+
 export class Wiki {
   private last = 0
   private readonly pages = new Map<string, CleanPage | null>()
@@ -29,13 +32,16 @@ export class Wiki {
   private async retry<T>(task: () => Promise<T>): Promise<T> {
     for (let attempt = 0; ; attempt++) {
       await this.turn()
+      if (process.env.WIKI_DEBUG) console.log(`    요청 ${this.requests} (${attempt + 1}번째 시도)`)
       try {
         return await task()
       } catch (e) {
         const limited = e instanceof WikiError ? e.kind === 'rate_limited' : e instanceof RateLimited
-        if (!limited || attempt >= 3) throw e
-        const sec = (e as { retryAfter?: number }).retryAfter ?? 30
-        console.warn(`  요청 제한: ${sec}초 쉼`)
+        // 응답이 오지 않아 끊은 요청도 다시 한다
+        const timedOut = (e instanceof DOMException && (e.name === 'TimeoutError' || e.name === 'AbortError')) || e instanceof TypeError
+        if ((!limited && !timedOut) || attempt >= 3) throw e
+        const sec = limited ? ((e as { retryAfter?: number }).retryAfter ?? 30) : 10
+        console.warn(`  ${limited ? '요청 제한' : '응답 없음'}: ${sec}초 쉼 (${(e as Error).message})`)
         await new Promise(r => setTimeout(r, sec * 1000))
       }
     }
@@ -45,7 +51,7 @@ export class Wiki {
   async page(title: string): Promise<CleanPage | null> {
     if (this.pages.has(title)) return this.pages.get(title)!
     const page = await this.retry(() =>
-      fetchPage(title, { parse: html => parseHTML(html).document as unknown as Document, headers: { 'user-agent': this.userAgent, 'api-user-agent': this.userAgent } }),
+      fetchPage(title, { signal: AbortSignal.timeout(TIMEOUT_MS), parse: html => parseHTML(html).document as unknown as Document, headers: { 'user-agent': this.userAgent, 'api-user-agent': this.userAgent } }),
     ).catch(e => {
       if (e instanceof WikiError && e.kind === 'missing') return null
       throw e
@@ -57,7 +63,7 @@ export class Wiki {
   /** Wikimedia REST API(조회수 등). 위키백과 API와 같은 줄에 선다 */
   async rest(url: string): Promise<unknown> {
     return this.retry(async () => {
-      const res = await fetch(url, { headers: { 'user-agent': this.userAgent, 'api-user-agent': this.userAgent } })
+      const res = await fetch(url, { signal: AbortSignal.timeout(TIMEOUT_MS), headers: { 'user-agent': this.userAgent, 'api-user-agent': this.userAgent } })
       if (res.status === 429) throw new RateLimited(Number(res.headers.get('retry-after')) || 30)
       if (!res.ok) throw new Error(`wikimedia rest ${res.status}`)
       return res.json()
@@ -67,6 +73,7 @@ export class Wiki {
   async api(params: Record<string, string>): Promise<unknown> {
     return this.retry(async () => {
       const res = await fetch(`https://ko.wikipedia.org/w/api.php?${new URLSearchParams({ format: 'json', formatversion: '2', ...params })}`, {
+        signal: AbortSignal.timeout(TIMEOUT_MS),
         headers: { 'user-agent': this.userAgent, 'api-user-agent': this.userAgent },
       })
       if (res.status === 429) throw new RateLimited(Number(res.headers.get('retry-after')) || 30)

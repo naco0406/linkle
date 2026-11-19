@@ -38,7 +38,7 @@ export async function popularNodes(g: Graph, wiki: Wiki, now: Date, months = 12,
     const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - k, 1))
     const y = d.getUTCFullYear()
     const m = String(d.getUTCMonth() + 1).padStart(2, '0')
-    const res = (await wiki.rest(`https://wikimedia.org/api/rest_v1/metrics/pageviews/top/ko.wikipedia.org/all-access/${y}/${m}/all-days`).catch(() => null)) as {
+    const res = (await wiki.rest(`https://wikimedia.org/api/rest_v1/metrics/pageviews/top/ko.wikipedia.org/all-access/${y}/${m}/all-days`).catch(e => (console.warn(`  ${y}-${m} 조회수를 받지 못함: ${(e as Error).message}`), null))) as {
       items?: { articles: { article: string }[] }[]
     } | null
     for (const a of res?.items?.[0]?.articles ?? []) {
@@ -68,7 +68,9 @@ export async function livingPeople(g: Graph, wiki: Wiki, nodes: number[]): Promi
 /** 출발·도착 후보: (기본 문서 ∪ 꾸준히 인기 있는 문서) − 동음이의 − 제목 규칙 − 살아 있는 사람 */
 export async function buildPool(g: Graph, wiki: Wiki, now: Date): Promise<{ pool: number[]; vital: number; popular: number; living: number }> {
   const vital = await vitalNodes(g, wiki)
+  console.log(`  기본 문서 ${vital.size}개`)
   const popular = await popularNodes(g, wiki, now)
+  console.log(`  꾸준히 인기 있는 문서 ${popular.size}개. 살아 있는 사람을 확인하는 중`)
   const base = [...new Set([...vital, ...popular])].filter(n => !g.disambig[n] && titleOk(g.titles[n]!))
   const living = await livingPeople(g, wiki, base)
   return { pool: base.filter(n => !living.has(n)), vital: vital.size, popular: popular.size, living: living.size }
