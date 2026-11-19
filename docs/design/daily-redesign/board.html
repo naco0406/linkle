@@ -208,11 +208,12 @@ svg { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: roun
 /* <PrimaryButton> — 높이 56 · 완전히 둥근 모서리 · 18/500 */
 .k-btn { height: 56px; border-radius: 28px; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 18px; font-weight: 500; }
 .k-btn.primary { background: var(--primary); color: #fff; }
-.k-btn.quiet { height: 48px; border-radius: 24px; font-size: 16px; color: var(--primary); background: #fff; box-shadow: inset 0 0 0 1.5px var(--line-blue); }
+.k-btn.ghost { height: 48px; font-size: 16px; font-weight: 500; color: var(--primary); gap: 4px; }
+.k-btn.ghost svg { width: 18px; height: 18px; }
 .k-iconbtn { width: 40px; height: 40px; border-radius: 8px; display: grid; place-items: center; color: var(--ink); }
 .k-iconbtn svg { width: 24px; height: 24px; }
 /* 홈 */
-.k-home { height: 100%; display: flex; flex-direction: column; padding: 0 20px; }
+.k-home { height: 100%; display: flex; flex-direction: column; padding: 0 20px; position: relative; overflow: hidden; }
 .k-top { height: 56px; margin: 0 -12px; display: flex; align-items: center; justify-content: space-between; flex: none; }
 .k-streak { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px 0 10px; margin-left: 4px; border-radius: 16px; background: #fff; box-shadow: inset 0 0 0 1.5px var(--line-blue); font-size: 14px; font-weight: 600; color: var(--primary); }
 .k-streak svg { width: 16px; height: 16px; }
@@ -233,12 +234,40 @@ svg { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: roun
 .k-meta { font-size: 14px; line-height: 20px; color: var(--ink-2); margin: 12px 0 16px; text-align: center; }
 .k-meta b { color: var(--ink); font-weight: 600; }
 .k-hint { font-size: 13px; line-height: 20px; color: var(--ink-2); text-align: center; margin-top: 8px; }
-.k-how { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 16px; flex: none; }
-.k-how > div { background: #fff; border-radius: 12px; padding: 12px 10px; font-size: 13px; line-height: 18px; color: var(--ink); }
-.k-how b { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 10px; background: var(--secondary); color: var(--primary); font-size: 12px; font-weight: 700; margin-bottom: 6px; }
-.k-nav3 { margin: auto -8px 0; padding: 8px 0 20px; display: grid; grid-template-columns: repeat(3, 1fr); flex: none; }
-.k-nav3 > div { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 0; font-size: 13px; line-height: 18px; color: var(--ink); }
-.k-nav3 svg { width: 22px; height: 22px; color: var(--primary); }
+/* 게임 방법 카드 — 처음 온 날에만. 줄마다 그 규칙을 그린 작은 그림 하나 */
+.k-howto { margin-top: 16px; background: #fff; border-radius: 20px; padding: 6px 20px; flex: none; }
+.k-howto > div { display: flex; align-items: center; gap: 14px; height: 56px; border-top: 1px solid #eef1f5; }
+.k-howto > div:first-child { border-top: 0; }
+.k-howto p { margin: 0; min-width: 0; }
+.k-howto b { display: block; font-size: 15px; line-height: 20px; font-weight: 600; color: var(--ink); }
+.k-howto small { display: block; font-size: 13px; line-height: 18px; color: var(--ink-2); }
+.k-gl { width: 36px; height: 36px; border-radius: 18px; flex: none; display: grid; place-items: center; background: var(--secondary); color: var(--primary); }
+.k-gl svg { width: 18px; height: 18px; }
+.k-gl.goal { background: var(--primary); color: #fff; }
+.k-gl.sq { grid-template-columns: 10px 10px; gap: 3px; align-content: center; justify-content: center; }
+.k-gl.sq .k-sq { width: 10px; height: 10px; border-radius: 3px; }
+/* 아래 탭 — 떠 있는 유리 알약. 내용이 뒤로 비친다. 게임 · 도착 화면에는 없다 */
+.k-tabbar { position: absolute; left: 16px; right: 16px; bottom: 20px; height: 64px; padding: 6px; border-radius: 32px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; z-index: 5;
+  background: linear-gradient(180deg, rgb(255 255 255 / .74), rgb(255 255 255 / .5));
+  -webkit-backdrop-filter: blur(18px) saturate(1.8); backdrop-filter: blur(18px) saturate(1.8);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / .8), inset 0 1.5px 0 rgb(255 255 255), 0 12px 32px -10px rgb(51 102 204 / .32), 0 2px 6px rgb(30 50 90 / .07); }
+.k-tab { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; border-radius: 26px; font-size: 12px; line-height: 16px; font-weight: 500; color: var(--ink-2); white-space: nowrap; }
+.k-tab svg { width: 22px; height: 22px; }
+.k-tab.on { color: var(--primary); font-weight: 600; background: linear-gradient(180deg, #fff, rgb(255 255 255 / .86)); box-shadow: inset 0 0 0 1px rgb(255 255 255 / .9), 0 1px 2px rgb(30 50 90 / .08), 0 6px 14px -6px rgb(51 102 204 / .3); }
+/* 어제의 링클 미리보기 */
+.k-yday { background: #fff; border-radius: 16px; padding: 14px 16px 16px; flex: none; }
+.k-yday-h { display: flex; align-items: center; gap: 8px; font-size: 15px; line-height: 20px; color: var(--ink); }
+.k-yday-h b { font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
+.k-yday-h b svg { width: 14px; height: 14px; color: #9db4dd; }
+.k-yday-h .k-no { font-size: 16px; line-height: 20px; }
+.k-more { margin-left: auto; display: inline-flex; align-items: center; gap: 2px; font-size: 13px; color: var(--primary); font-weight: 500; }
+.k-more svg { width: 14px; height: 14px; }
+.k-yday .k-tiles { margin-top: 12px; }
+.k-yday .k-tiles > div { background: var(--secondary); padding: 8px 12px; }
+.k-yday .k-tiles b { font-size: 18px; line-height: 24px; }
+.k-row > .k-state { width: 22px; height: 22px; border-radius: 11px; flex: none; display: grid; place-items: center; background: var(--secondary); color: var(--primary); }
+.k-row > .k-state svg { width: 14px; height: 14px; stroke-width: 2.25; }
+.k-row > .k-state.todo { background: transparent; box-shadow: inset 0 0 0 1.5px #c9d5e8; }
 /* 게임 */
 .k-header { height: 56px; flex: none; display: flex; align-items: center; padding: 0 8px 0 16px; background: var(--secondary); border-bottom: 1px solid var(--line); gap: 10px; }
 .k-goal { min-width: 0; flex: 1; display: flex; align-items: center; gap: 8px; }
@@ -318,13 +347,7 @@ svg { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: roun
 .k-row small { display: block; font-size: 13px; line-height: 18px; color: var(--ink-2); }
 .k-row > svg:last-child { color: #b3bcc6; width: 18px; height: 18px; }
 /* 아이콘 장 (화면 틀 밖) */
-.k-appicon { width: 96px; height: 96px; border-radius: 22px; background: #3366cc; position: relative; display: grid; place-items: center; color: #fff; font-family: "Rhodium Libre", Georgia, serif; font-size: 64px; line-height: 1; flex: none; }
-.k-appicon.sm { width: 48px; height: 48px; border-radius: 11px; font-size: 32px; }
-.k-appicon.xs { width: 24px; height: 24px; border-radius: 6px; font-size: 16px; }
-.k-appicon.u::after { content: ""; position: absolute; left: 26%; right: 26%; bottom: 17%; height: 5%; border-radius: 3px; background: #fff; }
-.k-appicon.inv { background: #f3f7ff; color: #3366cc; box-shadow: inset 0 0 0 1.5px #dbe8f9; }
-.k-appicon.inv.u::after { background: #3366cc; }
-.k-appicon span { transform: translateY(-4%); }
+.k-app { display: block; flex: none; fill: none; stroke: none; }
 .k-icons { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; margin-top: 12px; }
 .k-icons div { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 4px; font-size: 12px; line-height: 16px; color: #6b7682; text-align: center; }
 .k-icons svg { width: 24px; height: 24px; color: #3366cc; }
@@ -347,12 +370,15 @@ svg { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: roun
 <symbol id="i-arrow-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></symbol>
 <symbol id="i-calendar-days" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v3"></path><path d="M16 2v3"></path><rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M3 9h18"></path><path d="M8 13h.01"></path><path d="M12 13h.01"></path><path d="M16 13h.01"></path><path d="M8 17h.01"></path><path d="M12 17h.01"></path><path d="M16 17h.01"></path></symbol>
 <symbol id="i-chart-column" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v16a2 2 0 0 0 2 2h16"></path><path d="M18 17V9"></path><path d="M13 17V5"></path><path d="M8 17v-3"></path></symbol>
+<symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></symbol>
 <symbol id="i-chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></symbol>
 <symbol id="i-circle-question-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9 9.5a3 2.5 0 016 0c0 2-2 2-3 3.5"></path><path d="M12 17h.01"></path></symbol>
 <symbol id="i-flag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.333 2q2 0 3.067-.8A1 1 0 0 1 20 4v10a1 1 0 0 1-.4.8A6 6 0 0 1 16 16c-3 0-5-2-8-2a6 6 0 0 0-4 1.528"></path></symbol>
 <symbol id="i-flame" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3q1 4 4 6.5t3 5.5a1 1 0 0 1-14 0 5 5 0 0 1 1-3 1 1 0 0 0 5 0c0-2-1.5-3-1.5-5q0-2 2.5-4"></path></symbol>
 <symbol id="i-footprints" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16v-2.38C4 11.5 2.97 10.5 3 8c.03-2.72 1.49-6 4.5-6C9.37 2 10 3.8 10 5.5c0 3.11-2 5.66-2 8.68V16a2 2 0 1 1-4 0Z"></path><path d="M20 20v-2.38c0-2.12 1.03-3.12 1-5.62-.03-2.72-1.49-6-4.5-6C14.63 6 14 7.8 14 9.5c0 3.11 2 5.66 2 8.68V20a2 2 0 1 0 4 0Z"></path><path d="M16 17h4"></path><path d="M4 13h4"></path></symbol>
+<symbol id="i-house" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"></path><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></symbol>
 <symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></symbol>
+<symbol id="i-mouse-pointer-click" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4.1 12 6"></path><path d="m5.1 8-2.9-.8"></path><path d="m6 12-1.9 2"></path><path d="M7.2 2.2 8 5.1"></path><path d="M9.037 9.69a.498.498 0 0 1 .653-.653l11 4.5a.5.5 0 0 1-.074.949l-4.349 1.041a1 1 0 0 0-.74.739l-1.04 4.35a.5.5 0 0 1-.95.074z"></path></symbol>
 <symbol id="i-share-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"></line><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"></line></symbol>
 <symbol id="i-timer" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="10" x2="14" y1="2" y2="2"></line><line x1="12" x2="15" y1="14" y2="11"></line><circle cx="12" cy="14" r="8"></circle></symbol>
 <symbol id="i-trophy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14.66V17a1 1 0 0 1-1 1 2 2 0 0 0-2 2v2"></path><path d="M14 14.66V17a1 1 0 0 0 1 1 2 2 0 0 1 2 2v2"></path><path d="M17.916 10H19.5A2.5 2.5 0 0 0 22 7.5V5a1 1 0 0 0-1-1h-3"></path><path d="M4 22h16"></path><path d="M6 9a6 6 0 0 0 12 0V3a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1z"></path><path d="M6.084 10H4.5A2.5 2.5 0 0 1 2 7.5V5a1 1 0 0 1 1-1h3"></path></symbol>
@@ -367,7 +393,7 @@ svg { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: roun
 <main class="bd-wrap">
 
 <section class="bd-hero">
-  <div class="bd-kicker">링클 · 오늘의 게임 화면 시안 v1 · 2026-11-19 · 기준: main bce0deb</div>
+  <div class="bd-kicker">링클 · 오늘의 게임 화면 시안 v2 · 2026-11-19 · 기준: main bce0deb · v2: 로고 유지, 게임 방법 카드, 아래 탭, 버튼 크기</div>
   <h1>매일 들르는 한 장의 카드로 시작해, 지나온 길이 보이는 게임으로 끝나요</h1>
   <p class="bd-lead">기존 링클의 색과 글꼴, 여백은 그대로 두고 화면이 하는 말을 다시 정리했어요. 시작 전에는 오늘에 대해 알려 주고, 게임 중에는 어디를 지나왔는지 보여 주고, 끝나면 내일 다시 올 이유를 남겨요. <b>아직 구현 전</b>이고, 화면 속 이름 · 숫자는 예시예요.</p>
   <div class="bd-legend">
@@ -379,26 +405,26 @@ svg { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: roun
   <div class="bd-grid3" style="margin-top:48px">
     <div class="bd-card"><span class="bd-proposed">제안</span><h3 style="margin-top:10px">시작 전에 오늘을 알려 줘요</h3><p class="bd-small bd-muted">몇 번째 문제인지, 몇 명이 도착했는지, 시작하면 무슨 일이 생기는지를 카드 한 장에 담아요. 규칙은 물음표 뒤가 아니라 화면에 있어요.</p></div>
     <div class="bd-card"><span class="bd-proposed">제안</span><h3 style="margin-top:10px">지나온 길과 색을 한 줄로 묶어요</h3><p class="bd-small bd-muted">게임 중에는 경로 띠가, 끝난 뒤에는 문서마다 색이 붙은 경로가 보여요. 색의 뜻을 따로 설명하지 않아도 읽혀요.</p></div>
-    <div class="bd-card"><span class="bd-decided">결정됨</span><h3 style="margin-top:10px">색 · 글꼴 · 로그인 없음 · 랭킹 없음</h3><p class="bd-small bd-muted">#3366CC와 #F3F7FF, Pretendard와 Rhodium Libre, 스포 없는 이모지 공유는 그대로예요. 오늘의 문제에는 실시간 순위를 두지 않아요.</p></div>
+    <div class="bd-card"><span class="bd-decided">결정됨</span><h3 style="margin-top:10px">색 · 글꼴 · 로고 · 홈의 방향</h3><p class="bd-small bd-muted">#3366CC와 #F3F7FF, Pretendard와 Rhodium Libre, 밑줄 없는 L 로고는 그대로예요. 홈은 오늘 카드로 가고, 로그인과 오늘의 문제 순위는 두지 않아요.</p></div>
   </div>
 </section>
 
 <section class="bd-chapter" id="dirs">
   <div class="bd-kicker">00 · 방향</div>
   <h2>홈이 "오늘 한 판"만 말할지, 여러 놀이의 입구가 될지가 갈림길이에요</h2>
-  <p class="bd-lead">무한 모드(지난 문제 · 커뮤니티)가 생기면서 홈이 할 일이 늘었어요. 매일 한 번 들르는 사람이 가장 많을 화면이라, 무엇을 가장 크게 둘지를 기준으로 셋을 그려 봤고 <b>A를 추천해요</b>.</p>
+  <p class="bd-lead">무한 모드(지난 문제 · 커뮤니티)가 생기면서 홈이 할 일이 늘었어요. 매일 한 번 들르는 사람이 가장 많을 화면이라, 무엇을 가장 크게 둘지를 기준으로 셋을 그려 봤어요. <b>A로 정했고</b>, 다른 곳으로 가는 길은 B의 아래 탭을 빌려 와요. 탭은 홈에서만 보이고 게임 화면에는 나오지 않아요.</p>
   <div class="bd-grid3">
     <div class="bd-card bd-dir pick">
-      <div class="bd-dir-head"><span class="bd-tag pick">A · 오늘 카드</span><span class="bd-proposed">추천</span></div>
+      <div class="bd-dir-head"><span class="bd-tag pick">A · 오늘 카드</span><span class="bd-decided">결정됨</span></div>
       <h3>카드 한 장이 시작 → 진행 → 결과로 바뀌어요</h3>
       <div class="bd-wire ph"><div class="m">
         <div class="blk" style="min-height:26px"><span>로고</span></div>
-        <div class="blk key" style="height:118px"><span>오늘의 링클 · 번호 · 시작</span><div class="g-metrics" style="grid-template-columns:1fr 1fr"><i></i><i></i></div><div class="g-input" style="height:22px"></div></div>
+        <div class="blk key" style="height:104px"><span>오늘의 링클 · 번호 · 시작</span><div class="g-metrics" style="grid-template-columns:1fr 1fr"><i></i><i></i></div><div class="g-input" style="height:22px"></div></div>
         <div class="blk"><span>게임 방법 3단계</span><div class="g-metrics" style="grid-template-columns:repeat(3,1fr)"><i></i><i></i><i></i></div></div>
-        <div class="blk ghost"><span>어제 · 지난 문제 · 커뮤니티</span></div>
+        <div class="blk" style="margin-top:auto"><span>아래 탭(B에서 빌려 옴)</span><div class="tab"><i class="on"></i><i></i><i></i><i></i></div></div>
       </div></div>
-      <p class="bd-wire-cap"><b>핵심 한 수</b> · 홈의 주인은 오늘의 문제 카드 하나예요. 나머지는 아래 조용한 바로가기예요</p>
-      <div class="bd-pc"><div><h4>좋은 점</h4><ul><li>처음 온 사람도 무엇을 누를지 고민하지 않아요</li><li>"하루 한 번"이라는 정체성이 화면에 그대로 보여요</li><li>지금 구조(주소 하나, 상태로 화면 결정)와 맞아요</li></ul></div><div><h4>대가</h4><ul><li>무한 모드는 한 번 더 눌러야 보여요</li><li>오늘 문제를 푼 뒤에는 카드가 비어 보이지 않게 따로 설계해야 해요</li></ul></div></div>
+      <p class="bd-wire-cap"><b>핵심 한 수</b> · 홈의 주인은 오늘의 문제 카드 하나예요. 다른 곳은 떠 있는 아래 탭으로 가요</p>
+      <div class="bd-pc"><div><h4>좋은 점</h4><ul><li>처음 온 사람도 무엇을 누를지 고민하지 않아요</li><li>"하루 한 번"이라는 정체성이 화면에 그대로 보여요</li><li>지금 구조(주소 하나, 상태로 화면 결정)와 맞아요</li></ul></div><div><h4>대가</h4><ul><li>아래 탭이 생겨 홈이 조금 덜 단순해져요</li><li>오늘 문제를 푼 뒤에는 카드가 비어 보이지 않게 따로 설계해야 해요</li></ul></div></div>
       <p class="bd-prec">선례 · <a href="#refs">Krillion 시작 화면</a> · <a href="#refs">Wordle 시작 화면(2차)</a> · <a href="#refs">Contexto 오늘 카드</a></p>
     </div>
     <div class="bd-card bd-dir">
@@ -447,7 +473,7 @@ svg { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: roun
     <li><b>도착한 순간이 없어요.</b> 목표에 닿으면 곧바로 홈으로 바뀌고 결과가 로고 아래에 덧붙어요. 숫자는 글줄로 나열돼요. <span class="bd-src">apps/web/src/App.tsx — Daily / Home.tsx — Result</span></li>
     <li><b>경로와 색이 따로 놀아요.</b> 경로는 상자 안에, 색은 그 아래 한 줄에 있어서 어느 문서가 어느 색인지 짝을 맞춰 세어야 해요. 색의 뜻도 화면에 없어요. <span class="bd-src">apps/web/src/screens/Home.tsx — PathTrail · 이모지 줄</span></li>
     <li><b>끝난 뒤 할 일이 하나뿐이에요.</b> 공유를 하고 나면 다음 문제까지 얼마나 남았는지, 내 기록이 어떤지, 더 풀 것이 있는지 알 수 없어요. <span class="bd-src">apps/web/src/screens/Home.tsx — Result의 버튼 하나</span></li>
-    <li><b>아이콘이 임시예요.</b> 파비콘은 시스템 세리프로 쓴 L이고, 홈 화면에 추가했을 때의 앱 아이콘과 공유 미리보기 그림이 없어요. <span class="bd-src">apps/web/public/favicon.svg · index.html</span></li>
+    <li><b>아이콘이 덜 다듬어졌어요.</b> 파비콘의 L은 글꼴을 받기 전에는 다른 세리프 글자로 보이고 가운데에서 조금 벗어나 있어요. 홈 화면에 추가했을 때의 앱 아이콘과 공유 미리보기 그림이 없어요. <span class="bd-src">apps/web/public/favicon.svg · index.html</span></li>
   </ol>
 </section>
 
@@ -465,7 +491,7 @@ svg { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: roun
       <div class="bd-frame-wrap"><div class="bd-frame phone" id="f-home"><div class="bd-status"><span>9:41</span><span class="island"></span><span class="bat"></span></div>
         <div class="bd-screen" style="height:800px"><div class="k-home">
           <div class="k-top"><span class="k-streak" data-pin="5"><svg><use href="#i-flame"></use></svg>4일 연속</span><span class="k-top-r"><span class="k-iconbtn"><svg><use href="#i-chart-column"></use></svg></span><span class="k-iconbtn"><svg><use href="#i-circle-question-mark"></use></svg></span></span></div>
-          <div class="k-brand" style="padding:28px 0 32px"><div class="k-logo">Linkle</div><div class="k-tag">매일 위키피디아 탐험하기</div></div>
+          <div class="k-brand" style="padding:8px 0 20px"><div class="k-logo">Linkle</div><div class="k-tag">매일 위키피디아 탐험하기</div></div>
           <div class="k-card">
             <div class="k-card-h"><span class="k-kicker" data-pin="1">오늘의 링클</span><span class="k-no">#128</span></div>
             <div class="k-date">11월 19일 목요일</div>
@@ -474,25 +500,26 @@ svg { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: roun
             <div class="k-btn primary">시작</div>
             <div class="k-hint" data-pin="3">누르면 두 문서가 공개되고 시간이 흐르기 시작해요</div>
           </div>
-          <div class="k-how" data-pin="4">
-            <div><b>1</b>문서 속 링크만 눌러 이동해요</div>
-            <div><b>2</b>목표 문서에 도착하면 끝나요</div>
-            <div><b>3</b>지나온 길을 색으로 공유해요</div>
+          <div class="k-howto" data-pin="4">
+            <div><i class="k-gl"><svg><use href="#i-mouse-pointer-click"></use></svg></i><p><b>문서 속 링크만 눌러 이동해요</b><small>파란 글자가 다음 문서로 가는 길이에요</small></p></div>
+            <div><i class="k-gl goal"><svg><use href="#i-flag"></use></svg></i><p><b>목표 문서에 도착하면 끝나요</b><small>이동 횟수와 시간이 기록돼요</small></p></div>
+            <div><i class="k-gl sq"><i class="k-sq l1"></i><i class="k-sq l3"></i><i class="k-sq l4"></i><i class="k-sq l5"></i></i><p><b>지나온 길이 색으로 남아요</b><small>목표와 가까운 문서일수록 파랑이에요</small></p></div>
           </div>
-          <div class="k-nav3" data-pin="6">
-            <div><svg><use href="#i-trophy"></use></svg>어제의 기록</div>
-            <div><svg><use href="#i-calendar-days"></use></svg>지난 문제</div>
-            <div><svg><use href="#i-users"></use></svg>커뮤니티</div>
+          <div class="k-tabbar" data-pin="6">
+            <div class="k-tab on"><svg><use href="#i-house"></use></svg>오늘</div>
+            <div class="k-tab"><svg><use href="#i-trophy"></use></svg>어제의 기록</div>
+            <div class="k-tab"><svg><use href="#i-calendar-days"></use></svg>지난 문제</div>
+            <div class="k-tab"><svg><use href="#i-users"></use></svg>커뮤니티</div>
           </div>
         </div></div>
-      <span class="bd-pin" data-auto="" style="left: 47px; top: 97px;">5</span><span class="bd-pin" data-auto="" style="left: 61px; top: 237px;">1</span><span class="bd-pin" data-auto="" style="left: 359px; top: 345px;">2</span><span class="bd-pin" data-auto="" style="left: 363px; top: 489px;">3</span><span class="bd-pin" data-auto="" style="left: 184px; top: 641px;">4</span><span class="bd-pin" data-auto="" style="left: 348px; top: 782px;">6</span></div></div>
+      <span class="bd-pin" data-auto="" style="left: 47px; top: 97px;">5</span><span class="bd-pin" data-auto="" style="left: 61px; top: 205px;">1</span><span class="bd-pin" data-auto="" style="left: 359px; top: 313px;">2</span><span class="bd-pin" data-auto="" style="left: 184px; top: 484px;">3</span><span class="bd-pin" data-auto="" style="left: 184px; top: 703px;">4</span><span class="bd-pin" data-auto="" style="left: 363px; top: 723px;">6</span></div></div>
       <ol class="bd-notes">
         <li><b>카드 머리에 번호와 날짜를 크게 써요.</b> 로고 옆 작은 "#1" 대신 "오늘의 링클 #128 · 11월 19일 목요일"이 카드의 제목이에요. 공유받고 온 사람이 같은 문제인지 바로 확인해요.</li>
         <li><b>출발과 목표는 잠긴 칸으로 보여 줘요.</b> 무엇이 숨겨져 있는지, 시작하면 무엇이 열리는지가 그림으로 읽혀요. "시작 전에는 공개하지 않는다"는 원칙은 그대로예요.</li>
         <li><b>시작 버튼 아래에 결과를 미리 말해요.</b> 누르는 순간 시간이 흐른다는 것을 버튼 바로 아래 한 줄로 알려요. 지금은 도움말을 열어야 알 수 있어요.</li>
-        <li><b>규칙 세 단계를 화면에 꺼내요.</b> 처음 온 날에만 보이고, 한 번 끝까지 풀면 접혀요. 물음표는 그대로 남아 다시 볼 수 있어요. Contexto가 같은 방식이에요.</li>
+        <li><b>규칙 세 줄을 카드 하나에 담아요.</b> 줄마다 그 규칙을 그린 작은 그림이 붙어요. 누르는 손, 목표 깃발, 색 칸이에요. 처음 온 날에만 보이고 한 번 끝까지 풀면 사라져요. 물음표는 그대로 남아 다시 볼 수 있어요. Contexto가 같은 방식이에요.</li>
         <li><b>연속 일수는 작게, 왼쪽 위에 둬요.</b> 기록이 있을 때만 보여요. 누르면 내 기록 시트(05장)가 열려요.</li>
-        <li><b>다른 곳으로 가는 길은 아래 세 개예요.</b> 저작권 문구 자리에 어제의 기록 · 지난 문제 · 커뮤니티를 둬요. 저작권과 만든 사람은 도움말 아래로 옮겨요.</li>
+        <li><b>아래 탭은 떠 있는 유리 알약이에요.</b> 오늘 · 어제의 기록 · 지난 문제 · 커뮤니티 네 곳을 오가요. 반투명해서 화면을 내리면 내용이 뒤로 비쳐요. 게임과 도착 화면에는 나오지 않아요. 저작권과 만든 사람은 도움말 아래로 옮겨요.</li>
       </ol>
     </div>
   </div>
@@ -567,15 +594,15 @@ svg { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: roun
             <div class="k-step end"><i class="k-sq g"><svg><use href="#i-flag"></use></svg></i><b>뉴발란스</b><small>도착</small></div>
             <div class="k-legend"><span>목표와 멀어요</span><i class="k-sq l1"></i><i class="k-sq l2"></i><i class="k-sq l3"></i><i class="k-sq l4"></i><i class="k-sq l5"></i><span>가까워요</span></div>
           </div>
-          <div class="k-actions"><div class="k-btn primary" data-pin="4"><svg><use href="#i-share-2"></use></svg>결과 공유</div><div class="k-btn quiet"><svg><use href="#i-trophy"></use></svg>어제의 기록 보기</div></div>
+          <div class="k-actions"><div class="k-btn primary" data-pin="4"><svg><use href="#i-share-2"></use></svg>결과 공유</div><div class="k-btn ghost">홈으로<svg><use href="#i-chevron-right"></use></svg></div></div>
           <div class="k-next" data-pin="5">다음 링클까지 <b>07:41:12</b></div>
         </div></div>
-      <span class="bd-pin" data-auto="" style="left: 241px; top: 77px;">1</span><span class="bd-pin" data-auto="" style="left: 184px; top: 207px;">2</span><span class="bd-pin" data-auto="" style="left: 127px; top: 260px;">3</span><span class="bd-pin" data-auto="" style="left: 363px; top: 530px;">4</span><span class="bd-pin" data-auto="" style="left: 275px; top: 801px;">5</span></div></div>
+      <span class="bd-pin" data-auto="" style="left: 241px; top: 77px;">1</span><span class="bd-pin" data-auto="" style="left: 184px; top: 207px;">2</span><span class="bd-pin" data-auto="" style="left: 127px; top: 260px;">3</span><span class="bd-pin" data-auto="" style="left: 363px; top: 638px;">4</span><span class="bd-pin" data-auto="" style="left: 275px; top: 801px;">5</span></div></div>
       <ol class="bd-notes">
         <li><b>"어디에 도착했는지"가 제목이에요.</b> "N번째 링클을 클리어했습니다!"는 공유 문구에 그대로 남고, 화면에서는 목표 이름과 깃발로 도착을 말해요. 게임 화면의 깃발이 그대로 커져서 올라와요.</li>
         <li><b>숫자 셋은 타일로 나란히 둬요.</b> 이동, 시간, 도착 순서를 같은 크기로 놓아요. 도착 순서는 서버 응답이 오면 채워지고, 그 전에는 칸만 비워 둬요. 결과 화면은 응답을 기다리지 않아요.</li>
         <li><b>문서마다 색이 붙고, 색의 뜻은 바로 아래 한 줄이에요.</b> 경로와 색을 한 줄로 묶어서 어느 문서가 목표와 가까웠는지 세지 않아도 읽혀요. 되돌아간 줄은 회색 화살표로 구분하고, 가장 가까운 색은 링클의 파랑이에요. Six Degrees of Wikipedia의 경로 카드가 같은 읽기 방식이에요.</li>
-        <li><b>공유는 이 화면의 하나뿐인 주 행동이에요.</b> 누르면 기존과 같은 문구가 복사돼요. 문서 제목은 들어가지 않고 색만 들어가요. 그 아래 흰 버튼은 다음에 갈 곳 하나만 권해요.</li>
+        <li><b>공유는 이 화면의 하나뿐인 주 행동이에요.</b> 누르면 기존과 같은 문구가 복사돼요. 문서 제목은 들어가지 않고 색만 들어가요. 그 아래 "홈으로"는 테두리 없는 글자 버튼이에요. 크기가 다른 버튼 두 개가 나란히 놓이지 않아요.</li>
         <li><b>다음 문제까지 남은 시간을 맨 아래에 둬요.</b> 자정 기준으로 줄어들어요. 내일 다시 올 이유를 숫자 하나로 남겨요. Framed와 Krillion이 끝난 화면 아래에 같은 것을 둬요.</li>
       </ol>
     </div>
@@ -585,7 +612,7 @@ svg { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: roun
 <section class="bd-chapter" id="s-after">
   <div class="bd-kicker">05 · 끝난 뒤의 홈과 내 기록</div>
   <h2>오늘을 끝낸 사람에게는 기록과 더 풀 것을 보여 줘요</h2>
-  <p class="bd-lead">지금은 끝난 뒤 다시 들어와도 같은 결과가 로고 아래에 붙어 있어요. 오늘의 카드가 "도착 완료" 모습으로 바뀌고, 그 아래에 지난 문제와 커뮤니티로 가는 목록이 나와요. 내 기록은 기기에 저장된 값으로 그려요. 로그인은 없어요.</p>
+  <p class="bd-lead">지금은 끝난 뒤 다시 들어와도 같은 결과가 로고 아래에 붙어 있어요. 오늘의 카드가 "도착 완료" 모습으로 바뀌고, 그 아래에 어제의 링클과 지난 문제가 이어져요. 내 기록은 기기에 저장된 값으로 그려요. 로그인은 없어요.</p>
   <div class="bd-row">
     <div class="bd-cell">
       <h3 class="bd-sub" style="margin-top:0">시안 — 오늘을 끝낸 뒤의 홈</h3>
@@ -603,20 +630,30 @@ svg { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: roun
             <div class="k-btn primary"><svg><use href="#i-share-2"></use></svg>결과 공유</div>
             <div class="k-hint" data-pin="3">다음 링클까지 <b style="color:var(--ink);font-weight:600" class="k-num">07:38:05</b></div>
           </div>
-          <div class="k-sec" data-pin="4">더 풀기</div>
-          <div class="k-list">
-            <div class="k-row"><svg><use href="#i-trophy"></use></svg><div><b>어제의 기록</b><small>#127 · 2,310명 도착 · 최단 3번</small></div><svg><use href="#i-chevron-right"></use></svg></div>
-            <div class="k-row"><svg><use href="#i-calendar-days"></use></svg><div><b>지난 문제</b><small>127개 중 9개를 풀었어요</small></div><svg><use href="#i-chevron-right"></use></svg></div>
-            <div class="k-row"><svg><use href="#i-users"></use></svg><div><b>커뮤니티</b><small>링클이 낸 문제 24개 · 문제별 순위</small></div><svg><use href="#i-chevron-right"></use></svg></div>
+          <div class="k-sec" data-pin="4">어제의 링클</div>
+          <div class="k-yday">
+            <div class="k-yday-h"><span class="k-no">#127</span><b>김치<svg><use href="#i-arrow-right"></use></svg>올림픽</b><span class="k-more">기록 보기<svg><use href="#i-chevron-right"></use></svg></span></div>
+            <div class="k-tiles"><div><small>도착</small><b>2,310<i>명</i></b></div><div><small>최단</small><b>3<i>번</i></b></div><div><small>가장 많이</small><b>6<i>번</i></b></div></div>
           </div>
-          <p style="margin:auto 0 0;padding:0 0 24px;text-align:center;font-size:13px;line-height:20px;color:var(--ink-2)">문서 출처 · 한국어 위키백과 (CC BY-SA 4.0)</p>
+          <div class="k-sec">지난 문제</div>
+          <div class="k-list">
+            <div class="k-row"><i class="k-state"><svg><use href="#i-check"></use></svg></i><div><b>#126 · 11월 17일</b><small>5번 · 02:10에 도착했어요</small></div><svg><use href="#i-chevron-right"></use></svg></div>
+            <div class="k-row"><i class="k-state todo"></i><div><b>#125 · 11월 16일</b><small>아직 풀지 않았어요</small></div><svg><use href="#i-chevron-right"></use></svg></div>
+            <div class="k-row"><i class="k-state todo"></i><div><b>#124 · 11월 15일</b><small>아직 풀지 않았어요</small></div><svg><use href="#i-chevron-right"></use></svg></div>
+          </div>
+          <div class="k-tabbar">
+            <div class="k-tab on"><svg><use href="#i-house"></use></svg>오늘</div>
+            <div class="k-tab"><svg><use href="#i-trophy"></use></svg>어제의 기록</div>
+            <div class="k-tab"><svg><use href="#i-calendar-days"></use></svg>지난 문제</div>
+            <div class="k-tab"><svg><use href="#i-users"></use></svg>커뮤니티</div>
+          </div>
         </div></div>
-      <span class="bd-pin" data-auto="" style="left: 9px; top: 185px;">1</span><span class="bd-pin" data-auto="" style="left: 359px; top: 285px;">2</span><span class="bd-pin" data-auto="" style="left: 184px; top: 414px;">3</span><span class="bd-pin" data-auto="" style="left: 29px; top: 419px;">4</span></div></div>
+      <span class="bd-pin" data-auto="" style="left: 9px; top: 185px;">1</span><span class="bd-pin" data-auto="" style="left: 359px; top: 285px;">2</span><span class="bd-pin" data-auto="" style="left: 184px; top: 414px;">3</span><span class="bd-pin" data-auto="" style="left: 41px; top: 419px;">4</span></div></div>
       <ol class="bd-notes">
         <li><b>같은 카드가 "도착 완료"로 바뀌어요.</b> 시작 전의 잠긴 칸이 출발과 목표 이름으로 열려요. 카드의 자리와 크기가 같아서 오늘 한 일이 그 자리에 채워진 것처럼 보여요.</li>
         <li><b>색 띠와 숫자가 결과를 한 줄로 요약해요.</b> 자세한 경로는 카드를 누르면 04장의 도착 화면으로 다시 열려요.</li>
         <li><b>남은 시간이 시작 안내 자리를 대신해요.</b> 시작 전에 "누르면 시간이 흘러요"가 있던 자리예요. 자정이 지나면 카드는 새 번호의 시작 전 모습으로 돌아가요.</li>
-        <li><b>오늘을 끝낸 사람에게만 "더 풀기"를 크게 보여 줘요.</b> 시작 전에는 아래 바로가기 세 개였던 것이 설명이 붙은 목록이 돼요. 오늘의 문제보다 앞에 나오지 않아요.</li>
+        <li><b>오늘을 끝내면 어제의 링클과 지난 문제가 아래로 이어져요.</b> 어제 문제는 출발과 목표, 도착 인원, 최단 횟수를 미리 보여 줘요. 목록은 아래 탭 뒤로 비치며 이어져요. 오늘의 문제보다 앞에 나오지 않아요.</li>
       </ol>
     </div>
     <div class="bd-cell">
@@ -661,20 +698,21 @@ svg { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: roun
 
 <section class="bd-chapter" id="s-icons">
   <div class="bd-kicker">06 · 아이콘과 표시</div>
-  <h2>밑줄 그은 L 하나로 "링크"를 말해요</h2>
-  <p class="bd-lead">지금 파비콘은 시스템 글꼴로 쓴 임시 L이에요. 워드마크와 같은 Rhodium Libre의 L 아래에 하이퍼링크 밑줄을 그어 앱 아이콘을 만들고, 화면 속 아이콘과 유사도 색을 한 벌로 정해요. 운영체제마다 모양이 다른 이모지는 공유 문구에만 쓰고, 화면에서는 직접 그린 칸을 써요.</p>
+  <h2>로고는 지금의 L 그대로, 정확히 가운데에 둬요</h2>
+  <p class="bd-lead">파란 바탕에 흰 L이라는 지금의 로고를 유지해요. 바뀌는 것은 정렬과 만드는 방식이에요. 화면 속 아이콘과 유사도 색도 한 벌로 정해요. 운영체제마다 모양이 다른 이모지는 공유 문구에만 쓰고, 화면에서는 직접 그린 칸을 써요.</p>
   <div class="bd-grid2" style="margin-top:28px">
     <div class="bd-card">
-      <h3>앱 아이콘</h3>
-      <p class="bd-small bd-muted">링클의 파랑은 하이퍼링크 색에서 왔어요. 그 뜻을 밑줄로 한 번 더 말해요. 16px까지 줄여도 L과 밑줄이 남아요.</p>
+      <span class="bd-decided">결정됨</span>
+      <h3 style="margin-top:8px">앱 아이콘</h3>
+      <p class="bd-small bd-muted">워드마크의 L 하나만 써요. 글자가 차지하는 실제 범위를 재서 그 중심을 칸의 중심에 맞췄어요. 글자 상자 기준으로 놓으면 L이 오른쪽 아래로 쏠려 보여요.</p>
       <div class="k-iconrow">
-        <figure><div class="k-appicon u"><span>L</span></div>앱 아이콘 · 추천</figure>
-        <figure><div class="k-appicon sm u"><span>L</span></div>48</figure>
-        <figure><div class="k-appicon xs u"><span>L</span></div>파비콘</figure>
-        <figure><div class="k-appicon inv u"><span>L</span></div>밝은 바탕용</figure>
-        <figure><div class="k-appicon"><span>L</span></div>지금(밑줄 없음)</figure>
+        <figure><svg class="k-app" width="96" height="96" viewBox="0 0 96 96"><rect width="96" height="96" rx="22" fill="#3366cc"></rect><path d="M289 623 215 594V72H538L564 187H623V0H55V55L129 85V594L55 623V680H289Z" transform="translate(26.065 70) scale(0.06471 -0.06471)" fill="#fff"></path></svg>앱 아이콘</figure>
+        <figure><svg class="k-app" width="96" height="96" viewBox="0 0 96 96"><rect width="96" height="96" rx="22" fill="#3366cc"></rect><path d="M289 623 215 594V72H538L564 187H623V0H55V55L129 85V594L55 623V680H289Z" transform="translate(26.065 70) scale(0.06471 -0.06471)" fill="#fff"></path><rect x="29.62" y="26" width="36.75" height="44" stroke="#ffcf5c" stroke-width="1"></rect><line x1="48" y1="8" x2="48" y2="88" stroke="#ffcf5c" stroke-width="1" stroke-dasharray="3 3"></line><line x1="8" y1="48" x2="88" y2="48" stroke="#ffcf5c" stroke-width="1" stroke-dasharray="3 3"></line></svg>가운데 맞춤</figure>
+        <figure><svg class="k-app" width="48" height="48" viewBox="0 0 96 96"><rect width="96" height="96" rx="22" fill="#3366cc"></rect><path d="M289 623 215 594V72H538L564 187H623V0H55V55L129 85V594L55 623V680H289Z" transform="translate(26.065 70) scale(0.06471 -0.06471)" fill="#fff"></path></svg>48</figure>
+        <figure><svg class="k-app" width="24" height="24" viewBox="0 0 96 96"><rect width="96" height="96" rx="22" fill="#3366cc"></rect><path d="M289 623 215 594V72H538L564 187H623V0H55V55L129 85V594L55 623V680H289Z" transform="translate(26.065 70) scale(0.06471 -0.06471)" fill="#fff"></path></svg>파비콘</figure>
+        <figure><svg class="k-app" width="96" height="96" viewBox="0 0 96 96"><rect width="96" height="96" rx="22" fill="#f3f7ff"></rect><rect x=".75" y=".75" width="94.5" height="94.5" rx="21.25" stroke="#dbe8f9" stroke-width="1.5"></rect><path d="M289 623 215 594V72H538L564 187H623V0H55V55L129 85V594L55 623V680H289Z" transform="translate(26.065 70) scale(0.06471 -0.06471)" fill="#3366cc"></path></svg>밝은 바탕용</figure>
       </div>
-      <p class="bd-small bd-muted" style="margin-top:16px">같은 그림으로 홈 화면 추가용 아이콘(192 · 512, 가장자리 여백 포함)과 공유 미리보기 그림(1200×630, 연한 파랑 바탕에 워드마크와 "매일 위키피디아 탐험하기")을 만들어요.</p>
+      <p class="bd-small bd-muted" style="margin-top:16px">지금 파비콘은 글꼴 이름으로 글자를 쓰고 있어서, 글꼴을 받기 전에는 다른 세리프 글자로 보여요. 글자를 윤곽선으로 바꿔 어디서나 같은 모양이 되게 해요. 같은 그림으로 홈 화면 추가용 아이콘(192 · 512, 가장자리 여백 포함)과 공유 미리보기 그림(1200×630)을 만들어요.</p>
     </div>
     <div class="bd-card">
       <h3>유사도 표시 — 화면용</h3>
@@ -735,6 +773,9 @@ svg { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: roun
         <tr><td>오늘 카드 (새 컴포넌트)</td><td>흰 바탕 · 모서리 20 · 테두리 2 · 안쪽 20</td></tr>
         <tr><td>게임 Header · 경로 띠 · Footer</td><td>56 · 44 · 64 (지금 Header 60 · Footer 89)</td></tr>
         <tr><td>되돌아가기 (새 모양)</td><td>높이 44 알약 · 최대 폭 190 · 넘치면 말줄임</td></tr>
+        <tr><td>보조 버튼 (글자 버튼)</td><td>테두리와 바탕 없음 · 높이 48 · 16/500 · 주 색</td></tr>
+        <tr><td>게임 방법 카드 (새 컴포넌트)</td><td>흰 바탕 · 모서리 20 · 줄 높이 56 · 그림 36</td></tr>
+        <tr><td>아래 탭 (새 컴포넌트)</td><td>높이 64 알약 · 좌우 16 · 아래 20에 떠 있음 · 흰색 50~74% + 뒤 흐림 18 · 밝은 테두리와 파란 그림자 · 고른 칸은 흰 알약</td></tr>
         <tr><td>아이콘</td><td>lucide · 화면 20~24 · 선 1.75</td></tr>
       </tbody></table>
     </div>
@@ -758,10 +799,11 @@ svg { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: roun
       <div class="bd-rule"><span class="no">1</span><div><b>시작 전에는 출발과 목표를 어떤 모양으로도 보여 주지 않아요.</b> 잠긴 칸의 글자는 "출발 문서", "목표 문서"예요. 기존 기획 원칙이에요.</div></div>
       <div class="bd-rule"><span class="no">2</span><div><b>게임 중에는 유사도 색을 보여 주지 않아요.</b> 경로 띠는 이름만 보여 줘요. 색은 도착한 뒤에만 나와요. 길 찾기 힌트가 되기 때문이에요.</div></div>
       <div class="bd-rule"><span class="no">3</span><div><b>Header · 경로 띠 · Footer는 스크롤되지 않아요.</b> 문서만 스크롤돼요. 화면 높이는 dvh로 잡아요. 기존 구현에서 가장 고생한 지점이에요.</div></div>
-      <div class="bd-rule"><span class="no">4</span><div><b>화면마다 주 버튼은 하나예요.</b> 홈은 시작, 도착은 결과 공유예요. 나머지는 흰 알약이나 목록이에요.</div></div>
+      <div class="bd-rule"><span class="no">4</span><div><b>화면마다 주 버튼은 하나, 버튼 높이는 56 한 가지예요.</b> 홈은 시작, 도착은 결과 공유예요. 보조 행동은 테두리 없는 글자 버튼으로 써요. 크기가 다른 알약 버튼 두 개를 나란히 두지 않아요.</div></div>
       <div class="bd-rule"><span class="no">5</span><div><b>파랑은 누를 수 있는 것과 강조 숫자에만 써요.</b> 위키백과 문서 안의 링크와 같은 색이라, 장식에 쓰면 누를 수 있는 것처럼 보여요.</div></div>
       <div class="bd-rule"><span class="no">6</span><div><b>공유 문구는 바꾸지 않아요.</b> 기존 문구와 이모지를 그대로 써요. 화면의 색 칸은 그 이모지를 그린 것일 뿐이에요.</div></div>
       <div class="bd-rule"><span class="no">7</span><div><b>사람을 줄 세우는 말을 쓰지 않아요.</b> 오늘의 문제에서는 "도착 순서"와 "몇 명이 도착"까지만 말해요. 순위표는 커뮤니티 문제에만 있어요.</div></div>
+      <div class="bd-rule"><span class="no">8</span><div><b>아래 탭은 홈과 그 옆 세 화면에만 있어요.</b> 게임과 도착 화면에는 나오지 않아요. 유리 효과는 뒤 흐림과 밝은 테두리로 만들고, 뒤 흐림을 못 쓰는 브라우저에서는 불투명한 흰 알약으로 보여요.</div></div>
     </div>
   </div>
 </section>
@@ -805,13 +847,14 @@ svg { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: roun
       <div class="bd-rule"><span class="no">3</span><div><b>도착 화면</b> — 타일, 색이 붙은 경로, 남은 시간. 도착 순서는 서버 응답을 쓰므로 서버 API 뒤에 올려요.</div></div>
       <div class="bd-rule"><span class="no">4</span><div><b>홈의 오늘 카드</b> — 시작 전과 끝난 뒤 두 모습, 규칙 세 단계. 도착한 사람 수는 <code>/api/today</code>의 값을 써요.</div></div>
       <div class="bd-rule"><span class="no">5</span><div><b>내 기록</b> — 기기 저장소에 기록을 쌓기 시작하고 시트를 붙여요. 연속 일수 칩도 여기서 켜요.</div></div>
-      <div class="bd-rule"><span class="no">6</span><div><b>바로가기와 더 풀기</b> — 어제의 기록, 지난 문제, 커뮤니티 화면이 생기는 순서대로 하나씩 켜요. 화면이 없는 항목은 보여 주지 않아요.</div></div>
+      <div class="bd-rule"><span class="no">6</span><div><b>아래 탭과 어제의 링클 미리보기</b> — 어제의 기록, 지난 문제, 커뮤니티 화면이 생기는 순서대로 탭을 하나씩 켜요. 화면이 없는 탭은 보여 주지 않아요.</div></div>
     </div>
     <div class="bd-card"><h3>열린 질문</h3>
-      <div class="bd-rule q"><div><b>Q1 · 홈의 방향</b> — (가) 오늘 카드 (나) 아래 탭 허브 (다) 문서부터. 시안은 (가)로 그렸어요.</div></div>
+      <div class="bd-rule q"><div><b>Q1 · 홈의 방향</b> — <span class="bd-decided">결정됨</span> 오늘 카드로 가요. 다른 곳으로 가는 길은 떠 있는 아래 탭이에요.</div></div>
       <div class="bd-rule q"><div><b>Q2 · 최단 횟수를 보여 줄지</b> — 도착 화면에 "최단 3번"을 함께 보여 주면 내 기록을 평가할 기준이 생기지만, 아직 풀지 않은 친구에게 난이도가 새요. 시안은 오늘 화면에는 넣지 않고 어제의 기록에만 넣었어요.</div></div>
       <div class="bd-rule q"><div><b>Q3 · 연속 일수</b> — 매일 오게 하는 힘이 크지만 끊겼을 때 떠나는 이유가 되기도 해요. 시안은 작은 칩으로만 보여 주고 끊겨도 알리지 않아요.</div></div>
-      <div class="bd-rule q"><div><b>Q4 · 앱 아이콘</b> — (가) 밑줄 그은 L (나) 지금처럼 L만. 시안은 (가)예요.</div></div>
+      <div class="bd-rule q"><div><b>Q4 · 앱 아이콘</b> — <span class="bd-decided">결정됨</span> 지금처럼 밑줄 없는 L이에요. 정확히 가운데에 맞춰요.</div></div>
+      <div class="bd-rule q"><div><b>Q7 · 아래 탭의 유리 효과</b> — 시안은 뒤 흐림과 밝은 테두리로 그렸어요. 가장자리에서 뒤가 휘어 보이는 굴절까지 넣으려면 브라우저마다 지원이 달라 따로 확인해야 해요. 시안은 굴절 없이 가는 것으로 가정했어요.</div></div>
       <div class="bd-rule q"><div><b>Q5 · 도착한 사람 수를 시작 전에 보여 줄지</b> — 함께 하는 느낌을 주지만, 숫자가 작은 초기에는 썰렁해 보일 수 있어요. 시안은 보여 주는 것으로 그렸고, 일정 수 아래에서는 숨기는 방법도 있어요.</div></div>
       <div class="bd-rule q"><div><b>Q6 · 다크 모드</b> — 이번 시안에는 없어요. 위키백과 문서도 함께 어두워져야 해서 따로 다뤄야 해요. 1차에는 넣지 않는 것으로 가정했어요.</div></div>
     </div>

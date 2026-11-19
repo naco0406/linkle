@@ -9,11 +9,12 @@ svg { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: roun
 /* <PrimaryButton> — 높이 56 · 완전히 둥근 모서리 · 18/500 */
 .k-btn { height: 56px; border-radius: 28px; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 18px; font-weight: 500; }
 .k-btn.primary { background: var(--primary); color: #fff; }
-.k-btn.quiet { height: 48px; border-radius: 24px; font-size: 16px; color: var(--primary); background: #fff; box-shadow: inset 0 0 0 1.5px var(--line-blue); }
+.k-btn.ghost { height: 48px; font-size: 16px; font-weight: 500; color: var(--primary); gap: 4px; }
+.k-btn.ghost svg { width: 18px; height: 18px; }
 .k-iconbtn { width: 40px; height: 40px; border-radius: 8px; display: grid; place-items: center; color: var(--ink); }
 .k-iconbtn svg { width: 24px; height: 24px; }
 /* 홈 */
-.k-home { height: 100%; display: flex; flex-direction: column; padding: 0 20px; }
+.k-home { height: 100%; display: flex; flex-direction: column; padding: 0 20px; position: relative; overflow: hidden; }
 .k-top { height: 56px; margin: 0 -12px; display: flex; align-items: center; justify-content: space-between; flex: none; }
 .k-streak { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px 0 10px; margin-left: 4px; border-radius: 16px; background: #fff; box-shadow: inset 0 0 0 1.5px var(--line-blue); font-size: 14px; font-weight: 600; color: var(--primary); }
 .k-streak svg { width: 16px; height: 16px; }
@@ -34,12 +35,40 @@ svg { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: roun
 .k-meta { font-size: 14px; line-height: 20px; color: var(--ink-2); margin: 12px 0 16px; text-align: center; }
 .k-meta b { color: var(--ink); font-weight: 600; }
 .k-hint { font-size: 13px; line-height: 20px; color: var(--ink-2); text-align: center; margin-top: 8px; }
-.k-how { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 16px; flex: none; }
-.k-how > div { background: #fff; border-radius: 12px; padding: 12px 10px; font-size: 13px; line-height: 18px; color: var(--ink); }
-.k-how b { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 10px; background: var(--secondary); color: var(--primary); font-size: 12px; font-weight: 700; margin-bottom: 6px; }
-.k-nav3 { margin: auto -8px 0; padding: 8px 0 20px; display: grid; grid-template-columns: repeat(3, 1fr); flex: none; }
-.k-nav3 > div { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 0; font-size: 13px; line-height: 18px; color: var(--ink); }
-.k-nav3 svg { width: 22px; height: 22px; color: var(--primary); }
+/* 게임 방법 카드 — 처음 온 날에만. 줄마다 그 규칙을 그린 작은 그림 하나 */
+.k-howto { margin-top: 16px; background: #fff; border-radius: 20px; padding: 6px 20px; flex: none; }
+.k-howto > div { display: flex; align-items: center; gap: 14px; height: 56px; border-top: 1px solid #eef1f5; }
+.k-howto > div:first-child { border-top: 0; }
+.k-howto p { margin: 0; min-width: 0; }
+.k-howto b { display: block; font-size: 15px; line-height: 20px; font-weight: 600; color: var(--ink); }
+.k-howto small { display: block; font-size: 13px; line-height: 18px; color: var(--ink-2); }
+.k-gl { width: 36px; height: 36px; border-radius: 18px; flex: none; display: grid; place-items: center; background: var(--secondary); color: var(--primary); }
+.k-gl svg { width: 18px; height: 18px; }
+.k-gl.goal { background: var(--primary); color: #fff; }
+.k-gl.sq { grid-template-columns: 10px 10px; gap: 3px; align-content: center; justify-content: center; }
+.k-gl.sq .k-sq { width: 10px; height: 10px; border-radius: 3px; }
+/* 아래 탭 — 떠 있는 유리 알약. 내용이 뒤로 비친다. 게임 · 도착 화면에는 없다 */
+.k-tabbar { position: absolute; left: 16px; right: 16px; bottom: 20px; height: 64px; padding: 6px; border-radius: 32px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; z-index: 5;
+  background: linear-gradient(180deg, rgb(255 255 255 / .74), rgb(255 255 255 / .5));
+  -webkit-backdrop-filter: blur(18px) saturate(1.8); backdrop-filter: blur(18px) saturate(1.8);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / .8), inset 0 1.5px 0 rgb(255 255 255), 0 12px 32px -10px rgb(51 102 204 / .32), 0 2px 6px rgb(30 50 90 / .07); }
+.k-tab { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; border-radius: 26px; font-size: 12px; line-height: 16px; font-weight: 500; color: var(--ink-2); white-space: nowrap; }
+.k-tab svg { width: 22px; height: 22px; }
+.k-tab.on { color: var(--primary); font-weight: 600; background: linear-gradient(180deg, #fff, rgb(255 255 255 / .86)); box-shadow: inset 0 0 0 1px rgb(255 255 255 / .9), 0 1px 2px rgb(30 50 90 / .08), 0 6px 14px -6px rgb(51 102 204 / .3); }
+/* 어제의 링클 미리보기 */
+.k-yday { background: #fff; border-radius: 16px; padding: 14px 16px 16px; flex: none; }
+.k-yday-h { display: flex; align-items: center; gap: 8px; font-size: 15px; line-height: 20px; color: var(--ink); }
+.k-yday-h b { font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
+.k-yday-h b svg { width: 14px; height: 14px; color: #9db4dd; }
+.k-yday-h .k-no { font-size: 16px; line-height: 20px; }
+.k-more { margin-left: auto; display: inline-flex; align-items: center; gap: 2px; font-size: 13px; color: var(--primary); font-weight: 500; }
+.k-more svg { width: 14px; height: 14px; }
+.k-yday .k-tiles { margin-top: 12px; }
+.k-yday .k-tiles > div { background: var(--secondary); padding: 8px 12px; }
+.k-yday .k-tiles b { font-size: 18px; line-height: 24px; }
+.k-row > .k-state { width: 22px; height: 22px; border-radius: 11px; flex: none; display: grid; place-items: center; background: var(--secondary); color: var(--primary); }
+.k-row > .k-state svg { width: 14px; height: 14px; stroke-width: 2.25; }
+.k-row > .k-state.todo { background: transparent; box-shadow: inset 0 0 0 1.5px #c9d5e8; }
 /* 게임 */
 .k-header { height: 56px; flex: none; display: flex; align-items: center; padding: 0 8px 0 16px; background: var(--secondary); border-bottom: 1px solid var(--line); gap: 10px; }
 .k-goal { min-width: 0; flex: 1; display: flex; align-items: center; gap: 8px; }
@@ -119,13 +148,7 @@ svg { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: roun
 .k-row small { display: block; font-size: 13px; line-height: 18px; color: var(--ink-2); }
 .k-row > svg:last-child { color: #b3bcc6; width: 18px; height: 18px; }
 /* 아이콘 장 (화면 틀 밖) */
-.k-appicon { width: 96px; height: 96px; border-radius: 22px; background: #3366cc; position: relative; display: grid; place-items: center; color: #fff; font-family: "Rhodium Libre", Georgia, serif; font-size: 64px; line-height: 1; flex: none; }
-.k-appicon.sm { width: 48px; height: 48px; border-radius: 11px; font-size: 32px; }
-.k-appicon.xs { width: 24px; height: 24px; border-radius: 6px; font-size: 16px; }
-.k-appicon.u::after { content: ""; position: absolute; left: 26%; right: 26%; bottom: 17%; height: 5%; border-radius: 3px; background: #fff; }
-.k-appicon.inv { background: #f3f7ff; color: #3366cc; box-shadow: inset 0 0 0 1.5px #dbe8f9; }
-.k-appicon.inv.u::after { background: #3366cc; }
-.k-appicon span { transform: translateY(-4%); }
+.k-app { display: block; flex: none; fill: none; stroke: none; }
 .k-icons { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; margin-top: 12px; }
 .k-icons div { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 4px; font-size: 12px; line-height: 16px; color: #6b7682; text-align: center; }
 .k-icons svg { width: 24px; height: 24px; color: #3366cc; }
