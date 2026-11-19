@@ -1,6 +1,7 @@
 import { CalendarDays, Trophy, Users } from 'lucide-react'
 import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation } from 'react-router'
 import { useGame } from './game/store'
+import { Arrival } from './screens/Arrival'
 import { Game } from './screens/Game'
 import { Home } from './screens/Home'
 import { Soon } from './screens/Soon'
@@ -9,7 +10,11 @@ import { TabBar } from './ui/TabBar'
 /** 오늘의 게임. 어느 화면을 보일지는 주소가 아니라 Run의 상태가 정한다 */
 function Daily() {
   const run = useGame(s => s.run)
-  return run?.phase === 'playing' ? <Game run={run} /> : <Home run={run} />
+  const arrivalSeen = useGame(s => s.arrivalSeen)
+  if (run?.phase === 'playing') return <Game run={run} />
+  // 도착한 직후에는 도착 화면이 먼저 나온다. 닫으면 홈이다
+  if (run?.phase === 'finished' && arrivalSeen !== run.runId) return <Arrival run={run} />
+  return <Home run={run} />
 }
 
 /**
@@ -17,9 +22,10 @@ function Daily() {
  * 게임 화면은 Header와 Footer가 자리를 다 쓰고, 문서에 집중해야 한다.
  */
 function Shell() {
-  const playing = useGame(s => s.run?.phase === 'playing')
+  // 게임 중과 도착 화면에서는 탭을 치운다
+  const immersive = useGame(s => s.run?.phase === 'playing' || (s.run?.phase === 'finished' && s.arrivalSeen !== s.run.runId))
   const { pathname } = useLocation()
-  const tabs = !(playing && pathname === '/')
+  const tabs = !(immersive && pathname === '/')
   return (
     <div className="shell" data-tabs={tabs ? 'on' : 'off'}>
       <Outlet />

@@ -1,5 +1,8 @@
 @import 'tailwindcss';
 
+/* 가로로 눕힌 휴대폰처럼 세로가 짧은 화면. short:flex-row 처럼 쓴다 */
+@custom-variant short (@media (orientation: landscape) and (max-height: 520px));
+
 /* 브랜드 색은 위키백과 하이퍼링크 색에서 왔다 */
 @theme {
   --color-primary: #3366cc;
@@ -9,6 +12,15 @@
   --color-ink-2: #6b7682;
   --color-line: #e5e5e5;
   --color-line-blue: #dbe8f9;
+  /* 유사도 5단계. 마지막은 주 색 */
+  --color-s1: #e5534b;
+  --color-s2: #f0883e;
+  --color-s3: #eab308;
+  --color-s4: #57ab5a;
+  --color-s5: #3366cc;
+  /* 연속 기록의 불꽃 */
+  --color-flame: #ff8a00;
+  --color-flame-soft: #fff1dc;
   --font-sans: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   --font-brand: 'Rhodium Libre', Georgia, serif;
 }
@@ -31,4 +43,20 @@ button {
 }
 button:disabled {
   cursor: default;
+}
+
+/* 누르면 살짝 눌리는 느낌. 버튼과 누를 수 있는 카드에 붙인다 */
+.press {
+  transition: scale 0.12s ease-in-out, filter 0.12s ease-in-out;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.press:active:not(:disabled) {
+  scale: 0.97;
+  filter: brightness(0.96);
+}
+@media (prefers-reduced-motion: reduce) {
+  .press {
+    transition: none;
+  }
 }

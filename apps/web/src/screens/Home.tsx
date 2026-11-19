@@ -1,55 +1,48 @@
-import { useCallback, useEffect, useState } from 'react'
-import { CircleHelp } from 'lucide-react'
-import { createRun, elapsedMs, formatDurationKo, moveCount, pathOf, shareText, type Run } from '@linkle/core'
+import { useCallback, useState } from 'react'
+import { ChevronRight, CircleHelp, Share2 } from 'lucide-react'
+import { createRun, elapsedMs, formatClock, kstDate, moveCount, type Run } from '@linkle/core'
 import { startDaily } from '../game/api'
-import { computeEmoji } from '../game/emoji'
-import { useGame } from '../game/store'
-import { Help, PathTrail, PrimaryButton, Spinner, Stat, Toast } from '../ui/parts'
+import { useStats } from '../game/stats'
+import { now, useGame } from '../game/store'
+import { useEmoji } from '../game/useEmoji'
+import { Card, Countdown, Cta, formatDateKo, HowTo, kindOfEmoji, Route, Sq } from '../ui/cards'
+import { Help, Spinner, Toast } from '../ui/parts'
+import { shareRun } from '../ui/share'
+import { StreakCard, StreakChip } from '../ui/Streak'
 
-/** 게임 화면이 아닐 때의 화면. 시작 전이면 시작 버튼을, 끝났으면 결과를 보여 준다 */
+/**
+ * 홈. 가운데의 "오늘의 링클" 카드 한 장이 시작 전과 끝난 뒤 두 모습으로 바뀐다.
+ * 그 아래에는 처음 온 사람에게는 게임 방법을, 한 번이라도 푼 사람에게는 연속 기록을 보여 준다.
+ */
 export function Home({ run }: { run: Run | null }) {
-  // 번호는 서버가 알려 준 오늘의 것이다. 날짜가 넘어가면 sync가 다시 받아 와 여기도 바뀐다
+  // 번호와 날짜는 서버가 알려 준 오늘의 것이다. 날짜가 넘어가면 sync가 다시 받아 와 여기도 바뀐다
   const today = useGame(s => s.today)
-  const number = run?.puzzle.number ?? today?.number ?? null
-  const [starting, setStarting] = useState(false)
+  const stats = useStats(s => s.stats)
   const [help, setHelp] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
   const clearToast = useCallback(() => setToast(null), [])
-
-  const start = async () => {
-    setStarting(true)
-    try {
-      const s = await startDaily()
-      useGame.getState().begin(createRun({ mode: s.mode, puzzle: s.puzzle, runId: s.runId, startedAt: s.startedAt }), s.serverNow)
-    } catch {
-      setToast('시작하지 못했습니다. 잠시 뒤에 다시 시도해 주세요.')
-      setStarting(false)
-    }
-  }
+  const date = today?.date ?? kstDate(now())
+  const finished = run?.phase === 'finished' ? run : null
 
   return (
-    <div className="relative flex w-full flex-1 flex-col items-center justify-center overflow-hidden bg-secondary px-4 py-20">
-      <header className="absolute right-0 top-0 flex h-20 items-center px-4">
-        <button onClick={() => setHelp(true)} aria-label="게임 방법" className="rounded-full p-2 text-ink hover:bg-white/70">
-          <CircleHelp className="h-6 w-6" />
+    <div className="mx-auto flex w-full max-w-[440px] flex-1 flex-col justify-center px-5 pb-6">
+      <header className="flex h-14 flex-none items-center justify-between">
+        <StreakChip stats={stats} today={date} onClick={() => document.getElementById('streak')?.scrollIntoView({ behavior: 'smooth', block: 'center' })} />
+        <button onClick={() => setHelp(true)} aria-label="게임 방법" className="press -mr-2 ml-auto grid h-10 w-10 place-items-center rounded-full text-ink">
+          <CircleHelp className="h-6 w-6" strokeWidth={1.75} />
         </button>
       </header>
 
-      <div className="flex flex-row gap-2 pl-8">
-        <h1 className="pt-6 font-brand text-6xl font-normal text-primary sm:text-8xl">Linkle</h1>
-        <p className="font-brand text-primary">{number === null ? '' : `#${number}`}</p>
+      <div className="pb-5 pt-1 text-center">
+        <h1 className="font-brand text-[52px] font-normal leading-[56px] text-primary">Linkle</h1>
+        <p className="mt-1 text-[16px] leading-6 text-ink">매일 위키피디아 탐험하기</p>
       </div>
 
-      {run?.phase === 'finished' ? (
-        <Result run={run} onToast={setToast} />
-      ) : (
-        <>
-          <p className="mb-14 mt-2 text-xl text-ink">매일 위키피디아 탐험하기</p>
-          <PrimaryButton onClick={start} disabled={starting}>
-            {starting ? <Spinner className="h-6 w-6 text-white" /> : '시작'}
-          </PrimaryButton>
-        </>
-      )}
+      {finished ? <DoneCard run={finished} onToast={setToast} /> : <TodayCard number={run?.puzzle.number ?? today?.number ?? null} date={date} finishedCount={today?.finishedCount ?? null} onToast={setToast} />}
+
+      <div id="streak" className="mt-3">
+        {stats.played > 0 ? <StreakCard stats={stats} today={date} /> : <HowTo />}
+      </div>
 
       {help && <Help onClose={() => setHelp(false)} />}
       {toast && <Toast message={toast} onDone={clearToast} />}
@@ -57,72 +50,73 @@ export function Home({ run }: { run: Run | null }) {
   )
 }
 
-function Result({ run, onToast }: { run: Run; onToast: (m: string) => void }) {
-  // 이모지는 기기에서 계산한다. 아직 없으면 지금 계산해 저장한다
-  useEffect(() => {
-    if (run.emoji) return
-    let alive = true
-    computeEmoji(run)
-      .then(emoji => alive && useGame.getState().setEmoji(run.runId, emoji))
-      .catch(() => {})
-    return () => {
-      alive = false
-    }
-  }, [run])
-
-  const share = async () => {
-    const text = shareText(run, { origin: window.location.origin })
-    const ok = await copyText(text)
-    onToast(ok ? '결과가 클립보드에 복사되었습니다.' : '복사하지 못했습니다. 브라우저의 복사 권한을 확인해 주세요.')
-  }
-
+function CardHead({ label, number }: { label: string; number: number | null }) {
   return (
-    <div className="mt-6 flex w-full max-w-md flex-col items-center gap-8">
-      <div className="flex w-full flex-col gap-4">
-        <div className="my-4 flex flex-col gap-2 text-center">
-          <div className="text-xl font-semibold text-ink">{run.puzzle.number}번째 링클을 클리어했습니다!</div>
-          {run.result && (
-            <div className="text-ink">
-              일일 순위 : <span className="font-semibold text-primary">{run.result.order}</span>등
-            </div>
-          )}
-        </div>
-        <div className="flex flex-col gap-2">
-          <Stat label="소요 시간">{formatDurationKo(elapsedMs(run, run.finishedAt ?? 0))}</Stat>
-          <Stat label="이동 횟수">{moveCount(run)}</Stat>
-        </div>
-        <div className="rounded-xl border-2 border-line-blue bg-white px-4 py-4">
-          <PathTrail titles={pathOf(run).map(s => s.page.title)} className="max-h-48 overflow-y-auto" />
-        </div>
-        <div className="min-h-8 text-center text-2xl tracking-wide" aria-label="경로의 유사도">
-          {run.emoji ? run.emoji.join('') : <Spinner className="mx-auto h-6 w-6" />}
-        </div>
-      </div>
-      <PrimaryButton onClick={share} disabled={!run.emoji} className="w-full max-w-[250px] px-0">
-        결과 공유
-      </PrimaryButton>
+    <div className="flex items-baseline justify-between">
+      <span className="text-[15px] font-semibold leading-[22px] text-primary">{label}</span>
+      <span className="font-brand text-xl leading-6 text-primary">{number === null ? '' : `#${number}`}</span>
     </div>
   )
 }
 
-/** 클립보드 API가 막힌 환경(일부 인앱 브라우저)에서는 예전 방식으로 한 번 더 시도한다 */
-async function copyText(text: string): Promise<boolean> {
-  try {
-    await navigator.clipboard.writeText(text)
-    return true
-  } catch {
-    const area = document.createElement('textarea')
-    area.value = text
-    area.setAttribute('readonly', '')
-    area.style.cssText = 'position:fixed;top:0;left:0;opacity:0'
-    document.body.appendChild(area)
-    area.select()
+/** 시작 전. 출발과 목표는 잠겨 있고, 시작을 누르면 열린다 */
+function TodayCard({ number, date, finishedCount, onToast }: { number: number | null; date: string; finishedCount: number | null; onToast: (m: string) => void }) {
+  const [starting, setStarting] = useState(false)
+  const start = async () => {
+    setStarting(true)
     try {
-      return document.execCommand('copy')
+      const s = await startDaily()
+      useGame.getState().begin(createRun({ mode: s.mode, puzzle: s.puzzle, runId: s.runId, startedAt: s.startedAt }), s.serverNow)
     } catch {
-      return false
-    } finally {
-      area.remove()
+      onToast('시작하지 못했어요. 잠시 뒤에 다시 눌러 주세요.')
+      setStarting(false)
     }
   }
+  return (
+    <Card lift aria-label="오늘의 링클">
+      <CardHead label="오늘의 링클" number={number} />
+      <p className="mt-0.5 text-[22px] font-bold leading-[31px] text-ink">{formatDateKo(date)}</p>
+      <div className="mt-4">
+        <Route />
+      </div>
+      <p className="mb-4 mt-3 text-center text-[15px] leading-[22px] text-ink-2">
+        {finishedCount === null ? ' ' : finishedCount > 0 ? (
+          <>
+            지금까지 <b className="font-semibold tabular-nums text-ink">{finishedCount.toLocaleString('ko-KR')}명</b>이 도착했어요
+          </>
+        ) : (
+          '아직 아무도 도착하지 않았어요'
+        )}
+      </p>
+      <Cta onClick={start} disabled={starting}>
+        {starting ? <Spinner className="h-6 w-6 text-white" /> : '시작'}
+      </Cta>
+      <p className="mt-2 text-center text-[13px] leading-5 text-ink-2">누르면 두 문서가 공개되고 시간이 흐르기 시작해요</p>
+    </Card>
+  )
+}
+
+/** 끝난 뒤. 같은 카드가 결과 요약으로 바뀐다 */
+function DoneCard({ run, onToast }: { run: Run; onToast: (m: string) => void }) {
+  useEmoji(run)
+  return (
+    <Card lift aria-label="오늘의 링클 결과">
+      <CardHead label="오늘의 링클 · 도착 완료" number={run.puzzle.number} />
+      <div className="mt-4">
+        <Route start={run.puzzle.start.title} end={run.puzzle.end.title} />
+      </div>
+      <button onClick={() => useGame.getState().showArrival(run.runId, true)} className="press my-4 flex w-full items-center gap-3 rounded-xl text-left" aria-label="경로 다시 보기">
+        <span className="flex min-w-0 flex-1 flex-wrap gap-1">{run.emoji ? run.emoji.map((e, i) => <Sq key={i} kind={kindOfEmoji(e)} size={24} />) : <Spinner className="h-6 w-6" />}</span>
+        <span className="flex flex-none items-center text-[14px] tabular-nums text-ink-2">
+          {moveCount(run)}번 · {formatClock(elapsedMs(run, run.finishedAt ?? 0))}
+          <ChevronRight className="h-[18px] w-[18px] text-[#b3bcc6]" aria-hidden />
+        </span>
+      </button>
+      <Cta onClick={async () => onToast(await shareRun(run))} disabled={!run.emoji}>
+        <Share2 className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+        결과 공유
+      </Cta>
+      <Countdown className="mt-2" />
+    </Card>
+  )
 }

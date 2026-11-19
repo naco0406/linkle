@@ -14,6 +14,8 @@ export function useNavigator(run: Run) {
   const [page, setPage] = useState<CleanPage | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  /** 지금 열고 있는 링크의 이름 */
+  const [opening, setOpening] = useState<string | null>(null)
   const [retryKey, setRetryKey] = useState(0)
   const lock = useRef(false)
 
@@ -43,6 +45,7 @@ export function useNavigator(run: Run) {
       if (lock.current || run.phase !== 'playing') return
       lock.current = true
       setBusy(true)
+      setOpening(via)
       setError(null)
       try {
         const next = await loadPage(via)
@@ -55,6 +58,7 @@ export function useNavigator(run: Run) {
       } finally {
         lock.current = false
         setBusy(false)
+        setOpening(null)
       }
     },
     [run],
@@ -68,5 +72,5 @@ export function useNavigator(run: Run) {
   const retry = useCallback(() => setRetryKey(k => k + 1), [])
   const dismissError = useCallback(() => setError(null), [])
 
-  return { page, busy, error, go, back, retry, dismissError }
+  return { page, busy, opening, error, go, back, retry, dismissError }
 }

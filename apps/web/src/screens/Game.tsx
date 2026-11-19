@@ -1,33 +1,45 @@
-import { useEffect, useRef, useState } from 'react'
-import { ArrowLeft, CircleHelp } from 'lucide-react'
-import { backTarget, currentPage, elapsedMs, formatClock, moveCount, pathOf, type Run } from '@linkle/core'
+import { Fragment, useEffect, useRef, useState } from 'react'
+import { ChevronRight, CircleHelp, Flag, Footprints, Timer, Undo2 } from 'lucide-react'
+import { backTarget, elapsedMs, formatClock, moveCount, pathOf, stackOf, type Run } from '@linkle/core'
 import { getModel } from '../game/emoji'
 import { now, useGame } from '../game/store'
 import { useNavigator } from '../game/useNavigator'
-import { Help, PathTrail, Spinner, Stat, Toast, useTick } from '../ui/parts'
+import { Help, PathTrail, Spinner, Toast, useTick } from '../ui/parts'
 import { WikiView } from '../ui/WikiView'
 
+const TRAIL = 'items-center gap-1 overflow-x-auto whitespace-nowrap text-[14px] [scrollbar-width:none] [mask-image:linear-gradient(to_right,transparent,#000_24px)]'
+
 /**
- * 게임 화면. Header와 Footer는 스크롤 영역 밖에 있어 어떤 상황에서도 함께 보인다.
- * 화면 높이는 dvh로 잡아 모바일 브라우저의 주소창이 접히고 펴져도 맞는다.
+ * 게임 화면. 위에서부터 목표, 지나온 길, 문서, 그리고 되돌아가기와 숫자.
+ * 문서만 스크롤되고 나머지는 늘 보인다. 화면 높이는 dvh로 잡아 모바일 브라우저의 주소창이 접히고 펴져도 맞는다.
  */
 export function Game({ run }: { run: Run }) {
-  const { page, busy, error, go, back, retry, dismissError } = useNavigator(run)
+  const { page, busy, opening, error, go, back, retry, dismissError } = useNavigator(run)
   const [help, setHelp] = useState(false)
   const scroller = useRef<HTMLDivElement>(null)
+  const trail = useRef<HTMLDivElement>(null)
+  const trailShort = useRef<HTMLDivElement>(null)
   const prev = backTarget(run)
-  const here = currentPage(run)
+  const stack = stackOf(run.puzzle.start, run.events)
   useTick(true)
+  // 지나온 길. 누를 수는 없다: 이동은 문서 속 링크와 되돌아가기뿐이다
+  const crumbs = stack.map((p, i) => (
+    <Fragment key={`${i}-${p.id}`}>
+      {i > 0 && <ChevronRight className="h-3.5 w-3.5 flex-none text-[#b3bcc6]" aria-hidden />}
+      <span className={i === stack.length - 1 ? 'rounded-lg bg-secondary px-2 py-0.5 font-semibold text-primary short:bg-white' : 'text-ink-2'}>{p.title}</span>
+    </Fragment>
+  ))
 
   // 유사도 모델을 미리 받아 둔다. 도착했을 때 기다리지 않게 하려는 것이다
   useEffect(() => {
     void getModel().catch(() => {})
   }, [])
 
-  // 새 문서는 맨 위부터 보여 준다
+  // 새 문서는 맨 위부터 보여 주고, 경로 띠는 지금 문서가 보이게 끝으로 민다
   useEffect(() => {
     scroller.current?.scrollTo(0, 0)
-  }, [page?.id])
+    for (const el of [trail.current, trailShort.current]) el?.scrollTo({ left: el.scrollWidth })
+  }, [page?.id, stack.length])
 
   // 페이지 내 검색은 막지 않고 표시만 남긴다. 통계 후보에서만 빠진다
   useEffect(() => {
@@ -39,25 +51,32 @@ export function Game({ run }: { run: Run }) {
   }, [])
 
   return (
-    <div className="flex h-dvh flex-col bg-white">
-      <header className="flex h-[60px] shrink-0 items-center justify-between gap-2 border-b border-line bg-secondary px-2 sm:h-20 sm:px-4">
-        <button onClick={back} disabled={!prev || busy} aria-label="이전 문서로" className="flex min-w-0 items-center gap-2.5 rounded-lg p-2 text-ink disabled:opacity-35">
-          <ArrowLeft className="h-6 w-6 shrink-0" />
-          <span className="hidden max-w-48 truncate sm:inline">{prev?.title ?? ''}</span>
-        </button>
-        <div className="min-w-0 truncate text-ink">
-          목표: <span className="hidden font-semibold text-primary sm:inline">{run.puzzle.start.title}</span>
-          <span className="hidden sm:inline"> → </span>
-          <span className="font-semibold text-primary">{run.puzzle.end.title}</span>
+    <div className="flex h-dvh flex-col bg-white pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
+      <header className="flex h-14 flex-none items-center gap-2.5 border-b border-line bg-secondary pl-4 pr-2 short:h-12">
+        <span className="grid h-7 w-7 flex-none place-items-center rounded-full bg-primary text-white">
+          <Flag className="h-4 w-4" strokeWidth={2} aria-hidden />
+        </span>
+        <p className="flex min-w-0 flex-1 items-baseline gap-2 short:max-w-[40%] short:flex-initial">
+          <span className="flex-none text-[13px] leading-4 text-ink-2">목표</span>
+          <b className="truncate text-[17px] font-semibold leading-6 text-primary">{run.puzzle.end.title}</b>
+        </p>
+        {/* 눕힌 화면은 세로가 모자라서 지나온 길을 머리 안으로 들인다 */}
+        <div ref={trailShort} className={`${TRAIL} hidden min-w-0 flex-1 pl-4 short:flex`} aria-label="지나온 길">
+          {crumbs}
         </div>
-        <button onClick={() => setHelp(true)} aria-label="게임 방법" className="rounded-lg p-2 text-ink">
-          <CircleHelp className="h-6 w-6" />
+        <button onClick={() => setHelp(true)} aria-label="게임 방법" className="press grid h-10 w-10 flex-none place-items-center rounded-full text-ink">
+          <CircleHelp className="h-6 w-6" strokeWidth={1.75} />
         </button>
       </header>
 
+      {/* 세로 화면에서는 지나온 길이 머리 아래에 한 줄을 차지한다 */}
+      <div ref={trail} className={`${TRAIL} flex h-11 flex-none border-b border-line bg-white px-4 short:hidden`} aria-label="지나온 길">
+        {crumbs}
+      </div>
+
       <div className="relative min-h-0 flex-1">
-        {busy && <div className="absolute inset-x-0 top-0 z-10 h-0.5 animate-pulse bg-primary" />}
-        <div ref={scroller} className={`h-full overflow-auto overscroll-contain px-4 py-4 transition-opacity ${busy && page ? 'pointer-events-none opacity-50' : ''}`}>
+        {busy && <div className="absolute inset-x-0 top-0 z-10 h-[3px] animate-pulse bg-primary" />}
+        <div ref={scroller} className={`h-full overflow-auto overscroll-contain px-4 py-4 transition-opacity ${busy && page ? 'pointer-events-none opacity-45' : ''}`}>
           {page ? (
             <div className="mx-auto max-w-4xl">
               <WikiView page={page} onNavigate={go} />
@@ -67,30 +86,49 @@ export function Game({ run }: { run: Run }) {
               {error ? (
                 <>
                   <p className="mb-6 text-ink">{error}</p>
-                  <button onClick={retry} className="rounded-full border border-primary px-6 py-2 text-primary">
+                  <button onClick={retry} className="press h-12 rounded-full bg-secondary px-6 font-medium text-primary">
                     다시 시도
                   </button>
                 </>
               ) : (
                 <>
                   <Spinner className="mb-10 h-12 w-12" />
-                  <p className="mb-16 text-ink">로딩 중</p>
+                  <p className="mb-16 text-ink">문서를 여는 중</p>
                 </>
               )}
               <PathTrail titles={pathOf(run).map(s => s.page.title)} className="mt-6 max-w-3xl" />
             </div>
           )}
         </div>
+        {/* 무엇을 여는 중인지 말해 준다. 잘못 눌렀는지 바로 알 수 있다 */}
+        {busy && opening && page && (
+          <p role="status" className="absolute bottom-4 left-1/2 z-10 flex h-10 max-w-[calc(100%-32px)] -translate-x-1/2 items-center gap-2 rounded-full bg-ink px-4 text-[14px] text-white">
+            <Spinner className="h-3.5 w-3.5 flex-none text-white" />
+            <b className="truncate font-semibold">{opening}</b>
+            <span className="flex-none">여는 중</span>
+          </p>
+        )}
       </div>
 
-      <footer className="flex shrink-0 flex-col gap-2 border-t border-line bg-secondary px-6 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
-        <div className="min-w-0 truncate text-ink">
-          현재 문서: <span className="font-semibold text-primary">{here.title}</span>
-        </div>
-        <div className="flex items-center justify-between gap-4">
-          <Stat label="소요 시간">{formatClock(elapsedMs(run, now()))}</Stat>
-          <Stat label="이동 횟수">{moveCount(run)}</Stat>
-        </div>
+      <footer className="flex h-16 short:h-13 flex-none items-center justify-between gap-3 border-t border-line bg-secondary pl-3 pr-4 pb-[env(safe-area-inset-bottom)] [box-sizing:content-box]">
+        <button onClick={back} disabled={!prev || busy} aria-label={prev ? `${prev.title} 문서로 되돌아가기` : '되돌아갈 문서가 없어요'} className="press flex h-11 min-w-0 max-w-[55%] items-center gap-2 rounded-full bg-white pl-3 pr-4 text-[15px] text-ink disabled:opacity-40">
+          <Undo2 className="h-5 w-5 flex-none" strokeWidth={1.75} aria-hidden />
+          <b className="truncate font-semibold">{prev?.title ?? '출발 문서'}</b>
+        </button>
+        <dl className="flex flex-none items-center gap-4 text-[16px] font-semibold tabular-nums text-primary">
+          <div className="flex items-center gap-1.5">
+            <dt>
+              <Timer className="h-[18px] w-[18px] text-ink-2" strokeWidth={1.75} aria-label="소요 시간" />
+            </dt>
+            <dd>{formatClock(elapsedMs(run, now()))}</dd>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <dt>
+              <Footprints className="h-[18px] w-[18px] text-ink-2" strokeWidth={1.75} aria-label="이동 횟수" />
+            </dt>
+            <dd>{moveCount(run)}</dd>
+          </div>
+        </dl>
       </footer>
 
       {help && <Help onClose={() => setHelp(false)} />}

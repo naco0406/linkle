@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { addFlag, applyBack, applyLink, kstDate, RUN_VERSION, type Page, type Run } from '@linkle/core'
 import type { Today } from './api'
+import { useStats } from './stats'
 
 /** 오늘의 Run을 저장하는 키. 형식이 바뀌면 버전을 올리고 이전 저장분은 버린다 */
 export const RUN_KEY = 'linkle:run:v1'
@@ -21,6 +22,9 @@ type GameState = {
   back(): void
   flag(name: string): void
   setEmoji(runId: string, emoji: string[]): void
+  /** 도착 화면을 닫은 판. 닫은 뒤에는 홈이 보인다 */
+  arrivalSeen: string | null
+  showArrival(runId: string, show: boolean): void
 }
 
 /** 저장된 Run을 그대로 쓸 수 있는지 본다. 지난 날짜의 끝난 판은 버린다 */
@@ -38,6 +42,8 @@ export const useGame = create<GameState>()(
       run: null,
       clockOffset: 0,
       today: null,
+      arrivalSeen: null,
+      showArrival: (runId, show) => set({ arrivalSeen: show ? null : runId }),
       begin: (run, serverNow) => set({ run, clockOffset: serverNow - Date.now() }),
       setToday: today => {
         const { run } = get()
@@ -51,7 +57,11 @@ export const useGame = create<GameState>()(
       },
       link: move => {
         const { run } = get()
-        if (run) set({ run: applyLink(run, { ...move, at: now() - run.startedAt }) })
+        if (!run) return
+        const next = applyLink(run, { ...move, at: now() - run.startedAt })
+        set({ run: next })
+        // 방금 도착했으면 내 기록에 남긴다
+        if (run.phase === 'playing' && next.phase === 'finished') useStats.getState().record(next)
       },
       back: () => {
         const { run } = get()
@@ -69,11 +79,11 @@ export const useGame = create<GameState>()(
     {
       name: RUN_KEY,
       version: RUN_VERSION,
-      partialize: s => ({ run: s.run, clockOffset: s.clockOffset }),
-      migrate: () => ({ run: null, clockOffset: 0 }),
+      partialize: s => ({ run: s.run, clockOffset: s.clockOffset, arrivalSeen: s.arrivalSeen }),
+      migrate: () => ({ run: null, clockOffset: 0, arrivalSeen: null }),
       merge: (saved, current) => {
         const s = (saved ?? {}) as Partial<GameState>
-        return { ...current, run: keep(s.run), clockOffset: typeof s.clockOffset === 'number' ? s.clockOffset : 0 }
+        return { ...current, run: keep(s.run), clockOffset: typeof s.clockOffset === 'number' ? s.clockOffset : 0, arrivalSeen: typeof s.arrivalSeen === 'string' ? s.arrivalSeen : null }
       },
     },
   ),
