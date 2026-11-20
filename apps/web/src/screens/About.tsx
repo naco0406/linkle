@@ -29,9 +29,6 @@ export function About() {
             <li>탐색 상자, 안내 틀, 편집 링크, 소리·영상을 뺐어요.</li>
             <li>없는 문서와 일반 문서가 아닌 곳(분류, 틀, 파일 등)으로 가는 링크는 글자만 남겼어요.</li>
           </ul>
-          <p className="mt-3 text-[14px] leading-[21px] text-ink-2">
-            원문과 기여자 목록은 도착 화면과 어제의 기록에서 문서 이름을 누르면 볼 수 있어요. 게임 중에는 원문으로 나가는 링크를 두지 않아요.
-          </p>
         </Card>
       </Section>
     </main>
