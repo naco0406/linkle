@@ -3,6 +3,7 @@ import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation } from 'rea
 import { useGame, useImmersive } from './game/store'
 import { Arrival } from './screens/Arrival'
 import { Game } from './screens/Game'
+import { Me } from './screens/Me'
 import { Home } from './screens/Home'
 import { About } from './screens/About'
 import { Archive } from './screens/Archive'
@@ -54,6 +55,7 @@ export function App() {
           <Route path="/archive/:id" element={<PuzzlePage key="archive" kind="archive" />} />
           <Route path="/community" element={<Community />} />
           <Route path="/community/:id" element={<PuzzlePage key="community" kind="community" />} />
+          <Route path="/me" element={<Me />} />
           <Route path="/about" element={<About />} />
         </Route>
         <Route

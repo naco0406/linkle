@@ -94,13 +94,25 @@ export function CardTitle({ children, side }: { children: ReactNode; side?: Reac
   )
 }
 
-/** 이동 횟수 분포. 내가 속한 칸은 파랑이다. 다른 사람과 비교하는 것이 아니라 어제의 모양을 보여 준다 */
-function Distribution({ counts, mine, total }: { counts: Record<number, number>; mine: number | null; total: number }) {
+/** 이동 횟수 분포. 내가 속한 칸은 파랑이다. 다른 사람과 비교하는 것이 아니라 어제의 모양을 보여 준다. 내 기록 화면도 쓴다 */
+export function Distribution({
+  counts,
+  mine,
+  total,
+  unit = '명',
+  note = '파란 칸이 내가 도착한 횟수예요.',
+}: {
+  counts: Record<number, number>
+  mine: number | null
+  total: number
+  unit?: string
+  note?: string
+}) {
   const bins = binMoves(counts)
   const max = Math.max(...bins.map(b => b.count), 1)
   return (
     <Card aria-label="이동 횟수 분포">
-      <CardTitle side={`${total.toLocaleString('ko-KR')}명`}>이동 횟수</CardTitle>
+      <CardTitle side={`${total.toLocaleString('ko-KR')}${unit}`}>이동 횟수</CardTitle>
       <ol className="grid gap-1.5">
         {bins.map(b => {
           const me = mine !== null && mine >= b.from && mine <= b.to
@@ -119,7 +131,7 @@ function Distribution({ counts, mine, total }: { counts: Record<number, number>;
           )
         })}
       </ol>
-      {mine !== null && <p className="mt-3 text-[13px] leading-[18px] text-ink-2">파란 칸이 내가 도착한 횟수예요.</p>}
+      {mine !== null && <p className="mt-3 text-[13px] leading-[18px] text-ink-2">{note}</p>}
     </Card>
   )
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { addDays, averageMoves, binMoves, emptyStats, moveDistribution, recordDaily, streakOn, weekOf, type Stats } from './index.ts'
+import { addDays, addMonths, averageMoves, bestsOf, binMoves, monthGrid, emptyStats, moveDistribution, recordDaily, streakOn, weekOf, type Stats } from './index.ts'
 
 const play = (stats: Stats, ...days: [string, number][]) => days.reduce((s, [date, moves]) => recordDaily(s, { date, moves, ms: moves * 10_000 }), stats)
 
@@ -90,10 +90,10 @@ describe('날짜별 결과', () => {
   })
   it('오래된 날은 함께 버린다', () => {
     let s = emptyStats()
-    for (let i = 0; i < 70; i++) s = recordDaily(s, { date: addDays('2026-01-01', i), moves: 5, ms: 1 })
-    expect(Object.keys(s.recent)).toHaveLength(60)
+    for (let i = 0; i < 410; i++) s = recordDaily(s, { date: addDays('2026-01-01', i), moves: 5, ms: 1 })
+    expect(Object.keys(s.recent)).toHaveLength(400)
     expect(s.recent['2026-01-01']).toBeUndefined()
-    expect(s.recent[addDays('2026-01-01', 69)]).toBeDefined()
+    expect(s.recent[addDays('2026-01-01', 409)]).toBeDefined()
   })
 })
 
@@ -107,5 +107,36 @@ describe('날짜 더하기', () => {
 describe('이동 횟수 칸', () => {
   it('어떤 횟수 묶음이든 같은 일곱 칸으로 나눈다', () => {
     expect(binMoves({ 3: 1, 5: 4, 11: 2 }).map(b => b.count)).toEqual([1, 0, 4, 0, 0, 0, 2])
+  })
+})
+
+describe('최고 기록', () => {
+  it('가장 적은 이동과 가장 빠른 도착을 따로 고른다', () => {
+    let s = emptyStats()
+    s = recordDaily(s, { date: '2026-11-18', moves: 4, ms: 90_000 })
+    s = recordDaily(s, { date: '2026-11-19', moves: 6, ms: 30_000 })
+    s = recordDaily(s, { date: '2026-11-20', moves: 4, ms: 50_000 })
+    expect(bestsOf(s)).toEqual({ fewest: { date: '2026-11-18', moves: 4 }, fastest: { date: '2026-11-19', ms: 30_000 } })
+  })
+  it('푼 날이 없으면 비어 있다', () => {
+    expect(bestsOf(emptyStats())).toEqual({ fewest: null, fastest: null })
+  })
+})
+
+describe('달력', () => {
+  it('일요일부터 시작하고 1일 앞은 비운다', () => {
+    const g = monthGrid('2026-11')
+    // 2026-11-01은 일요일
+    expect(g[0]).toBe('2026-11-01')
+    expect(g).toHaveLength(30)
+    const dec = monthGrid('2026-12')
+    // 2026-12-01은 화요일
+    expect(dec.slice(0, 3)).toEqual([null, null, '2026-12-01'])
+    expect(dec.at(-1)).toBe('2026-12-31')
+  })
+  it('달을 넘긴다', () => {
+    expect(addMonths('2026-11', 1)).toBe('2026-12')
+    expect(addMonths('2026-12', 1)).toBe('2027-01')
+    expect(addMonths('2026-01', -1)).toBe('2025-12')
   })
 })

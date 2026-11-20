@@ -1,4 +1,6 @@
 import { useEffect, useId, useState, type CSSProperties } from 'react'
+import { ChevronRight } from 'lucide-react'
+import { Link } from 'react-router'
 import { streakOn, weekOf, type Stats, type WeekDay } from '@linkle/core'
 import './streak.css'
 
@@ -98,7 +100,7 @@ export function WeekRow({ week, litDate }: { week: WeekDay[]; /** 방금 채워�
   )
 }
 
-/** 홈 위쪽의 작은 칩. 누르면 연속 기록 카드로 내려간다 */
+/** 홈 위쪽의 작은 칩. 누르면 내 기록으로 간다 */
 export function StreakChip({ stats, today, onClick }: { stats: Stats; today: string; onClick?: () => void }) {
   const s = streakOn(stats, today)
   if (stats.played === 0) return null
@@ -110,17 +112,17 @@ export function StreakChip({ stats, today, onClick }: { stats: Stats; today: str
   )
 }
 
-function streakLine(count: number, doneToday: boolean, atRisk: boolean): string {
+export function streakLine(count: number, doneToday: boolean, atRisk: boolean): string {
   if (doneToday) return count >= 2 ? '오늘도 이어 갔어요' : '연속 기록을 시작했어요'
   if (atRisk) return `오늘 풀면 ${count + 1}일째예요`
   return '오늘 풀면 다시 시작돼요'
 }
 
-/** 홈의 연속 기록 카드: 불꽃과 큰 숫자, 한 줄 문구, 이번 주 */
+/** 홈의 연속 기록 카드: 불꽃과 큰 숫자, 한 줄 문구, 이번 주. 누르면 내 기록으로 간다 */
 export function StreakCard({ stats, today }: { stats: Stats; today: string }) {
   const s = streakOn(stats, today)
   return (
-    <section className="rounded-[20px] bg-white p-4 min-[360px]:p-5" aria-label="연속 기록">
+    <Link to="/me" className="press block rounded-[20px] bg-white p-4 focus-visible:outline-2 focus-visible:outline-primary min-[360px]:p-5" aria-label={`연속 ${s.count}일, 내 기록 보기`}>
       <div className="mb-4 flex items-center gap-3">
         <span className={`grid h-14 w-14 flex-none place-items-center rounded-full ${s.doneToday ? 'bg-flame-soft' : 'bg-[#f1f4f8]'}`}>
           <Flame size={32} lit={s.doneToday} live />
@@ -131,10 +133,13 @@ export function StreakCard({ stats, today }: { stats: Stats; today: string }) {
           </p>
           <p className="text-[15px] leading-[22px] text-ink-2">{streakLine(s.count, s.doneToday, s.atRisk)}</p>
         </div>
-        {stats.maxStreak > s.count && <p className="ml-auto self-start whitespace-nowrap text-[13px] leading-[18px] text-ink-2">최고 {stats.maxStreak}일</p>}
+        <span className="ml-auto flex flex-none items-center self-start text-[14px] font-medium leading-[22px] text-primary">
+          내 기록
+          <ChevronRight className="h-4 w-4" aria-hidden />
+        </span>
       </div>
       <WeekRow week={weekOf(stats, today)} />
-    </section>
+    </Link>
   )
 }
 

@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react'
 import { Check, ChevronRight, CircleHelp, Share2 } from 'lucide-react'
-import { Link } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import { createRun, elapsedMs, formatClock, kstDate, moveCount, type Run } from '@linkle/core'
 import { startDaily } from '../game/api'
 import { useStats } from '../game/stats'
@@ -26,11 +26,12 @@ export function Home({ run }: { run: Run | null }) {
   const date = today?.date ?? kstDate(now())
   const finished = run?.phase === 'finished' ? run : null
   const noPuzzle = useGame(s => s.noPuzzle)
+  const navigate = useNavigate()
 
   return (
     <div className="mx-auto flex w-full max-w-[440px] flex-1 flex-col justify-center px-4 min-[360px]:px-5 pb-6">
       <header className="flex h-14 flex-none items-center justify-between">
-        <StreakChip stats={stats} today={date} onClick={() => document.getElementById('streak')?.scrollIntoView({ behavior: 'smooth', block: 'center' })} />
+        <StreakChip stats={stats} today={date} onClick={() => navigate('/me')} />
         <button onClick={() => setHelp(true)} aria-label="게임 방법" className="press -mr-2 ml-auto grid h-10 w-10 place-items-center rounded-full text-ink">
           <CircleHelp className="h-6 w-6" strokeWidth={1.75} />
         </button>

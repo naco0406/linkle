@@ -19,7 +19,8 @@ export type Stats = {
   recent: Record<string, { moves: number; ms: number }>
 }
 
-const KEEP_DAYS = 60
+/** 날짜별 결과를 남기는 날 수. 내 기록의 달력이 1년을 넘겨 보여 줄 수 있을 만큼 둔다 */
+const KEEP_DAYS = 400
 
 export function emptyStats(): Stats {
   return { v: 1, played: 0, streak: 0, maxStreak: 0, lastDate: null, days: [], moves: {}, totalMoves: 0, recent: {} }
@@ -125,4 +126,41 @@ export function binMoves(counts: Record<number, number>): MoveBin[] {
 
 export function averageMoves(stats: Stats): number | null {
   return stats.played === 0 ? null : stats.totalMoves / stats.played
+}
+
+export type Bests = {
+  fewest: { date: string; moves: number } | null
+  fastest: { date: string; ms: number } | null
+}
+
+/** 남아 있는 날짜별 결과에서 가장 적은 이동과 가장 빠른 도착. 둘은 다른 날일 수 있다. 같으면 먼저 푼 날 */
+export function bestsOf(stats: Stats): Bests {
+  let fewest: Bests['fewest'] = null
+  let fastest: Bests['fastest'] = null
+  for (const date of [...stats.days].sort()) {
+    const r = stats.recent[date]
+    if (!r) continue
+    if (!fewest || r.moves < fewest.moves) fewest = { date, moves: r.moves }
+    if (!fastest || r.ms < fastest.ms) fastest = { date, ms: r.ms }
+  }
+  return { fewest, fastest }
+}
+
+/**
+ * 한 달 달력의 칸. 일요일부터 시작하고, 1일 앞의 빈칸은 null이다. 끝은 그 달 마지막 날에서 멈춘다.
+ * month는 "YYYY-MM"
+ */
+export function monthGrid(month: string): (string | null)[] {
+  const first = `${month}-01`
+  const lead = new Date(`${first}T00:00:00Z`).getUTCDay()
+  const cells: (string | null)[] = Array.from({ length: lead }, () => null)
+  for (let d = first; d.startsWith(month); d = addDays(d, 1)) cells.push(d)
+  return cells
+}
+
+/** "YYYY-MM"에 달을 더한다 */
+export function addMonths(month: string, n: number): string {
+  const [y, m] = month.split('-').map(Number) as [number, number]
+  const i = y * 12 + (m - 1) + n
+  return `${Math.floor(i / 12)}-${String((i % 12) + 1).padStart(2, '0')}`
 }

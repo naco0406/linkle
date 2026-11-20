@@ -1,0 +1,25 @@
+{
+  "id": "/",
+  "name": "링클 Linkle",
+  "short_name": "링클",
+  "description": "매일 위키피디아 탐험하기",
+  "lang": "ko",
+  "dir": "ltr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F3F7FF",
+  "theme_color": "#F3F7FF",
+  "categories": ["games", "education"],
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ],
+  "shortcuts": [
+    { "name": "어제의 기록", "url": "/yesterday", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
+    { "name": "내 기록", "url": "/me", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] }
+  ]
+}
