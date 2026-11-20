@@ -55,7 +55,7 @@ export function PuzzlePage({ kind }: { kind: Kind }) {
 
 function Frame({ kind, children }: { kind: Kind; children: React.ReactNode }) {
   return (
-    <main className="mx-auto flex w-full max-w-[440px] flex-1 flex-col px-5 pb-6 pt-[env(safe-area-inset-top)]">
+    <main className="mx-auto flex w-full max-w-[440px] flex-1 flex-col px-4 min-[360px]:px-5 pb-6 pt-[env(safe-area-inset-top)]">
       <header className="flex h-14 items-center">
         <Link to={`/${kind}`} className="press -ml-2 flex h-10 items-center gap-0.5 rounded-full pl-1 pr-3 text-[15px] font-medium text-ink">
           <ChevronLeft className="h-5 w-5" aria-hidden />
@@ -137,7 +137,7 @@ function Intro({ kind, info }: { kind: Kind; info: PuzzleInfo }) {
               : '누르면 두 문서가 공개되고 시간이 흘러요. 처음 도전한 기록만 순위에 올라요'}
         </p>
         {done && (
-          <TextButton onClick={() => useGame.getState().showArrival(done.runId, true)} className="mx-auto mt-1 flex">
+          <TextButton onClick={() => useGame.getState().showArrival(done.runId, true)} className="mx-auto mt-1 flex w-fit">
             지난 결과 다시 보기 · {moveCount(done)}번 {formatClock(elapsedMs(done, done.finishedAt ?? done.startedAt))}
           </TextButton>
         )}
@@ -161,7 +161,7 @@ function DayCompare({ date }: { date: string }) {
   return (
     <>
       <h2 className="mt-2 px-1 text-[17px] font-bold leading-[25px] text-ink">그날 사람들의 기록</h2>
-      <DayStats stats={data} />
+      <DayStats stats={data} head={false} />
     </>
   )
 }

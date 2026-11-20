@@ -64,5 +64,6 @@ export function WikiView({ page, onNavigate }: Props) {
     }
   }, [])
 
-  return <div ref={host} />
+  // 위키백과 본문은 위키백과와 같은 줄바꿈을 쓴다(넓은 표가 낱말 단위 줄바꿈으로 더 넓어지지 않게)
+  return <div ref={host} className="[word-break:normal]" />
 }

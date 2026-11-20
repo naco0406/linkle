@@ -128,7 +128,7 @@ function Console({ onOut }: { onOut: () => void }) {
     onOut()
   }
   return (
-    <main className="mx-auto w-full max-w-[960px] px-5 pb-12 pt-[env(safe-area-inset-top)]">
+    <main className="mx-auto w-full max-w-[960px] px-4 min-[360px]:px-5 pb-12 pt-[env(safe-area-inset-top)]">
       <header className="flex h-16 items-center gap-2.5">
         <Logo />
         <h1 className="flex-1 text-[19px] font-bold text-ink">링클 관리</h1>
@@ -266,15 +266,17 @@ function Rows({ children, empty }: { children: ReactNode[]; empty: string }) {
 }
 
 function Row({ lead, title, sub, actions, below }: { lead?: ReactNode; title: ReactNode; sub?: ReactNode; actions?: ReactNode; below?: ReactNode }) {
+  // 넓은 화면: [꼬리표 | 제목·설명 | 단추] 한 줄. 좁은 화면: 단추가 제목 아래 오른쪽으로 내려간다
+  const cols = lead ? 'grid-cols-[auto_minmax(0,1fr)] sm:grid-cols-[auto_minmax(0,1fr)_auto]' : 'grid-cols-[minmax(0,1fr)] sm:grid-cols-[minmax(0,1fr)_auto]'
   return (
-    <li className="flex min-h-[68px] flex-wrap items-center gap-x-3 gap-y-2 border-t border-[#eef1f5] py-3 first:border-t-0">
-      {lead && <span className="flex-none">{lead}</span>}
-      <span className="min-w-0 flex-[1_1_260px]">
-        <span className="flex items-center gap-2">{title}</span>
+    <li className={`grid min-h-[68px] items-center gap-x-3 gap-y-2 border-t border-[#eef1f5] py-3 first:border-t-0 ${cols}`}>
+      {lead && <span className="self-start sm:self-center">{lead}</span>}
+      <span className="min-w-0">
+        <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">{title}</span>
         {sub && <span className="mt-0.5 flex min-w-0 text-[14px] leading-5">{sub}</span>}
       </span>
-      {actions && <span className="ml-auto flex flex-none items-center gap-1.5">{actions}</span>}
-      {below && <div className="basis-full">{below}</div>}
+      {actions && <span className={`flex items-center justify-end gap-1.5 ${lead ? 'col-start-2 sm:col-start-auto' : ''}`}>{actions}</span>}
+      {below && <div className="col-span-full">{below}</div>}
     </li>
   )
 }

@@ -18,9 +18,9 @@
   --color-s3: #eab308;
   --color-s4: #57ab5a;
   --color-s5: #3366cc;
-  /* 연속 기록의 불꽃 */
-  --color-flame: #ff8a00;
-  --color-flame-soft: #fff1dc;
+  /* 연속 기록의 불꽃. 링클의 파랑으로 탄다 */
+  --color-flame: #3366cc;
+  --color-flame-soft: #e6eefc;
   --font-sans: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   --font-brand: 'Rhodium Libre', Georgia, serif;
 }
@@ -34,8 +34,17 @@ body,
 body {
   color: var(--color-ink);
   background: var(--color-secondary);
+  /* 한국어는 낱말 사이에서만 줄을 바꾼다. 아주 긴 낱말(URL 등)만 중간에서 끊는다 */
+  word-break: keep-all;
+  overflow-wrap: break-word;
   -webkit-text-size-adjust: 100%;
   overscroll-behavior: none;
+}
+
+/* 문단 끝에 한두 글자만 남는 줄을 피한다 */
+p,
+li {
+  text-wrap: pretty;
 }
 
 button {

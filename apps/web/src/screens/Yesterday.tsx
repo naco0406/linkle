@@ -14,7 +14,7 @@ import { Card, formatDateKo, kindOfEmoji, PathStep, Route, StatTile, TextButton 
 export function Yesterday() {
   const { data, error, retry } = useYesterday()
   return (
-    <main className="mx-auto flex w-full max-w-[440px] flex-1 flex-col px-5 pb-6 pt-[env(safe-area-inset-top)]">
+    <main className="mx-auto flex w-full max-w-[440px] flex-1 flex-col px-4 min-[360px]:px-5 pb-6 pt-[env(safe-area-inset-top)]">
       <header className="pb-4 pt-5">
         <h1 className="text-[22px] font-bold leading-[31px] text-ink">어제의 기록</h1>
         <p className="h-[22px] text-[15px] leading-[22px] text-ink-2">{data && data.status !== 'none' ? `#${data.number} · ${formatDateKo(data.date)}` : ''}</p>
@@ -41,30 +41,33 @@ export function Yesterday() {
 }
 
 /** 그날의 기록 전체. 어제의 기록과, 지난 문제를 푼 뒤의 비교에 함께 쓴다 */
-export function DayStats({ stats }: { stats: YesterdayStats }) {
+/** head가 거짓이면 출발·도착 카드를 뺀다(지난 문제 화면처럼 위에 이미 있을 때) */
+export function DayStats({ stats, head = true }: { stats: YesterdayStats; head?: boolean }) {
   const mine = useStats(s => s.stats.recent[stats.date])
   return (
     <div className="flex flex-col gap-3">
-      <Card lift aria-label="어제의 문제">
-        <Route start={stats.start.title} end={stats.end.title} />
-        <p className="mt-3 text-center text-[15px] leading-[22px] text-ink-2">
-          {stats.finished > 0 ? (
-            <>
-              <b className="font-semibold tabular-nums text-ink">{stats.finished.toLocaleString('ko-KR')}명</b>이 도착했어요
-            </>
-          ) : (
-            '어제는 아무도 도착하지 못했어요'
-          )}
-        </p>
-        {mine && (
-          <p className="mt-3 flex items-center justify-center gap-2 rounded-xl bg-secondary py-2.5 text-[15px] leading-[22px] text-ink">
-            <span className="h-2 w-2 rounded-full bg-primary" aria-hidden />
-            <span>
-              나는 <b className="font-semibold tabular-nums text-primary">{mine.moves}번 · {formatClock(mine.ms)}</b>에 도착했어요
-            </span>
+      {head && (
+        <Card lift aria-label="어제의 문제">
+          <Route start={stats.start.title} end={stats.end.title} />
+          <p className="mt-3 text-center text-[15px] leading-[22px] text-ink-2">
+            {stats.finished > 0 ? (
+              <>
+                <b className="font-semibold tabular-nums text-ink">{stats.finished.toLocaleString('ko-KR')}명</b>이 도착했어요
+              </>
+            ) : (
+              '어제는 아무도 도착하지 못했어요'
+            )}
           </p>
-        )}
-      </Card>
+          {mine && (
+            <p className="mt-3 flex items-center justify-center gap-2 rounded-xl bg-secondary py-2.5 text-[15px] leading-[22px] text-ink">
+              <span className="h-2 w-2 rounded-full bg-primary" aria-hidden />
+              <span>
+                나는 <b className="font-semibold tabular-nums text-primary">{mine.moves}번 · {formatClock(mine.ms)}</b>에 도착했어요
+              </span>
+            </p>
+          )}
+        </Card>
+      )}
 
       {stats.finished > 0 && (
         <>

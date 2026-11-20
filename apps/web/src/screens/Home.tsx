@@ -28,7 +28,7 @@ export function Home({ run }: { run: Run | null }) {
   const noPuzzle = useGame(s => s.noPuzzle)
 
   return (
-    <div className="mx-auto flex w-full max-w-[440px] flex-1 flex-col justify-center px-5 pb-6">
+    <div className="mx-auto flex w-full max-w-[440px] flex-1 flex-col justify-center px-4 min-[360px]:px-5 pb-6">
       <header className="flex h-14 flex-none items-center justify-between">
         <StreakChip stats={stats} today={date} onClick={() => document.getElementById('streak')?.scrollIntoView({ behavior: 'smooth', block: 'center' })} />
         <button onClick={() => setHelp(true)} aria-label="게임 방법" className="press -mr-2 ml-auto grid h-10 w-10 place-items-center rounded-full text-ink">

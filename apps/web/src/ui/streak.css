@@ -100,3 +100,122 @@
     display: none;
   }
 }
+
+/* ---- 파란 불꽃과 축하 장면 (2026-11-20) ---- */
+
+/* 불꽃의 세 겹은 서로 다른 박자로 일렁인다. 한 덩어리로 흔들리는 것보다 살아 있어 보인다 */
+.flame--live .flame__mid {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: flame-mid 1.35s ease-in-out infinite;
+}
+@keyframes flame-mid {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(0.92, 1.08) rotate(2deg); }
+}
+
+/* 오늘 칸이 채워질 때 체크가 그어진다 */
+.check--draw path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: check-draw 0.35s 0.25s ease-out forwards;
+}
+@keyframes check-draw {
+  to { stroke-dashoffset: 0; }
+}
+/* 채워진 칸 둘레로 번지는 빛 */
+.day__burst {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  box-shadow: 0 0 0 0 rgb(51 102 204 / 0.45);
+  animation: day-burst 0.9s 0.15s ease-out both;
+}
+@keyframes day-burst {
+  0% { box-shadow: 0 0 0 0 rgb(51 102 204 / 0.5); }
+  100% { box-shadow: 0 0 0 14px rgb(51 102 204 / 0); }
+}
+
+/* 불꽃이 눌렸다가 튀어 오른다 */
+.cel__flame {
+  animation: cel-pop-squash 0.9s cubic-bezier(0.3, 1.4, 0.4, 1) both;
+  transform-origin: 50% 90%;
+}
+@keyframes cel-pop-squash {
+  0% { transform: translateY(36px) scale(0.2, 0.1); opacity: 0; }
+  35% { transform: translateY(0) scale(1.18, 0.82); opacity: 1; }
+  60% { transform: scale(0.92, 1.1); }
+  80% { transform: scale(1.03, 0.98); }
+  100% { transform: none; }
+}
+
+/* 파동 두 겹 */
+.cel__wave {
+  position: absolute;
+  inset: 12%;
+  border-radius: 9999px;
+  border: 3px solid rgb(51 102 204 / 0.55);
+  animation: cel-wave 1s cubic-bezier(0.1, 0.7, 0.3, 1) both;
+}
+.cel__wave--late {
+  border-width: 2px;
+  animation-delay: 0.18s;
+}
+@keyframes cel-wave {
+  0% { transform: scale(0.4); opacity: 1; }
+  100% { transform: scale(1.9); opacity: 0; }
+}
+
+/* 피어오르는 불티 */
+.cel__spark {
+  position: absolute;
+  bottom: 22%;
+  border-radius: 9999px;
+  background: radial-gradient(circle, #fff 0 30%, #8fb5f7 60%, transparent 70%);
+  opacity: 0;
+  animation: cel-spark 3s ease-out infinite;
+}
+@keyframes cel-spark {
+  0% { transform: translate(0, 0) scale(0.6); opacity: 0; }
+  15% { opacity: 1; }
+  100% { transform: translate(var(--sx, 6px), -110px) scale(0.2); opacity: 0; }
+}
+.cel__spark:nth-child(odd) {
+  --sx: -8px;
+}
+
+/* 숫자 넘기기 */
+.cel__digits {
+  position: relative;
+  overflow: hidden;
+  height: 1.05em;
+  padding: 0 0.1em;
+}
+.cel__num {
+  animation: cel-num-in 0.5s cubic-bezier(0.2, 1.5, 0.4, 1) both;
+}
+@keyframes cel-num-in {
+  0% { transform: translateY(100%); opacity: 0; }
+  100% { transform: none; opacity: 1; }
+}
+.cel__num-out {
+  position: absolute;
+  inset: 0;
+  text-align: center;
+  animation: cel-num-out 0.35s ease-in both;
+}
+@keyframes cel-num-out {
+  to { transform: translateY(-100%); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flame--live .flame__mid, .check--draw path, .day__burst, .cel__wave, .cel__num-out, .cel__flame, .cel__num {
+    animation: none;
+  }
+  .check--draw path {
+    stroke-dashoffset: 0;
+  }
+  .cel__spark, .cel__wave, .cel__num-out {
+    display: none;
+  }
+}

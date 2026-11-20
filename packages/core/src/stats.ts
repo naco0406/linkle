@@ -77,14 +77,25 @@ export type WeekDay = {
 }
 
 
-/** 오늘이 들어 있는 주(월~일)의 하루하루. 오늘은 풀었으면 done, 아직이면 today */
+/** 일곱 칸에서 오늘 앞에 둘 수 있는 지난 날의 수. 나머지는 앞으로의 날이라 "이어 갈 자리"가 늘 보인다 */
+export const WEEK_BACK = 3
+
+/**
+ * 연속 기록의 일곱 칸. 요일(월~일)에 맞추지 않고, 지금 이어지는 기록의 첫날부터 시작한다.
+ *   새로 시작하는 날: 오늘이 맨 앞(금 토 일 월 화 수 목)
+ *   이어 가는 중: 이어진 지난 날(최대 WEEK_BACK일) 다음에 오늘
+ * 오늘은 풀었으면 done, 아직이면 today
+ */
 export function weekOf(stats: Stats, today: string): WeekDay[] {
-  const weekday = (new Date(`${today}T00:00:00Z`).getUTCDay() + 6) % 7
   const done = new Set(stats.days)
+  // 어제부터 거꾸로 이어진 날 수
+  let run = 0
+  while (run < WEEK_BACK && done.has(addDays(today, -(run + 1)))) run++
   return Array.from({ length: 7 }, (_, i) => {
-    const date = addDays(today, i - weekday)
-    const state = done.has(date) ? 'done' : i === weekday ? 'today' : i > weekday ? 'future' : 'missed'
-    return { date, weekday: i, state }
+    const date = addDays(today, i - run)
+    const weekday = (new Date(`${date}T00:00:00Z`).getUTCDay() + 6) % 7
+    const state = done.has(date) ? 'done' : i === run ? 'today' : i > run ? 'future' : 'missed'
+    return { date, weekday, state }
   })
 }
 

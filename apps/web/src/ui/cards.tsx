@@ -7,7 +7,7 @@ import { useTick } from './parts'
 /** 흰 카드. 테두리와 그림자 없이 바탕과의 색 차이로만 구분한다 */
 export function Card({ children, className = '', lift = false, ...rest }: { children: ReactNode; className?: string; lift?: boolean } & React.HTMLAttributes<HTMLElement>) {
   return (
-    <section {...rest} className={`rounded-[20px] bg-white p-5 ${lift ? 'shadow-[0_10px_28px_-16px_rgb(51_102_204/0.35)]' : ''} ${className}`}>
+    <section {...rest} className={`rounded-[20px] bg-white p-4 min-[360px]:p-5 ${lift ? 'shadow-[0_10px_28px_-16px_rgb(51_102_204/0.35)]' : ''} ${className}`}>
       {children}
     </section>
   )

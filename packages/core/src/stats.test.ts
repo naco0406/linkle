@@ -48,18 +48,27 @@ describe('연속 상태', () => {
 describe('이번 주', () => {
   // 2026-11-19는 목요일
   const s = play(emptyStats(), ['2026-11-16', 5], ['2026-11-18', 6])
-  it('월요일부터 일요일까지 일곱 칸', () => {
+  it('요일이 아니라 지금 이어지는 기록의 첫날부터 일곱 칸', () => {
+    // 11-18에 풀고 11-19는 아직: 어제 하루가 앞에, 다음이 오늘
     const week = weekOf(s, '2026-11-19')
-    expect(week.map(d => d.date)).toEqual(['2026-11-16', '2026-11-17', '2026-11-18', '2026-11-19', '2026-11-20', '2026-11-21', '2026-11-22'])
-    expect(week.map(d => d.state)).toEqual(['done', 'missed', 'done', 'today', 'future', 'future', 'future'])
+    expect(week.map(d => d.date)).toEqual(['2026-11-18', '2026-11-19', '2026-11-20', '2026-11-21', '2026-11-22', '2026-11-23', '2026-11-24'])
+    expect(week.map(d => d.state)).toEqual(['done', 'today', 'future', 'future', 'future', 'future', 'future'])
+    expect(week.map(d => d.weekday)).toEqual([2, 3, 4, 5, 6, 0, 1])
   })
-  it('오늘을 풀면 오늘 칸이 채워진다', () => {
-    expect(weekOf(play(s, ['2026-11-19', 5]), '2026-11-19')[3]!.state).toBe('done')
+  it('새로 시작하면 오늘이 맨 앞이다(금요일이면 금 토 일 월 화 수 목)', () => {
+    const week = weekOf(play(emptyStats(), ['2026-11-20', 5]), '2026-11-20')
+    expect(week[0]).toMatchObject({ date: '2026-11-20', state: 'done', weekday: 4 })
+    expect(week.map(d => d.weekday)).toEqual([4, 5, 6, 0, 1, 2, 3])
   })
-  it('일요일은 그 주의 마지막 칸이다', () => {
-    const week = weekOf(emptyStats(), '2026-11-22')
-    expect(week[0]!.date).toBe('2026-11-16')
-    expect(week[6]).toMatchObject({ date: '2026-11-22', state: 'today' })
+  it('오래 이어 가도 지난 날은 세 칸까지만 보이고, 오늘 뒤로 세 칸이 남는다', () => {
+    const long = play(emptyStats(), ...Array.from({ length: 10 }, (_, i) => [addDays('2026-11-10', i), 5] as [string, number]))
+    const week = weekOf(long, '2026-11-20')
+    expect(week.map(d => d.state)).toEqual(['done', 'done', 'done', 'today', 'future', 'future', 'future'])
+    expect(week[0]!.date).toBe('2026-11-17')
+    expect(weekOf(play(long, ['2026-11-20', 4]), '2026-11-20')[3]).toMatchObject({ date: '2026-11-20', state: 'done' })
+  })
+  it('끊긴 뒤에는 오늘부터 다시', () => {
+    expect(weekOf(s, '2026-11-25')[0]).toMatchObject({ date: '2026-11-25', state: 'today' })
   })
 })
 

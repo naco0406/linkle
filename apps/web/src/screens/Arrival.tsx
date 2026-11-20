@@ -1,4 +1,4 @@
-import { useCallback, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { ChevronRight, Flag, Share2 } from 'lucide-react'
 import { elapsedMs, formatClock, kstDate, moveCount, type Run } from '@linkle/core'
 import { useStats } from '../game/stats'
@@ -31,6 +31,10 @@ export function Arrival({
   children?: ReactNode
 }) {
   useEmoji(run)
+  // 앞 화면의 스크롤 위치를 물려받지 않고 맨 위에서 연다
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [run.runId])
   const stats = useStats(s => s.stats)
   const celebrate = useStats(s => s.celebrate)
   const [toast, setToast] = useState<string | null>(null)
@@ -53,7 +57,7 @@ export function Arrival({
   }
 
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-[440px] flex-col px-5 pt-[max(20px,env(safe-area-inset-top))]">
+    <div className="mx-auto flex min-h-dvh w-full max-w-[440px] flex-col px-4 min-[360px]:px-5 pt-[max(20px,env(safe-area-inset-top))]">
       <header className="flex items-center gap-3">
         <span className="grid h-11 w-11 flex-none place-items-center rounded-full bg-primary text-white">
           <Flag className="h-[22px] w-[22px]" strokeWidth={1.75} aria-hidden />
@@ -103,9 +107,9 @@ export function Arrival({
           <Share2 className="h-5 w-5" strokeWidth={1.75} aria-hidden />
           결과 공유
         </Cta>
-        <div className="mt-1 flex items-center justify-between">
-          {daily ? <Countdown /> : <span />}
-          <TextButton onClick={close} className="-mr-3">
+        <div className={`mt-1 flex items-center ${daily ? 'justify-between' : 'justify-center'}`}>
+          {daily && <Countdown />}
+          <TextButton onClick={close} className={daily ? '-mr-3' : ''}>
             {closeLabel}
             <ChevronRight className="h-[18px] w-[18px]" aria-hidden />
           </TextButton>

@@ -1,34 +1,51 @@
 import { useEffect, useId, useState, type CSSProperties } from 'react'
-import { Check } from 'lucide-react'
 import { streakOn, weekOf, type Stats, type WeekDay } from '@linkle/core'
 import './streak.css'
 
 const FLAME = 'M12.4 2.2c.5 3.3 2.4 5.2 4.1 7.2 1.6 1.9 3 3.9 3 6.9a7.5 7.5 0 0 1-15 0c0-2.3 1-4.2 2.3-5.6.3 1.5 1 2.5 2.1 3-.4-4.1.9-8.3 3.5-11.5z'
 const CORE = 'M12 21.6a3.7 3.7 0 0 0 3.7-3.7c0-1.6-1-2.6-1.9-3.7-.8-.9-1.5-1.8-1.8-3.1-.3 1.3-1 2.2-1.8 3.1-.9 1.1-1.9 2.1-1.9 3.7a3.7 3.7 0 0 0 3.7 3.7z'
 
-/** 연속 기록의 불꽃. 오늘 풀었으면 타오르고, 아직이면 회색으로 꺼져 있다 */
+/**
+ * 연속 기록의 불꽃. 링클의 파랑으로 탄다: 바깥 불, 가운데 불, 하얀 심지 세 겹.
+ * 오늘 풀었으면 타오르고, 아직이면 회색으로 꺼져 있다. live면 겹마다 다른 박자로 일렁인다.
+ */
 export function Flame({ size = 24, lit = true, live = false, className = '' }: { size?: number; lit?: boolean; live?: boolean; className?: string }) {
   const id = useId()
   return (
     <svg viewBox="0 0 24 24" width={size} height={size} className={`flame ${live && lit ? 'flame--live' : ''} ${className}`} aria-hidden>
       <defs>
         <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#ffb224" />
-          <stop offset="1" stopColor="#ff6f00" />
+          <stop offset="0" stopColor="#8fb5f7" />
+          <stop offset="0.55" stopColor="#4f7fdb" />
+          <stop offset="1" stopColor="#2f5fc4" />
         </linearGradient>
       </defs>
-      <path d={FLAME} fill={lit ? `url(#${id})` : '#cbd3dd'} />
-      {lit && <path className="flame__core" d={CORE} fill="#ffe27a" />}
+      <path className="flame__outer" d={FLAME} fill={lit ? `url(#${id})` : '#cbd3dd'} />
+      {lit && (
+        <g transform="translate(12 22) scale(1.32) translate(-12 -22)">
+          <path className="flame__mid" d={CORE} fill="#a9c6fa" />
+        </g>
+      )}
+      {lit && <path className="flame__core" d={CORE} fill="#f4f8ff" />}
+    </svg>
+  )
+}
+
+/** 체크 표시를 그리는 선. 방금 채워진 칸에서는 선이 그어지듯 나타난다 */
+function DrawnCheck({ draw }: { draw: boolean }) {
+  return (
+    <svg viewBox="0 0 24 24" className={`h-[18px] w-[18px] ${draw ? 'check--draw' : ''}`} aria-hidden>
+      <path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" pathLength={1} />
     </svg>
   )
 }
 
 const WEEKDAYS = ['월', '화', '수', '목', '금', '토', '일']
 
-/** 이번 주 일곱 칸. 푼 날은 불꽃색, 오늘은 테두리, 놓친 날은 회색 */
+/** 연속 기록의 일곱 칸(지금 기록의 첫날부터). 푼 날은 파랑, 오늘은 테두리, 놓친 날은 회색 */
 export function WeekRow({ week, litDate }: { week: WeekDay[]; /** 방금 채워진 날. 채워지는 움직임을 준다 */ litDate?: string }) {
   return (
-    <ol className="grid grid-cols-7 gap-1" aria-label="이번 주">
+    <ol className="grid grid-cols-7 gap-1" aria-label="연속 기록 일곱 날">
       {week.map(d => {
         const today = d.state === 'today'
         const label = `${WEEKDAYS[d.weekday]}요일 ${d.state === 'done' ? '풀었어요' : today ? '오늘' : d.state === 'missed' ? '풀지 않았어요' : ''}`
@@ -38,7 +55,7 @@ export function WeekRow({ week, litDate }: { week: WeekDay[]; /** 방금 채워�
             <span
               className={`relative grid h-9 w-9 place-items-center rounded-full ${
                 d.state === 'done'
-                  ? `bg-gradient-to-b from-[#ffb224] to-[#ff7a00] text-white ${d.date === litDate ? 'day--lit' : ''}`
+                  ? `bg-gradient-to-b from-[#6f9cef] to-[#3366cc] text-white ${d.date === litDate ? 'day--lit' : ''}`
                   : today
                     ? 'day--today bg-flame-soft'
                     : d.state === 'missed'
@@ -46,7 +63,8 @@ export function WeekRow({ week, litDate }: { week: WeekDay[]; /** 방금 채워�
                       : 'bg-white shadow-[inset_0_0_0_1.5px_#e3e8ef]'
               }`}
             >
-              {d.state === 'done' && <Check className="h-[18px] w-[18px]" strokeWidth={3} aria-hidden />}
+              {d.state === 'done' && <DrawnCheck draw={d.date === litDate} />}
+              {d.date === litDate && d.state === 'done' && <i className="day__burst" aria-hidden />}
             </span>
           </li>
         )
@@ -77,7 +95,7 @@ function streakLine(count: number, doneToday: boolean, atRisk: boolean): string 
 export function StreakCard({ stats, today }: { stats: Stats; today: string }) {
   const s = streakOn(stats, today)
   return (
-    <section className="rounded-[20px] bg-white p-5" aria-label="연속 기록">
+    <section className="rounded-[20px] bg-white p-4 min-[360px]:p-5" aria-label="연속 기록">
       <div className="mb-4 flex items-center gap-3">
         <span className={`grid h-14 w-14 flex-none place-items-center rounded-full ${s.doneToday ? 'bg-flame-soft' : 'bg-[#f1f4f8]'}`}>
           <Flame size={32} lit={s.doneToday} live />
@@ -96,10 +114,19 @@ export function StreakCard({ stats, today }: { stats: Stats; today: string }) {
 }
 
 const MILESTONE: Record<number, string> = { 7: '일주일을 채웠어요', 30: '한 달을 채웠어요', 100: '100일을 채웠어요', 365: '1년을 채웠어요' }
-const BIT_COLORS = ['var(--color-s1)', 'var(--color-s2)', 'var(--color-s3)', 'var(--color-s4)', 'var(--color-s5)']
+// 터져 나오는 조각은 링클의 파랑 계열 위주에, 유사도 색을 조금 섞는다
+const BIT_COLORS = ['#3366cc', '#8fb5f7', 'var(--color-s4)', '#5b8ae6', 'var(--color-s3)', '#c9dafb']
+/** 불꽃 둘레에서 피어오르는 불티. [가로 위치(%), 늦춤(ms), 크기(px)] */
+const SPARKS: [number, number, number][] = [
+  [30, 0, 6], [62, 380, 5], [44, 760, 7], [70, 1140, 4], [36, 1520, 5], [56, 1900, 6], [25, 2280, 4], [66, 2660, 5],
+]
 
 /**
- * 연속 일수가 늘어난 직후 한 번 뜨는 화면. 불꽃이 튀어 오르고 숫자가 하나 올라가고 오늘 칸이 채워진다.
+ * 연속 일수가 늘어난 직후 한 번 뜨는 화면. 짧은 애니메이션 한 편처럼 차례로 움직인다.
+ *   0.0s  불꽃이 눌렸다 튀어 오르며 나타나고, 세 겹이 서로 다른 박자로 일렁이기 시작한다
+ *   0.65s 파동 두 겹이 퍼지고 조각이 터지며, 숫자가 아래에서 위로 넘어간다
+ *   0.65s 오늘 칸이 튀어 채워지고 체크가 그어지며 둘레로 빛이 번진다
+ *   이후  불티가 계속 피어오른다
  * 겁주는 말은 쓰지 않는다. 끊겨도 알리지 않고, 이어 갔을 때만 축하한다.
  */
 export function StreakCelebration({ stats, today, onDone }: { stats: Stats; today: string; onDone: () => void }) {
@@ -125,14 +152,35 @@ export function StreakCelebration({ stats, today, onDone }: { stats: Stats; toda
       {/* 세로 화면: 불꽃 → 문구 → 이번 주 → 버튼. 눕힌 화면: 왼쪽에 불꽃과 숫자, 오른쪽에 나머지 */}
       <div className="flex w-full max-w-sm flex-1 flex-col items-center justify-end short:w-auto short:flex-none short:justify-center">
         <div className="relative grid h-40 w-40 place-items-center short:h-28 short:w-28">
-          <span className="cel__glow absolute inset-0 rounded-full bg-[radial-gradient(closest-side,#ffe3b3,transparent)]" />
-          {shown === count && bits.map((style, i) => <i key={i} className="cel__bit" style={style} />)}
+          <span className="cel__glow absolute inset-0 rounded-full bg-[radial-gradient(closest-side,#cfe0ff,transparent)]" />
+          {shown === count && (
+            <>
+              <i className="cel__wave" aria-hidden />
+              <i className="cel__wave cel__wave--late" aria-hidden />
+              {bits.map((style, i) => (
+                <i key={i} className="cel__bit" style={style} />
+              ))}
+            </>
+          )}
+          {SPARKS.map(([x, delay, size], i) => (
+            <i key={i} className="cel__spark" style={{ left: `${x}%`, width: size, height: size, animationDelay: `${900 + delay}ms` }} aria-hidden />
+          ))}
           <Flame size={120} live className="cel__flame relative short:!h-20 short:!w-20" />
         </div>
-        <p className="mt-2 text-[64px] font-extrabold leading-none tabular-nums text-flame short:mt-0 short:text-[52px]" aria-live="polite">
-          <span key={shown} className="cel__num">
-            {shown}
-          </span>
+        {/* 숫자는 넘어가는 판처럼: 앞 숫자가 위로 빠지고 새 숫자가 아래에서 올라온다 */}
+        <p className="cel__digits mt-2 text-[64px] font-extrabold leading-none tabular-nums text-flame short:mt-0 short:text-[52px]" aria-live="polite">
+          {shown !== count || count === 0 ? (
+            <span className="block">{shown}</span>
+          ) : (
+            <>
+              {count > 1 && (
+                <span className="cel__num-out" aria-hidden>
+                  {count - 1}
+                </span>
+              )}
+              <span className="cel__num block">{count}</span>
+            </>
+          )}
         </p>
       </div>
       <div className="flex w-full max-w-sm flex-1 flex-col items-center short:justify-center">

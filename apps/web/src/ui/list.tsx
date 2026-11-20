@@ -5,7 +5,7 @@ import { Link } from 'react-router'
 /** 목록 화면의 틀: 왼쪽 정렬 제목과 한 줄 설명. 홈과 같은 폭(440)으로 가운데에 둔다 */
 export function ListPage({ title, desc, children }: { title: string; desc: ReactNode; children: ReactNode }) {
   return (
-    <main className="mx-auto flex w-full max-w-[440px] flex-1 flex-col px-5 pb-6 pt-[env(safe-area-inset-top)]">
+    <main className="mx-auto flex w-full max-w-[440px] flex-1 flex-col px-4 min-[360px]:px-5 pb-6 pt-[env(safe-area-inset-top)]">
       <header className="pb-4 pt-5">
         <h1 className="text-[22px] font-bold leading-[31px] text-ink">{title}</h1>
         <p className="mt-0.5 text-[15px] leading-[22px] text-ink-2">{desc}</p>
@@ -54,7 +54,7 @@ export function Segmented<T extends string>({ value, options, onChange, label }:
           role="tab"
           aria-selected={v === value}
           onClick={() => onChange(v)}
-          className={`press h-9 rounded-full text-[14px] font-semibold transition-colors ${v === value ? 'bg-white text-primary shadow-[0_1px_2px_rgb(30_50_90/0.08)]' : 'text-ink-2'}`}
+          className={`press h-10 rounded-full text-[15px] font-semibold transition-colors ${v === value ? 'bg-white text-primary shadow-[0_1px_2px_rgb(30_50_90/0.08)]' : 'text-ink-2'}`}
         >
           {text}
         </button>
