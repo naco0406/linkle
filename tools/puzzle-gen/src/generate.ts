@@ -54,7 +54,7 @@ async function similarity(titles: [string, string], wiki: Wiki, model: ReturnTyp
   return score01(model, embed(model, lead(titles[0])), embed(model, lead(titles[1])))
 }
 
-export async function generate(o: { graphDir: string; outDir: string; count: number; seed: number }): Promise<Candidate[]> {
+export async function generate(o: { graphDir: string; outDir: string; count: number; seed: number; pool?: 'daily' | 'official'; exclude?: string[] }): Promise<Candidate[]> {
   const g = loadGraph(o.graphDir)
   const rand = seeded(o.seed)
   const wiki = new Wiki()
@@ -68,7 +68,8 @@ export async function generate(o: { graphDir: string; outDir: string; count: num
   const ends = new Set(pool.filter(n => canEnd(g, n)))
   log(`지도 ${g.titles.length}개 문서 · 기본 문서 ${vital} · 꾸준히 인기 ${popular} · 살아 있는 사람 ${living} 뺌 · 후보 문서 ${pool.length} (출발 ${starts.length}, 도착 ${ends.size})`)
 
-  const used = new Set<number>()
+  // 이미 대기열이나 문제에 쓴 문서는 다시 쓰지 않는다. 오늘의 문제와 커뮤니티 문제가 겹치면 답이 샌다
+  const used = new Set<number>((o.exclude ?? []).map(t => g.byTitle.get(t)).filter((n): n is number => n !== undefined))
   const found: Candidate[] = []
   const tally = { tried: 0, close: 0, blocked: 0 }
   for (const s of starts) {
@@ -128,8 +129,9 @@ export async function generate(o: { graphDir: string; outDir: string; count: num
 
   mkdirSync(o.outDir, { recursive: true })
   writeFileSync(join(o.outDir, 'candidates.json'), JSON.stringify(found, null, 1))
-  writeFileSync(join(o.outDir, 'queue.sql'), queueSql(found, Date.now()))
-  log(`${o.outDir}/queue.sql: ${found.length}개`)
+  const file = o.pool === 'official' ? 'official.sql' : 'queue.sql'
+  writeFileSync(join(o.outDir, file), o.pool === 'official' ? officialSql(found, Date.now()) : queueSql(found, Date.now()))
+  log(`${o.outDir}/${file}: ${found.length}개`)
   return found
 }
 
@@ -143,4 +145,20 @@ export function queueSql(items: Candidate[], now: number): string {
       `(${c.start.id}, ${q(c.start.title)}, ${c.end.id}, ${q(c.end.title)}, ${c.par}, ${q(c.difficulty)}, ${q(JSON.stringify(c.solution))}, 'approved', 'daily', ${now})`,
   )
   return `INSERT OR IGNORE INTO puzzle_queue (start_id, start_title, end_id, end_title, par, difficulty, solution, status, pool, created_at) VALUES\n${rows.join(',\n')};\n`
+}
+
+/**
+ * 커뮤니티의 "링클이 낸 문제"로 바로 공개하는 SQL. 번호는 링클이 낸 문제끼리 이어진다.
+ * 한 줄씩 넣어야 앞 줄이 넣은 번호를 다음 줄이 본다. 같은 쌍은 한 번만 들어간다(puzzles_pair).
+ */
+export function officialSql(items: Candidate[], now: number): string {
+  if (items.length === 0) return '-- 후보 없음\n'
+  return items
+    .map(
+      c =>
+        `INSERT OR IGNORE INTO puzzles (kind, number, start_id, start_title, end_id, end_title, par, difficulty, solution, status, created_at)\n` +
+        `SELECT 'official', COALESCE(MAX(number), 0) + 1, ${c.start.id}, ${q(c.start.title)}, ${c.end.id}, ${q(c.end.title)}, ${c.par}, ${q(c.difficulty)}, ${q(JSON.stringify(c.solution))}, 'published', ${now} FROM puzzles WHERE kind = 'official';`,
+    )
+    .join('\n')
+    .concat('\n')
 }

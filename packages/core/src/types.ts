@@ -41,8 +41,8 @@ export type Run = {
   flags: string[]
   /** 기기에서 계산한 이모지 */
   emoji: string[] | null
-  /** 서버 응답 */
-  result: { order: number } | null
+  /** 서버 응답. order: 그 문제를 몇 번째로 끝냈는지, rank: 커뮤니티 순위표의 자리. 기록에 들지 않는 판은 null */
+  result: { order: number | null; rank?: number | null } | null
   /** 완료 제출을 다시 보내야 하는지 */
   outbox: 'none' | 'pending'
 }

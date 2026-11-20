@@ -16,7 +16,8 @@ export function shareText(run: Run, opts: { origin: string }): string {
         ? `${puzzle.number}번째 링클(지난 문제)을 클리어했습니다!`
         : `링클 커뮤니티 ${puzzle.number}번 문제를 클리어했습니다!`
   const lines = [head]
-  if (mode === 'daily' && run.result) lines.push(`일일 순위 : ${run.result.order}등`)
+  if (mode === 'daily' && run.result?.order != null) lines.push(`일일 순위 : ${run.result.order}등`)
+  if (mode === 'community' && run.result?.rank != null) lines.push(`순위 : ${run.result.rank}위`)
   lines.push(`이동 횟수: ${moveCount(run)}`)
   lines.push(`소요 시간: ${formatDurationKo(elapsedMs(run, run.finishedAt))}`)
   if (run.emoji) lines.push('', run.emoji.join(''))

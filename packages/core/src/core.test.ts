@@ -191,3 +191,17 @@ describe('공유 문구', () => {
     expect(() => shareText(fresh(), { origin: 'https://x' })).toThrow()
   })
 })
+
+describe('닉네임', () => {
+  it('같은 기기는 늘 같은 이름, 대소문자는 가리지 않는다', async () => {
+    const { nicknameOf } = await import('./index.ts')
+    const id = '0cd2cea2-1111-4222-8333-444455556666'
+    expect(nicknameOf(id)).toBe(nicknameOf(id.toUpperCase()))
+    expect(nicknameOf(id)).toMatch(/^\S+( \S+)? \S+ \d{4}$/)
+  })
+  it('기기마다 대체로 다른 이름', async () => {
+    const { nicknameOf } = await import('./index.ts')
+    const names = new Set(Array.from({ length: 200 }, (_, i) => nicknameOf(`00000000-0000-4000-8000-${String(i).padStart(12, '0')}`)))
+    expect(names.size).toBeGreaterThan(195)
+  })
+})

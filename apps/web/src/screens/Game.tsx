@@ -2,7 +2,7 @@ import { Fragment, useEffect, useRef, useState } from 'react'
 import { ChevronRight, CircleHelp, Flag, Footprints, Timer, Undo2 } from 'lucide-react'
 import { backTarget, elapsedMs, formatClock, moveCount, pathOf, stackOf, type Run } from '@linkle/core'
 import { getModel } from '../game/emoji'
-import { now, useGame } from '../game/store'
+import { now, useGame, type Slot } from '../game/store'
 import { useNavigator } from '../game/useNavigator'
 import { Help, PathTrail, Spinner, Toast, useTick } from '../ui/parts'
 import { WikiView } from '../ui/WikiView'
@@ -13,8 +13,8 @@ const TRAIL = 'items-center gap-1 overflow-x-auto whitespace-nowrap text-[14px] 
  * 게임 화면. 위에서부터 목표, 지나온 길, 문서, 그리고 되돌아가기와 숫자.
  * 문서만 스크롤되고 나머지는 늘 보인다. 화면 높이는 dvh로 잡아 모바일 브라우저의 주소창이 접히고 펴져도 맞는다.
  */
-export function Game({ run }: { run: Run }) {
-  const { page, busy, opening, error, go, back, retry, dismissError } = useNavigator(run)
+export function Game({ run, slot = 'daily' }: { run: Run; slot?: Slot }) {
+  const { page, busy, opening, error, go, back, retry, dismissError } = useNavigator(run, slot)
   const [help, setHelp] = useState(false)
   const scroller = useRef<HTMLDivElement>(null)
   const trail = useRef<HTMLDivElement>(null)
@@ -44,11 +44,11 @@ export function Game({ run }: { run: Run }) {
   // 페이지 내 검색은 막지 않고 표시만 남긴다. 통계 후보에서만 빠진다
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'f') useGame.getState().flag('find')
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'f') useGame.getState().flag(slot, 'find')
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [])
+  }, [slot])
 
   return (
     <div className="flex h-dvh flex-col bg-white pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">

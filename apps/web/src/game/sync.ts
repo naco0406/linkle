@@ -1,6 +1,6 @@
 import { kstDate } from '@linkle/core'
 import { ApiError, finishRun, getToday } from './api'
-import { now, useGame } from './store'
+import { allRuns, now, useGame } from './store'
 
 // 서버와 맞추는 일 두 가지를 화면 밖에서 맡는다.
 //   1. 끝난 판을 서버에 알린다. 결과 화면은 이 제출을 기다리지 않는다.
@@ -19,8 +19,9 @@ let emojiTimer: ReturnType<typeof setTimeout> | undefined
  * 실패하면 그대로 두고, 다음에 앱을 열거나 탭으로 돌아왔을 때 다시 보낸다.
  */
 export async function flushOutbox(waitForEmoji: boolean): Promise<void> {
-  const { run } = useGame.getState()
-  if (!run || run.phase !== 'finished' || run.outbox !== 'pending' || sending === run.runId) return
+  // 오늘의 문제부터, 그다음 지난 문제·커뮤니티 판
+  const run = allRuns(useGame.getState()).find(r => r.phase === 'finished' && r.outbox === 'pending' && sending !== r.runId)
+  if (!run) return
   if (!run.emoji && waitForEmoji) {
     emojiTimer ??= setTimeout(() => {
       emojiTimer = undefined
@@ -33,14 +34,16 @@ export async function flushOutbox(waitForEmoji: boolean): Promise<void> {
 
   sending = run.runId
   try {
-    const { order } = await finishRun(run)
-    useGame.getState().settle(run.runId, order === null ? null : { order })
+    const { order, rank } = await finishRun(run)
+    useGame.getState().settle(run.runId, order === null && rank == null ? null : { order, rank: rank ?? null })
   } catch (e) {
     // 서버가 받지 않는 판(예: 서버에 없는 판)은 다시 보내도 같으므로 그만둔다. 결과 화면은 순서 없이 그대로 보인다
     if (e instanceof ApiError && !e.retryable) useGame.getState().settle(run.runId, null)
   } finally {
     sending = null
   }
+  // 보낼 판이 더 있으면 이어서 보낸다
+  if (allRuns(useGame.getState()).some(r => r.phase === 'finished' && r.outbox === 'pending' && r.runId !== run.runId)) void flushOutbox(false)
 }
 
 let checking = false
@@ -78,7 +81,7 @@ export function startSync(): void {
 
   // 판이 끝나는 순간(또는 이모지가 계산된 순간) 바로 제출한다
   useGame.subscribe(state => {
-    if (state.run?.outbox === 'pending') void flushOutbox(true)
+    if (allRuns(state).some(r => r.outbox === 'pending')) void flushOutbox(true)
   })
 
   wake()

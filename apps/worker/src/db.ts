@@ -1,4 +1,4 @@
-import type { MoveEvent, Puzzle } from '@linkle/core'
+import { nicknameOf, type MoveEvent, type Puzzle } from '@linkle/core'
 import type { RunKind, Settled } from './rules.ts'
 import type { Aggregate, Candidate, StoredStats } from './daily.ts'
 
@@ -63,8 +63,8 @@ export async function startRun(
 ): Promise<{ runId: string; startedAt: number }> {
   const { puzzleId, playerId, kind, now } = input
   const runId = crypto.randomUUID()
-  // 닉네임은 무한 모드(구현 순서 9번)에서 붙인다. 그때까지는 비워 둔다
-  const player = db.prepare(`INSERT INTO players (id, name, created_at) VALUES (?1, '', ?2) ON CONFLICT (id) DO NOTHING`).bind(playerId, now)
+  // 순위표에 쓰는 이름은 기기 id에서 정해진다(nicknameOf). 처음 온 기기만 넣는다
+  const player = db.prepare(`INSERT INTO players (id, name, created_at) VALUES (?1, ?2, ?3) ON CONFLICT (id) DO NOTHING`).bind(playerId, nicknameOf(playerId), now)
   const insert = (ranked: 0 | 1) =>
     db
       .prepare('INSERT INTO runs (id, puzzle_id, mode, ranked, player_id, started_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6) ON CONFLICT DO NOTHING')
@@ -81,7 +81,11 @@ export async function startRun(
   const ranked = db.prepare('SELECT id, started_at FROM runs WHERE puzzle_id = ?1 AND player_id = ?2 AND ranked = 1').bind(puzzleId, playerId)
   const results = await db.batch<{ id: string; started_at: number }>([player, insert(1), ranked])
   const existing = results[2]?.results[0]
-  if (!existing || existing.id === runId) return fresh
+  if (!existing || existing.id === runId) {
+    // 처음 도전한 판만 도전 수에 센다. 커뮤니티 목록의 "도전"과 "클리어율"이 이 값을 쓴다
+    await db.prepare('UPDATE puzzles SET plays = plays + 1 WHERE id = ?1').bind(puzzleId).run()
+    return fresh
+  }
   if (kind.mode === 'daily') return { runId: existing.id, startedAt: existing.started_at }
 
   // 커뮤니티 문제의 두 번째 도전부터는 순위에 들지 않는 새 Run이다
@@ -98,7 +102,8 @@ export type RunForFinish = {
 }
 
 /** order는 그 문제를 몇 번째로 끝냈는지. 기록에 들지 않는 판은 null */
-export type FinishResult = { order: number | null; durationMs: number }
+/** order는 그 문제를 몇 번째로 끝냈는지. rank는 커뮤니티 순위표의 자리. 기록에 들지 않는 판은 둘 다 null */
+export type FinishResult = { order: number | null; durationMs: number; rank?: number | null }
 
 type RunRow = PuzzleRow & {
   player_id: string
@@ -227,4 +232,143 @@ export async function loadRunsForVerify(db: D1Database, ids: string[]): Promise<
 export async function markVerified(db: D1Database, ids: string[]): Promise<void> {
   if (ids.length === 0) return
   await db.prepare(`UPDATE runs SET verified = 1 WHERE id IN (${ids.map((_, i) => `?${i + 1}`).join(', ')})`).bind(...ids).run()
+}
+
+// ── 지난 문제와 커뮤니티 ──
+
+// 순위에 쓰는 시간은 서버가 잰 시간이다(시작을 받은 때부터 완료를 받은 때까지). 기기가 보낸 시간은 믿지 않는다(설계 문서 5.5)
+/** 순위표에 오르는 판의 조건. a는 runs 표의 별칭 */
+const onBoard = (a = '') => { const p = a ? `${a}.` : ''; return `${p}ranked = 1 AND ${p}finished_at IS NOT NULL AND ${p}flags = ''` }
+
+/** 그 판의 순위. 이동이 적은 순, 같으면 시간이 짧은 순 */
+export async function rankOf(db: D1Database, runId: string): Promise<number | null> {
+  const row = await db
+    .prepare(
+      `SELECT (SELECT COUNT(*) FROM runs o WHERE o.puzzle_id = r.puzzle_id AND ${onBoard('o')}
+                AND (o.moves < r.moves OR (o.moves = r.moves AND (o.finished_at - o.started_at) < (r.finished_at - r.started_at)))) + 1 AS rank
+       FROM runs r WHERE r.id = ?1 AND ${onBoard('r')}`,
+    )
+    .bind(runId)
+    .first<{ rank: number }>()
+  return row?.rank ?? null
+}
+
+export type ArchiveItem = { id: number; number: number; date: string; finished: number }
+
+/** 지난 오늘의 문제. 오늘 것은 빼고 최근 것부터. 출발·도착은 담지 않는다 */
+export async function listArchive(db: D1Database, today: string, before: number | null, limit: number): Promise<ArchiveItem[]> {
+  const { results } = await db
+    .prepare(
+      `SELECT id, number, date, clears AS finished FROM puzzles
+       WHERE kind = 'daily' AND status = 'published' AND date < ?1 AND (?2 IS NULL OR number < ?2)
+       ORDER BY number DESC LIMIT ?3`,
+    )
+    .bind(today, before, limit)
+    .all<ArchiveItem>()
+  return results
+}
+
+export type CommunitySort = 'new' | 'popular' | 'hard'
+export type PuzzleCard = { id: number; kind: Puzzle['kind']; number: number; author: string; plays: number; clears: number; difficulty: string | null }
+
+const ORDER: Record<CommunitySort, string> = {
+  new: 'p.created_at DESC, p.id DESC',
+  popular: 'p.plays DESC, p.id DESC',
+  // 도전한 사람이 있는 문제 중 클리어율이 낮은 순. 아무도 안 한 문제는 뒤로
+  hard: 'p.plays = 0, CAST(p.clears AS REAL) / MAX(p.plays, 1), p.id DESC',
+}
+
+/** 커뮤니티 문제 목록. 링클이 낸 문제와 사용자가 낸 문제. 출발·도착은 담지 않는다 */
+export async function listCommunity(db: D1Database, sort: CommunitySort, offset: number, limit: number): Promise<PuzzleCard[]> {
+  const { results } = await db
+    .prepare(
+      `SELECT p.id, p.kind, p.number, COALESCE(pl.name, '링클') AS author, p.plays, p.clears, p.difficulty
+       FROM puzzles p LEFT JOIN players pl ON pl.id = p.author_id
+       WHERE p.kind IN ('official', 'community') AND p.status = 'published'
+       ORDER BY ${ORDER[sort]} LIMIT ?1 OFFSET ?2`,
+    )
+    .bind(limit, offset)
+    .all<PuzzleCard>()
+  return results
+}
+
+export type PuzzleInfo = PuzzleCard & { date: string | null; medianMoves: number | null }
+
+/** 문제 하나의 카드와 통계. 지난 오늘의 문제도 된다. 출발·도착은 담지 않는다 */
+export async function puzzleInfo(db: D1Database, id: number): Promise<PuzzleInfo | null> {
+  const [card, median] = await db.batch([
+    db
+      .prepare(
+        `SELECT p.id, p.kind, p.number, p.date, p.status, COALESCE(pl.name, '링클') AS author, p.plays, p.clears, p.difficulty
+         FROM puzzles p LEFT JOIN players pl ON pl.id = p.author_id WHERE p.id = ?1`,
+      )
+      .bind(id),
+    db
+      .prepare(
+        `SELECT moves FROM (SELECT moves, ROW_NUMBER() OVER (ORDER BY moves) AS rn, COUNT(*) OVER () AS cnt FROM runs WHERE puzzle_id = ?1 AND ${onBoard()})
+         WHERE rn = (cnt + 1) / 2`,
+      )
+      .bind(id),
+  ])
+  const row = card?.results[0] as (PuzzleCard & { date: string | null; status: string }) | undefined
+  if (!row || row.status !== 'published') return null
+  const { status: _status, ...rest } = row
+  return { ...rest, medianMoves: (median?.results[0] as { moves?: number } | undefined)?.moves ?? null }
+}
+
+export type BoardRow = { rank: number; name: string; moves: number; ms: number; verified: boolean; me: boolean }
+
+/** 문제별 순위표: 위에서부터 limit명과, 그 밖에 있으면 내 자리 */
+export async function boardOf(db: D1Database, puzzleId: number, playerId: string | null, limit: number): Promise<{ top: BoardRow[]; me: BoardRow | null; total: number }> {
+  const [top, total, mine] = await db.batch([
+    db
+      .prepare(
+        `SELECT r.player_id, COALESCE(NULLIF(pl.name, ''), '') AS name, r.moves, (r.finished_at - r.started_at) AS ms, r.verified
+         FROM runs r LEFT JOIN players pl ON pl.id = r.player_id
+         WHERE r.puzzle_id = ?1 AND ${onBoard('r')}
+         ORDER BY r.moves, ms LIMIT ?2`,
+      )
+      .bind(puzzleId, limit),
+    db.prepare(`SELECT COUNT(*) AS n FROM runs WHERE puzzle_id = ?1 AND ${onBoard()}`).bind(puzzleId),
+    db.prepare(`SELECT id FROM runs WHERE puzzle_id = ?1 AND player_id = ?2 AND ${onBoard()}`).bind(puzzleId, playerId ?? ''),
+  ])
+  type Row = { player_id: string; name: string; moves: number; ms: number; verified: number }
+  const rows = (top?.results ?? []) as Row[]
+  const toRow = (r: Row, rank: number): BoardRow => ({ rank, name: r.name || nicknameOf(r.player_id), moves: r.moves, ms: r.ms, verified: r.verified === 1, me: r.player_id === playerId })
+  // 같은 이동·같은 시간이면 같은 순위다
+  const ranked: BoardRow[] = []
+  rows.forEach((r, i) => {
+    const prev = rows[i - 1]
+    const rank = prev && prev.moves === r.moves && prev.ms === r.ms ? ranked[i - 1]!.rank : i + 1
+    ranked.push(toRow(r, rank))
+  })
+  let me: BoardRow | null = ranked.find(r => r.me) ?? null
+  const myRun = (mine?.results[0] as { id: string } | undefined)?.id
+  if (!me && myRun && playerId) {
+    const rank = await rankOf(db, myRun)
+    const row = await db
+      .prepare(`SELECT r.player_id, COALESCE(pl.name, '') AS name, r.moves, (r.finished_at - r.started_at) AS ms, r.verified FROM runs r LEFT JOIN players pl ON pl.id = r.player_id WHERE r.id = ?1`)
+      .bind(myRun)
+      .first<Row>()
+    if (row && rank) me = toRow(row, rank)
+  }
+  return { top: ranked, me, total: (total?.results[0] as { n: number } | undefined)?.n ?? 0 }
+}
+
+/** 순위표에 오른 판 중 아직 경로를 확인하지 않은 것. 먼저 끝낸 판부터 */
+export async function unverifiedLeaders(db: D1Database, limit: number): Promise<{ id: string; startId: number; startTitle: string; events: MoveEvent[] }[]> {
+  const { results } = await db
+    .prepare(
+      `SELECT r.id, p.start_id, p.start_title, r.events FROM runs r JOIN puzzles p ON p.id = r.puzzle_id
+       WHERE r.mode = 'community' AND ${onBoard('r')} AND r.verified = 0
+       ORDER BY r.finished_at LIMIT ?1`,
+    )
+    .bind(limit)
+    .all<{ id: string; start_id: number; start_title: string; events: string }>()
+  return results.map(r => ({ id: r.id, startId: r.start_id, startTitle: r.start_title, events: JSON.parse(r.events) as MoveEvent[] }))
+}
+
+/** 경로가 위키백과 링크로 이어지지 않은 판은 표시를 붙여 순위표에서 뺀다 */
+export async function markBadPath(db: D1Database, id: string, reason: string): Promise<void> {
+  await db.prepare(`UPDATE runs SET flags = ?2 WHERE id = ?1`).bind(id, `bad_path:${reason}`).run()
 }

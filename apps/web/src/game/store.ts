@@ -4,32 +4,51 @@ import { addFlag, applyBack, applyLink, kstDate, RUN_VERSION, type Page, type Ru
 import type { Today } from './api'
 import { useStats } from './stats'
 
-/** 오늘의 Run을 저장하는 키. 형식이 바뀌면 버전을 올리고 이전 저장분은 버린다 */
+/** 판을 저장하는 키. 형식이 바뀌면 버전을 올리고 이전 저장분은 버린다 */
 export const RUN_KEY = 'linkle:run:v1'
 
+/**
+ * 판이 놓이는 자리. 오늘의 문제는 'daily' 하나, 지난 문제와 커뮤니티 문제는 문제 id마다 하나다.
+ * 오늘의 문제를 풀다가 지난 문제를 열어도 서로의 진행이 섞이지 않는다.
+ */
+export type Slot = 'daily' | number
+
+/** 지난 문제·커뮤니티 판을 몇 개까지 기기에 둘지. 넘으면 오래된 끝난 판부터 지운다 */
+const KEEP_OTHERS = 80
+
+type Move = { to: Page; via: string; lead: string }
+
 type GameState = {
+  /** 오늘의 문제 */
   run: Run | null
+  /** 지난 문제·커뮤니티 문제. 키는 문제 id */
+  others: Record<string, Run>
   /** 서버 시각 - 기기 시각 */
   clockOffset: number
   /** 서버가 알려 준 오늘. 저장하지 않고 앱을 열 때마다 다시 받는다 */
   today: Today | null
   /** 오늘의 문제가 아직 없다고 서버가 답했다(출제 대기열이 비었을 때) */
   noPuzzle: boolean
-  begin(run: Run, serverNow: number): void
+  /** 도착 화면을 닫은 판. 닫은 뒤에는 홈(또는 문제 화면)이 보인다 */
+  seen: string[]
+  begin(slot: Slot, run: Run, serverNow: number): void
   /** 서버의 오늘을 반영한다. 날짜가 넘어갔으면 끝난 지난 판을 치운다 */
   setToday(today: Today): void
   /** 완료 제출을 마무리한다. result가 null이면 서버가 받지 않은 판이다(더 보내지 않는다) */
   settle(runId: string, result: Run['result']): void
-  link(move: { to: Page; via: string; lead: string }): void
-  back(): void
-  flag(name: string): void
+  link(slot: Slot, move: Move): void
+  back(slot: Slot): void
+  flag(slot: Slot, name: string): void
   setEmoji(runId: string, emoji: string[]): void
-  /** 도착 화면을 닫은 판. 닫은 뒤에는 홈이 보인다 */
-  arrivalSeen: string | null
   showArrival(runId: string, show: boolean): void
 }
 
-/** 저장된 Run을 그대로 쓸 수 있는지 본다. 지난 날짜의 끝난 판은 버린다 */
+export const runIn = (s: Pick<GameState, 'run' | 'others'>, slot: Slot): Run | null => (slot === 'daily' ? s.run : (s.others[String(slot)] ?? null))
+
+/** 모든 자리의 판 */
+export const allRuns = (s: Pick<GameState, 'run' | 'others'>): Run[] => [...(s.run ? [s.run] : []), ...Object.values(s.others)]
+
+/** 저장된 Run을 그대로 쓸 수 있는지 본다. 지난 날짜의 끝난 오늘의 문제는 버린다 */
 function keep(run: unknown): Run | null {
   if (!run || typeof run !== 'object') return null
   const r = run as Run
@@ -38,55 +57,83 @@ function keep(run: unknown): Run | null {
   return r
 }
 
+function prune(others: Record<string, Run>): Record<string, Run> {
+  const entries = Object.entries(others)
+  if (entries.length <= KEEP_OTHERS) return others
+  // 진행 중인 판은 남기고, 끝난 판은 최근 것부터 남긴다
+  const sorted = entries.sort(([, a], [, b]) => (a.phase === 'playing' ? -1 : b.phase === 'playing' ? 1 : b.startedAt - a.startedAt))
+  return Object.fromEntries(sorted.slice(0, KEEP_OTHERS))
+}
+
 export const useGame = create<GameState>()(
   persist(
-    (set, get) => ({
-      run: null,
-      clockOffset: 0,
-      today: null,
-      noPuzzle: false,
-      arrivalSeen: null,
-      showArrival: (runId, show) => set({ arrivalSeen: show ? null : runId }),
-      begin: (run, serverNow) => set({ run, clockOffset: serverNow - Date.now() }),
-      setToday: today => {
-        const { run } = get()
-        // 진행 중인 판은 자정을 넘겨도 끝까지 풀 수 있게 둔다. 치우는 것은 끝난 판뿐이다
-        const stale = run?.mode === 'daily' && run.phase === 'finished' && run.puzzle.date !== today.date
-        set({ today, noPuzzle: false, clockOffset: today.serverNow - Date.now(), ...(stale ? { run: null } : null) })
-      },
-      settle: (runId, result) => {
-        const { run } = get()
-        if (run && run.runId === runId && run.phase === 'finished') set({ run: { ...run, result, outbox: 'none' } })
-      },
-      link: move => {
-        const { run } = get()
+    (set, get) => {
+      /** 자리의 판을 바꾼다. 그 판이 없으면 아무것도 하지 않는다 */
+      const update = (slot: Slot, f: (run: Run) => Run) => {
+        const run = runIn(get(), slot)
         if (!run) return
-        const next = applyLink(run, { ...move, at: now() - run.startedAt })
-        set({ run: next })
-        // 방금 도착했으면 내 기록에 남긴다
-        if (run.phase === 'playing' && next.phase === 'finished') useStats.getState().record(next)
-      },
-      back: () => {
-        const { run } = get()
-        if (run) set({ run: applyBack(run, now() - run.startedAt) })
-      },
-      flag: name => {
-        const { run } = get()
-        if (run && run.phase === 'playing') set({ run: addFlag(run, name) })
-      },
-      setEmoji: (runId, emoji) => {
-        const { run } = get()
-        if (run && run.runId === runId) set({ run: { ...run, emoji } })
-      },
-    }),
+        const next = f(run)
+        if (next === run) return
+        if (slot === 'daily') set({ run: next })
+        else set({ others: { ...get().others, [String(slot)]: next } })
+      }
+      /** runId로 판을 찾아 바꾼다(제출 결과·이모지는 어느 자리의 판인지 모른 채 온다) */
+      const updateById = (runId: string, f: (run: Run) => Run) => {
+        const { run, others } = get()
+        if (run?.runId === runId) return update('daily', f)
+        const key = Object.keys(others).find(k => others[k]!.runId === runId)
+        if (key) update(Number(key), f)
+      }
+      return {
+        run: null,
+        others: {},
+        clockOffset: 0,
+        today: null,
+        noPuzzle: false,
+        seen: [],
+        showArrival: (runId, show) => {
+          const seen = get().seen.filter(id => id !== runId)
+          set({ seen: show ? seen : [...seen, runId].slice(-100) })
+        },
+        begin: (slot, run, serverNow) => {
+          const clockOffset = serverNow - Date.now()
+          if (slot === 'daily') set({ run, clockOffset })
+          else set({ others: prune({ ...get().others, [String(slot)]: run }), clockOffset })
+        },
+        setToday: today => {
+          const { run } = get()
+          // 진행 중인 판은 자정을 넘겨도 끝까지 풀 수 있게 둔다. 치우는 것은 끝난 판뿐이다
+          const stale = run?.mode === 'daily' && run.phase === 'finished' && run.puzzle.date !== today.date
+          set({ today, noPuzzle: false, clockOffset: today.serverNow - Date.now(), ...(stale ? { run: null } : null) })
+        },
+        settle: (runId, result) => updateById(runId, r => (r.phase === 'finished' ? { ...r, result, outbox: 'none' } : r)),
+        link: (slot, move) => {
+          const before = runIn(get(), slot)
+          update(slot, r => applyLink(r, { ...move, at: now() - r.startedAt }))
+          const after = runIn(get(), slot)
+          // 오늘의 문제에 방금 도착했으면 내 기록에 남긴다(지난 문제·커뮤니티는 넣지 않는다)
+          if (before?.phase === 'playing' && after?.phase === 'finished') useStats.getState().record(after)
+        },
+        back: slot => update(slot, r => applyBack(r, now() - r.startedAt)),
+        flag: (slot, name) => update(slot, r => (r.phase === 'playing' ? addFlag(r, name) : r)),
+        setEmoji: (runId, emoji) => updateById(runId, r => ({ ...r, emoji })),
+      }
+    },
     {
       name: RUN_KEY,
       version: RUN_VERSION,
-      partialize: s => ({ run: s.run, clockOffset: s.clockOffset, arrivalSeen: s.arrivalSeen }),
-      migrate: () => ({ run: null, clockOffset: 0, arrivalSeen: null }),
+      partialize: s => ({ run: s.run, others: s.others, clockOffset: s.clockOffset, seen: s.seen }),
+      migrate: () => ({ run: null, others: {}, clockOffset: 0, seen: [] }),
       merge: (saved, current) => {
-        const s = (saved ?? {}) as Partial<GameState>
-        return { ...current, run: keep(s.run), clockOffset: typeof s.clockOffset === 'number' ? s.clockOffset : 0, arrivalSeen: typeof s.arrivalSeen === 'string' ? s.arrivalSeen : null }
+        const s = (saved ?? {}) as Partial<GameState> & { arrivalSeen?: unknown }
+        const others: Record<string, Run> = {}
+        for (const [k, v] of Object.entries(s.others ?? {})) {
+          const r = keep(v)
+          if (r) others[k] = r
+        }
+        // 예전에는 닫은 도착 화면을 하나만 기억했다(arrivalSeen)
+        const seen = Array.isArray(s.seen) ? s.seen.filter((x): x is string => typeof x === 'string') : typeof s.arrivalSeen === 'string' ? [s.arrivalSeen] : []
+        return { ...current, run: keep(s.run), others, seen, clockOffset: typeof s.clockOffset === 'number' ? s.clockOffset : 0 }
       },
     },
   ),
@@ -103,3 +150,6 @@ if (typeof window !== 'undefined') {
     if (e.key === RUN_KEY) void useGame.persist.rehydrate()
   })
 }
+
+/** 화면 위쪽 탭을 치워야 하는지. 게임 중이거나 막 도착한 화면이면 문서와 결과에 집중하게 한다 */
+export const useImmersive = create<{ on: boolean; set(on: boolean): void }>(set => ({ on: false, set: on => set({ on }) }))

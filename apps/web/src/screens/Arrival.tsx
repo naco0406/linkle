@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useState, type ReactNode } from 'react'
 import { ChevronRight, Flag, Share2 } from 'lucide-react'
 import { elapsedMs, formatClock, kstDate, moveCount, type Run } from '@linkle/core'
 import { useStats } from '../game/stats'
@@ -9,11 +9,26 @@ import { Spinner, Toast } from '../ui/parts'
 import { shareRun } from '../ui/share'
 import { StreakCelebration } from '../ui/Streak'
 
+type TileValue = { label: string; value: string | number | null; unit?: string }
+
 /**
- * 도착 화면. 목표에 닿은 직후 한 번 뜨고, "홈으로"를 누르면 닫힌다.
+ * 도착 화면. 목표에 닿은 직후 한 번 뜨고, 아래 글자 버튼을 누르면 닫힌다.
  * 숫자 셋을 타일로, 지나온 길을 문서마다 색이 붙은 목록으로 보여 준다.
+ * 오늘의 문제, 지난 문제, 커뮤니티 문제가 함께 쓴다. 다른 것은 세 번째 타일, 닫는 곳, 아래에 덧붙는 카드다.
  */
-export function Arrival({ run }: { run: Run }) {
+export function Arrival({
+  run,
+  third,
+  closeLabel = '홈으로',
+  onClose,
+  children,
+}: {
+  run: Run
+  third?: TileValue
+  closeLabel?: string
+  onClose?: () => void
+  children?: ReactNode
+}) {
   useEmoji(run)
   const stats = useStats(s => s.stats)
   const celebrate = useStats(s => s.celebrate)
@@ -22,8 +37,17 @@ export function Arrival({ run }: { run: Run }) {
   const { puzzle } = run
   const kinds = run.emoji?.map(kindOfEmoji)
 
-  // 연속 일수가 방금 늘었으면 축하 화면이 먼저 나온다
-  if (celebrate && celebrate === puzzle.date) {
+  const daily = run.mode === 'daily'
+  const close = onClose ?? (() => useGame.getState().showArrival(run.runId, false))
+  const tile3 = third ?? { label: '도착 순서', value: run.result?.order ?? null, unit: '번째' }
+  const subtitle = daily
+    ? `${puzzle.number}번째 링클${puzzle.date ? ` · ${formatDateKo(puzzle.date).replace(/ \S+요일$/, '')}` : ''}`
+    : run.mode === 'archive'
+      ? `${puzzle.number}번째 링클 · 지난 문제`
+      : `링클 커뮤니티 ${puzzle.number}번`
+
+  // 오늘의 문제로 연속 일수가 방금 늘었으면 축하 화면이 먼저 나온다
+  if (daily && celebrate && celebrate === puzzle.date) {
     return <StreakCelebration stats={stats} today={puzzle.date ?? kstDate(now())} onDone={() => useStats.getState().celebrated()} />
   }
 
@@ -35,16 +59,14 @@ export function Arrival({ run }: { run: Run }) {
         </span>
         <div className="min-w-0">
           <h1 className="truncate text-[24px] font-bold leading-[30px] tracking-[-0.01em] text-ink">{puzzle.end.title}에 도착!</h1>
-          <p className="text-[14px] leading-5 text-ink-2">
-            {puzzle.number}번째 링클{puzzle.date ? ` · ${formatDateKo(puzzle.date).replace(/ \S+요일$/, '')}` : ''}
-          </p>
+          <p className="text-[14px] leading-5 text-ink-2">{subtitle}</p>
         </div>
       </header>
 
       <dl className="mt-4 grid grid-cols-3 gap-2">
         <Tile label="이동" value={moveCount(run)} unit="번" />
         <Tile label="시간" value={formatClock(elapsedMs(run, run.finishedAt ?? 0))} />
-        <Tile label="도착 순서" value={run.result?.order ?? null} unit="번째" />
+        <Tile label={tile3.label} value={tile3.value} unit={tile3.unit} />
       </dl>
 
       <Card className="mt-3 !px-4 !pb-3 !pt-2" aria-label="지나온 길">
@@ -65,15 +87,17 @@ export function Arrival({ run }: { run: Run }) {
         </p>
       </Card>
 
+      {children && <div className="mt-3 flex flex-col gap-3">{children}</div>}
+
       <div className="sticky bottom-0 mt-auto bg-gradient-to-t from-secondary from-70% to-transparent pb-[max(16px,env(safe-area-inset-bottom))] pt-6">
         <Cta onClick={async () => setToast(await shareRun(run))} disabled={!run.emoji}>
           <Share2 className="h-5 w-5" strokeWidth={1.75} aria-hidden />
           결과 공유
         </Cta>
         <div className="mt-1 flex items-center justify-between">
-          <Countdown />
-          <TextButton onClick={() => useGame.getState().showArrival(run.runId, false)} className="-mr-3">
-            홈으로
+          {daily ? <Countdown /> : <span />}
+          <TextButton onClick={close} className="-mr-3">
+            {closeLabel}
             <ChevronRight className="h-[18px] w-[18px]" aria-hidden />
           </TextButton>
         </div>

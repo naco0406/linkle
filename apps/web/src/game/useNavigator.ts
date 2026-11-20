@@ -3,13 +3,13 @@ import { currentPage, type Run } from '@linkle/core'
 import { makeLead } from '@linkle/embed'
 import type { CleanPage } from '@linkle/wiki'
 import { errorMessage, isAbort, loadPage } from './pages'
-import { useGame } from './store'
+import { runIn, useGame, type Slot } from './store'
 
 /**
  * 문서 이동을 맡는다. 이동은 문서를 실제로 받았을 때만 로그에 확정된다.
  * 받는 중에는 다른 클릭을 받지 않고, 실패하면 현재 문서에 그대로 머문다.
  */
-export function useNavigator(run: Run) {
+export function useNavigator(run: Run, slot: Slot = 'daily') {
   const current = currentPage(run)
   const [page, setPage] = useState<CleanPage | null>(null)
   const [busy, setBusy] = useState(false)
@@ -49,9 +49,9 @@ export function useNavigator(run: Run) {
       setError(null)
       try {
         const next = await loadPage(via)
-        if (next.id !== currentPage(useGame.getState().run ?? run).id) {
+        if (next.id !== currentPage(runIn(useGame.getState(), slot) ?? run).id) {
           setPage(next)
-          useGame.getState().link({ to: { id: next.id, title: next.title }, via, lead: makeLead(next.title, next.leadText) })
+          useGame.getState().link(slot, { to: { id: next.id, title: next.title }, via, lead: makeLead(next.title, next.leadText) })
         }
       } catch (e) {
         if (!isAbort(e)) setError(errorMessage(e))
@@ -61,13 +61,13 @@ export function useNavigator(run: Run) {
         setOpening(null)
       }
     },
-    [run],
+    [run, slot],
   )
 
   const back = useCallback(() => {
     if (lock.current) return
-    useGame.getState().back()
-  }, [])
+    useGame.getState().back(slot)
+  }, [slot])
 
   const retry = useCallback(() => setRetryKey(k => k + 1), [])
   const dismissError = useCallback(() => setError(null), [])

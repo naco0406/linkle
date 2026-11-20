@@ -82,7 +82,7 @@ function TodayCard({ number, date, finishedCount, onToast }: { number: number | 
     setStarting(true)
     try {
       const s = await startDaily()
-      useGame.getState().begin(createRun({ mode: s.mode, puzzle: s.puzzle, runId: s.runId, startedAt: s.startedAt }), s.serverNow)
+      useGame.getState().begin('daily', createRun({ mode: s.mode, puzzle: s.puzzle, runId: s.runId, startedAt: s.startedAt }), s.serverNow)
     } catch {
       onToast('시작하지 못했어요. 잠시 뒤에 다시 눌러 주세요.')
       setStarting(false)

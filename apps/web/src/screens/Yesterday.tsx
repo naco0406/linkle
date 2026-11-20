@@ -33,13 +33,14 @@ export function Yesterday() {
       ) : data.status === 'pending' ? (
         <Notice title="어제 기록을 모으고 있어요" body="자정이 지나고 몇 분 뒤에 열려요. 조금 뒤에 다시 와 주세요." />
       ) : (
-        <Ready stats={data} />
+        <DayStats stats={data} />
       )}
     </main>
   )
 }
 
-function Ready({ stats }: { stats: YesterdayStats }) {
+/** 그날의 기록 전체. 어제의 기록과, 지난 문제를 푼 뒤의 비교에 함께 쓴다 */
+export function DayStats({ stats }: { stats: YesterdayStats }) {
   const mine = useStats(s => s.stats.recent[stats.date])
   return (
     <div className="flex flex-col gap-3">
@@ -80,7 +81,7 @@ function Ready({ stats }: { stats: YesterdayStats }) {
   )
 }
 
-function CardTitle({ children, side }: { children: ReactNode; side?: ReactNode }) {
+export function CardTitle({ children, side }: { children: ReactNode; side?: ReactNode }) {
   return (
     <div className="mb-3 flex items-baseline justify-between gap-3">
       <h2 className="text-[17px] font-bold leading-[25px] text-ink">{children}</h2>
@@ -176,7 +177,7 @@ function TopPages({ pages, total }: { pages: YesterdayStats['topPages']; total: 
   )
 }
 
-function Notice({ title, body, children }: { title: string; body: string; children?: ReactNode }) {
+export function Notice({ title, body, children }: { title: string; body: string; children?: ReactNode }) {
   return (
     <Card>
       <p className="text-[17px] font-bold leading-[25px] text-ink">{title}</p>
@@ -186,7 +187,7 @@ function Notice({ title, body, children }: { title: string; body: string; childr
   )
 }
 
-function Skeleton() {
+export function Skeleton() {
   return (
     <div className="flex flex-col gap-3" aria-busy="true" aria-label="불러오는 중">
       {[132, 76, 220].map(h => (

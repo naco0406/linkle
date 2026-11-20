@@ -6,7 +6,7 @@ import { playerId } from './player'
 export type Today = { date: string; number: number; resetsAt: number; serverNow: number; finishedCount: number }
 export type Started = { runId: string; startedAt: number; serverNow: number; mode: RunMode; puzzle: Puzzle }
 /** order는 그 문제를 몇 번째로 끝냈는지. 기록에 들지 않는 판은 null */
-export type Finished = { order: number | null; durationMs: number }
+export type Finished = { order: number | null; durationMs: number; rank?: number | null }
 
 /** 서버를 기다리는 상한. 시작 버튼이 끝없이 돌지 않게 한다 */
 const TIMEOUT_MS = 15_000
@@ -65,4 +65,25 @@ export function finishRun(run: Run): Promise<Finished> {
 /** 어제의 기록. 자정이 지나고 몇 분 동안은 모으는 중이다 */
 export function getYesterday(): Promise<Yesterday> {
   return call<Yesterday>('/api/yesterday')
+}
+
+// ── 지난 문제와 커뮤니티 ──
+
+export type ArchiveItem = { id: number; number: number; date: string; finished: number }
+export type PuzzleCard = { id: number; kind: Puzzle['kind']; number: number; author: string; plays: number; clears: number; difficulty: 'easy' | 'normal' | 'hard' | null }
+export type PuzzleInfo = PuzzleCard & { date: string | null; medianMoves: number | null }
+export type BoardRow = { rank: number; name: string; moves: number; ms: number; verified: boolean; me: boolean }
+export type Board = { top: BoardRow[]; me: BoardRow | null; total: number }
+export type Page<T> = { items: T[]; next: number | null }
+export type CommunitySort = 'new' | 'popular' | 'hard'
+
+export const getArchive = (before: number | null) => call<Page<ArchiveItem>>(`/api/archive${before ? `?before=${before}` : ''}`)
+export const getCommunity = (sort: CommunitySort, offset: number) => call<Page<PuzzleCard>>(`/api/community?sort=${sort}&offset=${offset}`)
+export const getPuzzle = (id: number) => call<PuzzleInfo>(`/api/puzzles/${id}`)
+export const getBoard = (id: number) => call<Board>(`/api/puzzles/${id}/board?playerId=${playerId()}`)
+export const getDay = (date: string) => call<Yesterday>(`/api/days/${date}`)
+
+/** 지난 문제나 커뮤니티 문제를 시작한다. 커뮤니티 문제는 처음 도전만 순위에 든다 */
+export function startPuzzle(puzzleId: number): Promise<Started> {
+  return call<Started>('/api/runs', { playerId: playerId(), puzzleId })
 }
