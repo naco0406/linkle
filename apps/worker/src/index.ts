@@ -5,6 +5,7 @@ import { admin } from './admin.ts'
 import { toPublic } from './daily.ts'
 import { dailyJob, ensureStats, olderDayJob, verifyLeaders, yesterdayOf } from './job.ts'
 import { runKindFor, settle } from './rules.ts'
+import { refillIfLow } from './refill.ts'
 import { fillUpcoming } from './schedule.ts'
 import { isUuid, LIMITS, parseFinishBody, parseStartBody, type Parsed } from './validate.ts'
 import { wikiApi } from './verify.ts'
@@ -18,6 +19,8 @@ interface Env {
   ADMIN_TOKEN?: string
   /** 관리자 화면 비밀번호. 사용자가 wrangler secret put으로 직접 정한다 */
   ADMIN_PASSWORD?: string
+  /** 문제 채우기(GitHub Actions)를 부르는 열쇠(refill.ts). 이 저장소의 Actions 실행 권한만 가진 토큰을 운영자가 직접 만들어 넣는다 */
+  GITHUB_DISPATCH_TOKEN?: string
 }
 
 const DEFAULT_USER_AGENT = 'Linkle-daily-check/1.0'
@@ -46,7 +49,8 @@ export default {
     const run = (name: string, job: Promise<string>) => job.then(r => console.log(`${name}: ${r}`)).catch(e => console.error(`${name} 실패`, e))
     ctx.waitUntil(
       Promise.all([
-        run('puzzles', fillUpcoming(env.DB, api, now)),
+        // 꺼내 쓴 뒤에 남은 양을 보고 채우기를 부른다
+        run('puzzles', fillUpcoming(env.DB, api, now)).then(() => run('refill', refillIfLow(env.DB, env.GITHUB_DISPATCH_TOKEN, now))),
         // 위키백과 요청이 몰리지 않게 기록 확인은 차례로 한다
         run('yesterday', dailyJob(env.DB, api, now))
           .then(() => run('older days', olderDayJob(env.DB, api, now)))

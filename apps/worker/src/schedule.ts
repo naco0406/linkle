@@ -97,8 +97,6 @@ export async function fillUpcoming(db: D1Database, api: WikiApi, now: number): P
   const today = kstDate(now)
   const results: string[] = []
   for (const date of [today, addDays(today, 1)]) results.push(`${date} ${await assignDay(db, api, date, now)}`)
-  const left = await db.prepare(`SELECT COUNT(*) AS n FROM puzzle_queue WHERE status = 'approved' AND pool = 'daily'`).first<{ n: number }>()
-  // 남은 문제가 일주일 치 아래면 로그로 알린다. 문제 채우기(GitHub Actions)를 손으로 돌리면 된다
-  if ((left?.n ?? 0) < 7) results.push(`대기열 ${left?.n ?? 0}개 남음`)
-  return results.join(' · ')
+  // 대기열이 줄면 채우는 일은 refill.ts가 이어서 한다
+  return results.join(', ')
 }

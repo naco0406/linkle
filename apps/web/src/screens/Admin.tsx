@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { ArrowRight, ArrowUpToLine, Eye, EyeOff, LogOut, RefreshCw, RotateCcw, Trash2 } from 'lucide-react'
 import { createRun, moveCount, type Page } from '@linkle/core'
 import { ApiError } from '../game/api'
-import { ADMIN_RUN_PREFIX, ADMIN_SLOT, adminApi, guessDifficulty, solutionOf, type AdminDay, type Difficulty, type Hop } from '../game/admin'
+import { ADMIN_RUN_PREFIX, ADMIN_SLOT, adminApi, guessDifficulty, solutionOf, type AdminDay, type Difficulty, type Hop, type Overview } from '../game/admin'
 import { now, runIn, useGame } from '../game/store'
 import { useLoad } from '../game/useLoad'
 import { Card, Cta, formatDateKo, StatTile, TextButton } from '../ui/cards'
@@ -299,6 +299,23 @@ function DateBadge({ date, today }: { date: string; today: string }) {
 
 const LOW_QUEUE = 7
 
+const kstTime = (at: number) =>
+  new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(at)
+
+/** 문제 채우기 상태. Worker가 대기열을 보고 GitHub Actions를 부른다(worker/src/refill.ts) */
+function RefillNote({ refill, total }: { refill: Overview['refill']; total: number }) {
+  const { last, below, canDispatch } = refill
+  const warn = (text: string) => <p className="mt-3 rounded-2xl bg-[#fdf3d8] px-4 py-3 text-[15px] leading-[22px] text-[#7a5400]">{text}</p>
+  if (!canDispatch) return warn(`Worker에 GITHUB_DISPATCH_TOKEN이 없어 대기열이 줄어도 자동으로 채우지 못해요. 지금 ${total}개 남았어요.`)
+  if (last && !last.ok) return warn(`${kstTime(last.at)}에 문제 채우기를 부르지 못했어요(GitHub 답 ${last.status || '없음'}). 토큰이 만료됐는지 확인해 주세요. 다음 날 다시 불러요.`)
+  if (total < LOW_QUEUE && !(last && Date.now() - last.at < 24 * 3600_000)) return warn(`대기열이 ${total}개 남았어요. 문제 채우기가 아직 불리지 않았어요.`)
+  return (
+    <p className="mt-2 px-1 text-[13px] leading-5 text-ink-2">
+      대기열이 {below}개 아래로 줄면 문제 채우기를 자동으로 불러요.{last && ` 마지막으로 부른 때는 ${kstTime(last.at)}이에요.`}
+    </p>
+  )
+}
+
 function OverviewTab({ notify }: { notify: Notify }) {
   const { data, error, reload } = useLoad('admin:overview', adminApi.overview)
   const [busy, setBusy] = useState<number | null>(null)
@@ -332,11 +349,7 @@ function OverviewTab({ notify }: { notify: Notify }) {
         <StatTile label="커뮤니티" value={data.community?.n ?? 0} unit="개" />
         <StatTile label="기기" value={data.players.toLocaleString('ko-KR')} unit="대" />
       </dl>
-      {total < LOW_QUEUE && (
-        <p className="mt-3 rounded-2xl bg-[#fdf3d8] px-4 py-3 text-[15px] leading-[22px] text-[#7a5400]">
-          대기열이 {total}개 남았어요. GitHub Actions의 문제 채우기를 돌리거나 문제 넣기에서 직접 넣어 주세요.
-        </p>
-      )}
+      <RefillNote refill={data.refill} total={total} />
       <Section title="날짜별 오늘의 문제" aside={<RowButton onClick={reload}><RefreshCw className="h-4 w-4" aria-hidden />새로고침</RowButton>}>
         <Rows empty="정해진 문제가 없어요">
           {days.map(d => (

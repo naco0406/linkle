@@ -1,5 +1,6 @@
 import { addDays, kstDate } from '@linkle/core'
 import { HttpError, json, readJson } from './http.ts'
+import { REFILL_BELOW, type RefillState } from './refill.ts'
 import { fillUpcoming } from './schedule.ts'
 import type { WikiApi } from './verify.ts'
 
@@ -8,7 +9,7 @@ import type { WikiApi } from './verify.ts'
 //   관리자 화면(/admin)은 비밀번호(ADMIN_PASSWORD)로 들어와 서명한 쿠키로 부른다.
 // Cloudflare API 토큰을 저장소에 두지 않으려고 만들었다. 할 수 있는 일은 문제를 넣고, 빼고, 순서를 바꾸고, 숨기는 것뿐이다.
 
-export type AdminEnv = { DB: D1Database; ADMIN_TOKEN?: string; ADMIN_PASSWORD?: string }
+export type AdminEnv = { DB: D1Database; ADMIN_TOKEN?: string; ADMIN_PASSWORD?: string; GITHUB_DISPATCH_TOKEN?: string }
 
 const COOKIE = 'linkle_admin'
 const SESSION_DAYS = 30
@@ -144,7 +145,7 @@ async function addPuzzles(request: Request, env: AdminEnv): Promise<Response> {
 /** 한눈에: 오늘·내일 문제, 대기열의 난이도별 수, 최근 며칠의 도착 인원 */
 async function overview(env: AdminEnv): Promise<Response> {
   const today = kstDate(Date.now())
-  const [days, queue, community, players] = await env.DB.batch([
+  const [days, queue, community, players, refill] = await env.DB.batch([
     env.DB.prepare(
       `SELECT id, date, number, start_title, end_title, difficulty, par, plays, clears, solution FROM puzzles
        WHERE kind = 'daily' AND date >= ?1 ORDER BY date LIMIT 14`,
@@ -152,13 +153,17 @@ async function overview(env: AdminEnv): Promise<Response> {
     env.DB.prepare(`SELECT difficulty, COUNT(*) AS n FROM puzzle_queue WHERE status = 'approved' AND pool = 'daily' GROUP BY difficulty`),
     env.DB.prepare(`SELECT COUNT(*) AS n, SUM(plays) AS plays, SUM(clears) AS clears FROM puzzles WHERE kind = 'official' AND status = 'published'`),
     env.DB.prepare(`SELECT COUNT(*) AS n FROM players`),
+    env.DB.prepare(`SELECT value FROM job_state WHERE key = 'refill'`),
   ])
+  const last = (refill?.results[0] as { value: string } | undefined)?.value
   return json({
     today,
     days: days?.results ?? [],
     queue: queue?.results ?? [],
     community: community?.results[0] ?? null,
     players: (players?.results[0] as { n: number } | undefined)?.n ?? 0,
+    // 문제 채우기를 마지막으로 부른 결과와, 부를 열쇠가 있는지(값은 내보내지 않는다)
+    refill: { last: last ? (JSON.parse(last) as RefillState) : null, below: REFILL_BELOW, canDispatch: Boolean(env.GITHUB_DISPATCH_TOKEN) },
   })
 }
 

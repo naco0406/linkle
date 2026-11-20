@@ -24,6 +24,8 @@ export type Overview = {
   queue: { difficulty: Difficulty | null; n: number }[]
   community: { n: number; plays: number | null; clears: number | null } | null
   players: number
+  /** 대기열이 below개 아래로 줄면 Worker가 문제 채우기를 부른다. last는 마지막으로 부른 결과 */
+  refill: { last: { at: number; ok: boolean; status: number; left: number } | null; below: number; canDispatch: boolean }
 }
 export type QueueItem = { id: number; start_title: string; end_title: string; par: number; difficulty: Difficulty | null; solution: string | null; priority: number; created_at: number }
 export type RejectedItem = { id: number; start_title: string; end_title: string; par: number; difficulty: Difficulty | null; note: string | null }
