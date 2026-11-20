@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { dispatchRequest, REFILL_BELOW, REFILL_COOLDOWN_MS, shouldRefill, type RefillState } from './refill.ts'
+import { canCallNow, dispatchRequest, REFILL_BELOW, REFILL_COOLDOWN_MS, shouldRefill, type RefillState } from './refill.ts'
 
 const NOW = Date.UTC(2026, 10, 21, 0, 5)
 const called = (hoursAgo: number, ok = true): RefillState => ({ at: NOW - hoursAgo * 3600_000, ok, status: ok ? 204 : 401, left: 5 })
@@ -28,5 +28,16 @@ describe('GitHub에 보내는 요청', () => {
     expect(r.headers.get('authorization')).toBe('Bearer t')
     expect(r.headers.get('user-agent')).toBeTruthy()
     expect(await r.json()).toEqual({ ref: 'main' })
+  })
+})
+
+describe('지금 채우기', () => {
+  it('방금 받아들여진 호출이 있으면 한 시간은 막는다', () => {
+    expect(canCallNow(null, NOW)).toBe(true)
+    expect(canCallNow(called(0.5), NOW)).toBe(false)
+    expect(canCallNow(called(1), NOW)).toBe(true)
+  })
+  it('실패한 호출 뒤에는 바로 다시 누를 수 있다', () => {
+    expect(canCallNow(called(0.1, false), NOW)).toBe(true)
   })
 })

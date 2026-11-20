@@ -1,6 +1,6 @@
 import { addDays, kstDate } from '@linkle/core'
 import { HttpError, json, readJson } from './http.ts'
-import { REFILL_BELOW, type RefillState } from './refill.ts'
+import { canCallNow, dispatchRefill, queueLeft, readRefill, REFILL_BELOW, type RefillState } from './refill.ts'
 import { fillUpcoming } from './schedule.ts'
 import type { WikiApi } from './verify.ts'
 
@@ -167,6 +167,16 @@ async function overview(env: AdminEnv): Promise<Response> {
   })
 }
 
+/** "지금 채우기": 대기열 수와 상관없이 문제 채우기(GitHub Actions)를 부른다. 토큰이 맞는지 확인할 때도 쓴다 */
+async function refillNow(env: AdminEnv): Promise<Response> {
+  if (!env.GITHUB_DISPATCH_TOKEN) throw new HttpError(409, 'no_token')
+  const now = Date.now()
+  const [left, last] = await Promise.all([queueLeft(env.DB), readRefill(env.DB)])
+  if (!canCallNow(last, now)) throw new HttpError(409, 'recent')
+  // GitHub가 거절해도 200으로 답하고 그 상태를 그대로 알려 준다(토큰 권한 확인용)
+  return json(await dispatchRefill(env.DB, env.GITHUB_DISPATCH_TOKEN, now, left))
+}
+
 /** 대기열. 낼 순서대로, 뺀 문제도 최근 것 몇 개 */
 async function queueList(env: AdminEnv): Promise<Response> {
   const [approved, rejected] = await env.DB.batch([
@@ -257,6 +267,7 @@ export async function admin(request: Request, env: AdminEnv, api: WikiApi, path:
   if (path === '/api/admin/overview' && m === 'GET') return overview(env)
   if (path === '/api/admin/queue' && m === 'GET') return queueList(env)
   if (path === '/api/admin/community' && m === 'GET') return communityList(env)
+  if (path === '/api/admin/refill' && m === 'POST') return refillNow(env)
   const q = QUEUE_PATH.exec(path)
   if (q && m === 'POST') return queueAction(request, env, Number(q[1]))
   const p = PUZZLE_PATH.exec(path)

@@ -59,6 +59,7 @@ export const adminApi = {
   queue: () => call<{ approved: QueueItem[]; rejected: RejectedItem[] }>('queue'),
   queueAction: (id: number, action: 'reject' | 'restore' | 'first' | 'unpin') => call<{ ok: true }>(`queue/${id}`, { action }),
   community: () => call<{ items: CommunityItem[] }>('community'),
+  refill: () => call<{ at: number; ok: boolean; status: number; left: number }>('refill', {}),
   puzzleAction: (id: number, action: 'hide' | 'show' | 'replace') => call<{ ok: true }>(`puzzles/${id}`, { action }),
   add: (pool: 'daily' | 'official', item: NewPuzzle, first: boolean) => call<{ added: number; queue: number }>('puzzles', { pool, items: [item], first }),
 }

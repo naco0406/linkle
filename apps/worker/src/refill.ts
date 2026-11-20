@@ -41,24 +41,40 @@ export async function readRefill(db: D1Database): Promise<RefillState | null> {
   }
 }
 
-export async function refillIfLow(db: D1Database, token: string | undefined, now: number, send: (r: Request) => Promise<Response> = r => fetch(r)): Promise<string> {
-  const [count, last] = await Promise.all([
-    db.prepare(`SELECT COUNT(*) AS n FROM puzzle_queue WHERE status = 'approved' AND pool = 'daily'`).first<{ n: number }>(),
-    readRefill(db),
-  ])
-  const left = count?.n ?? 0
-  if (!shouldRefill(left, last, now)) return `대기열 ${left}개`
-  if (!token) return `대기열 ${left}개, GITHUB_DISPATCH_TOKEN이 없어 채우기를 부르지 못함`
+type Send = (r: Request) => Promise<Response>
+
+export async function queueLeft(db: D1Database): Promise<number> {
+  const row = await db.prepare(`SELECT COUNT(*) AS n FROM puzzle_queue WHERE status = 'approved' AND pool = 'daily'`).first<{ n: number }>()
+  return row?.n ?? 0
+}
+
+/** GitHub에 문제 채우기를 부르고, 그 결과를 남긴다. 예약 작업과 관리자 화면의 "지금 채우기"가 함께 쓴다 */
+export async function dispatchRefill(db: D1Database, token: string, now: number, left: number, send: Send = r => fetch(r)): Promise<RefillState> {
   let status = 0
   try {
     status = (await send(dispatchRequest(token))).status
   } catch {
-    // 닿지 못한 것도 실패로 남긴다. 다음 날 다시 한다
+    // 닿지 못한 것도 실패로 남긴다
   }
   const state: RefillState = { at: now, ok: status >= 200 && status < 300, status, left }
   await db
     .prepare(`INSERT INTO job_state (key, value) VALUES ('refill', ?1) ON CONFLICT (key) DO UPDATE SET value = excluded.value`)
     .bind(JSON.stringify(state))
     .run()
-  return `대기열 ${left}개, 문제 채우기 ${state.ok ? '부름' : `실패(${status})`}`
+  return state
+}
+
+export async function refillIfLow(db: D1Database, token: string | undefined, now: number, send?: Send): Promise<string> {
+  const [left, last] = await Promise.all([queueLeft(db), readRefill(db)])
+  if (!shouldRefill(left, last, now)) return `대기열 ${left}개`
+  if (!token) return `대기열 ${left}개, GITHUB_DISPATCH_TOKEN이 없어 채우기를 부르지 못함`
+  // 실패하면 20시간 뒤(다음 날) 다시 한다
+  const state = await dispatchRefill(db, token, now, left, send)
+  return `대기열 ${left}개, 문제 채우기 ${state.ok ? '부름' : `실패(${state.status})`}`
+}
+
+/** 관리자가 직접 부를 때. 방금 부른 것이 받아들여졌으면 한 시간은 막는다. 채우기가 도는 중이라 두 번 누르면 80개가 들어간다 */
+export const MANUAL_GAP_MS = 60 * 60 * 1000
+export function canCallNow(last: RefillState | null, now: number): boolean {
+  return !last || !last.ok || now - last.at >= MANUAL_GAP_MS
 }

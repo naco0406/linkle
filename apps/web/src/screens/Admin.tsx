@@ -33,6 +33,8 @@ const ERRORS: Record<string, string> = {
   no_change: '이미 반영돼 있어요',
   no_replacement: '대기열에 그날 낼 수 있는 문제가 없어서 그대로 뒀어요(최근 30일에 쓴 문서는 다시 못 써요)',
   unauthorized: '다시 들어와 주세요(로그인이 끝났어요)',
+  no_token: 'Worker에 GITHUB_DISPATCH_TOKEN이 없어요',
+  recent: '방금 불렀어요. 채우기가 도는 중이라 한 시간 뒤에 다시 누를 수 있어요',
 }
 const messageOf = (e: unknown) => (e instanceof ApiError ? (ERRORS[e.code] ?? `처리하지 못했어요 (${e.code})`) : '처리하지 못했어요')
 
@@ -164,7 +166,7 @@ function RowButton({ children, tone = 'plain', ...rest }: { tone?: 'plain' | 'da
 }
 
 /** 되돌리기 어려운 일은 두 번 눌러야 한다. 처음 누르면 문구가 바뀌고 4초 안에 다시 눌러야 한다 */
-function ConfirmButton({ children, confirm, onConfirm, disabled }: { children: ReactNode; confirm: string; onConfirm: () => void; disabled?: boolean }) {
+function ConfirmButton({ children, confirm, onConfirm, disabled, tone = 'danger' }: { children: ReactNode; confirm: string; onConfirm: () => void; disabled?: boolean; tone?: 'plain' | 'danger' }) {
   const [armed, setArmed] = useState(false)
   useEffect(() => {
     if (!armed) return
@@ -172,7 +174,7 @@ function ConfirmButton({ children, confirm, onConfirm, disabled }: { children: R
     return () => clearTimeout(t)
   }, [armed])
   return (
-    <RowButton tone="danger" disabled={disabled} onClick={() => (armed ? (setArmed(false), onConfirm()) : setArmed(true))}>
+    <RowButton tone={tone} disabled={disabled} onClick={() => (armed ? (setArmed(false), onConfirm()) : setArmed(true))}>
       {armed ? confirm : children}
     </RowButton>
   )
@@ -303,16 +305,49 @@ const kstTime = (at: number) =>
   new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(at)
 
 /** 문제 채우기 상태. Worker가 대기열을 보고 GitHub Actions를 부른다(worker/src/refill.ts) */
-function RefillNote({ refill, total }: { refill: Overview['refill']; total: number }) {
+/** GitHub가 거절한 까닭. 401은 토큰이 틀리거나 만료, 403·404는 이 저장소의 Actions 쓰기 권한이 없을 때 */
+const githubSays = (status: number) =>
+  status === 401 ? '토큰이 맞지 않거나 만료됐어요' : status === 403 || status === 404 ? '토큰에 이 저장소의 Actions 쓰기 권한이 없어요' : status === 0 ? 'GitHub에 닿지 못했어요' : 'GitHub가 받지 않았어요'
+
+/** 문제 채우기 상태. Worker가 대기열을 보고 GitHub Actions를 부른다(worker/src/refill.ts). "지금 채우기"로 직접 부를 수도 있다 */
+function RefillNote({ refill, total, notify, reload }: { refill: Overview['refill']; total: number; notify: Notify; reload: () => void }) {
   const { last, below, canDispatch } = refill
-  const warn = (text: string) => <p className="mt-3 rounded-2xl bg-[#fdf3d8] px-4 py-3 text-[15px] leading-[22px] text-[#7a5400]">{text}</p>
-  if (!canDispatch) return warn(`Worker에 GITHUB_DISPATCH_TOKEN이 없어 대기열이 줄어도 자동으로 채우지 못해요. 지금 ${total}개 남았어요.`)
-  if (last && !last.ok) return warn(`${kstTime(last.at)}에 문제 채우기를 부르지 못했어요(GitHub 답 ${last.status || '없음'}). 토큰이 만료됐는지 확인해 주세요. 다음 날 다시 불러요.`)
-  if (total < LOW_QUEUE && !(last && Date.now() - last.at < 24 * 3600_000)) return warn(`대기열이 ${total}개 남았어요. 문제 채우기가 아직 불리지 않았어요.`)
+  const [busy, setBusy] = useState(false)
+  const call = async () => {
+    setBusy(true)
+    try {
+      const r = await adminApi.refill()
+      notify(r.ok ? '문제 채우기를 불렀어요. 한 시간쯤 뒤에 대기열이 늘어나요' : `${githubSays(r.status)} (${r.status})`)
+      reload()
+    } catch (e) {
+      notify(messageOf(e))
+    } finally {
+      setBusy(false)
+    }
+  }
+  const text = !canDispatch
+    ? `Worker에 GITHUB_DISPATCH_TOKEN이 없어 대기열이 줄어도 자동으로 채우지 못해요.`
+    : last && !last.ok
+      ? `${kstTime(last.at)}에 문제 채우기를 부르지 못했어요. ${githubSays(last.status)} (${last.status}). 자동으로는 다음 날 다시 불러요.`
+      : total < LOW_QUEUE && !(last && Date.now() - last.at < 24 * 3600_000)
+        ? `대기열이 ${total}개 남았는데 문제 채우기가 아직 불리지 않았어요.`
+        : null
   return (
-    <p className="mt-2 px-1 text-[13px] leading-5 text-ink-2">
-      대기열이 {below}개 아래로 줄면 문제 채우기를 자동으로 불러요.{last && ` 마지막으로 부른 때는 ${kstTime(last.at)}이에요.`}
-    </p>
+    // 좁은 화면에서는 버튼이 문구 아래로 내려간다
+    <Card className={`mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 !py-3 ${text ? '!bg-[#fdf3d8]' : ''}`}>
+      <p className={`min-w-0 flex-1 basis-[240px] text-[14px] leading-[21px] ${text ? 'text-[#7a5400]' : 'text-ink-2'}`}>
+        {text ?? (
+          <>
+            대기열이 {below}개 아래로 줄면 문제 채우기를 자동으로 불러요.
+            {last && ` 마지막으로 부른 때는 ${kstTime(last.at)}이에요.`}
+          </>
+        )}
+      </p>
+      <ConfirmButton tone="plain" confirm="40개 더 넣을까요?" disabled={busy || !canDispatch} onConfirm={() => void call()}>
+        {busy ? <Spinner className="h-4 w-4" /> : <RefreshCw className="h-4 w-4" aria-hidden />}
+        지금 채우기
+      </ConfirmButton>
+    </Card>
   )
 }
 
@@ -349,7 +384,7 @@ function OverviewTab({ notify }: { notify: Notify }) {
         <StatTile label="커뮤니티" value={data.community?.n ?? 0} unit="개" />
         <StatTile label="기기" value={data.players.toLocaleString('ko-KR')} unit="대" />
       </dl>
-      <RefillNote refill={data.refill} total={total} />
+      <RefillNote refill={data.refill} total={total} notify={notify} reload={reload} />
       <Section title="날짜별 오늘의 문제" aside={<RowButton onClick={reload}><RefreshCw className="h-4 w-4" aria-hidden />새로고침</RowButton>}>
         <Rows empty="정해진 문제가 없어요">
           {days.map(d => (
