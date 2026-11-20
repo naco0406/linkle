@@ -61,9 +61,9 @@ export function Home({ run }: { run: Run | null }) {
         </div>
       )}
 
-      {/* 위키백과 글의 출처와 라이선스, 만든 사람 */}
+      {/* 위키백과 글의 출처와 라이선스 */}
       <Link to="/about" className="press mx-auto mt-6 flex h-10 items-center rounded-full px-4 text-[13px] font-medium text-ink-2">
-        링클 정보 · 라이선스
+        출처 · 라이선스
       </Link>
 
       {help && <Help onClose={() => setHelp(false)} />}

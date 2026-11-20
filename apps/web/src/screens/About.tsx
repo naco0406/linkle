@@ -4,27 +4,7 @@ import { Link } from 'react-router'
 import { Card } from '../ui/cards'
 import { CC_BY_SA } from '../ui/license'
 
-// 링클 정보와 라이선스 (/about).
-// 위키백과 글(CC BY-SA 4.0)의 출처와 바꾼 점, 함께 쓰는 글꼴·아이콘·라이브러리의 라이선스, 만든 사람을 적는다.
-
-const OFL = 'https://openfontlicense.org'
-
-type Item = { name: string; by?: string; license: string; url: string }
-
-const FONTS_AND_CODE: Item[] = [
-  { name: 'Pretendard', by: '길형진', license: 'SIL OFL 1.1', url: 'https://github.com/orioncactus/pretendard' },
-  { name: 'Rhodium Libre', by: 'James Puckett', license: 'SIL OFL 1.1', url: 'https://fonts.google.com/specimen/Rhodium+Libre' },
-  { name: 'Lucide', by: 'Lucide Contributors', license: 'ISC', url: 'https://lucide.dev/license' },
-  { name: 'React · React Router', by: 'Meta · Remix', license: 'MIT', url: 'https://react.dev' },
-  { name: 'Zustand', by: 'Poimandres', license: 'MIT', url: 'https://github.com/pmndrs/zustand' },
-  { name: 'Tailwind CSS', by: 'Tailwind Labs', license: 'MIT', url: 'https://tailwindcss.com' },
-]
-
-const CREDITS: [string, string][] = [
-  ['기획 · 디자인', '임민서'],
-  ['개발', '고영'],
-  ['기술 고문', '서동휘'],
-]
+// 출처와 라이선스 (/about). 위키백과 글(CC BY-SA 4.0)의 출처와 게임에 맞게 바꾼 점만 적는다.
 
 export function About() {
   return (
@@ -54,58 +34,6 @@ export function About() {
           </p>
         </Card>
       </Section>
-
-      <Section title="색 이모지를 만드는 모델">
-        <Card>
-          <p className="text-[15px] leading-[24px] text-ink">
-            지나온 문서가 목표와 얼마나 가까운지는 기기 안에서 작은 모델로 계산해요. 이 모델은 한국어 위키백과 덤프의 글로 만들었고, 원자료와 같은{' '}
-            <Ext href={CC_BY_SA.url}>{CC_BY_SA.name}</Ext>로 나눠요. 계산에 쓰는 문서 첫 문단은 서버로 보내지 않아요.
-          </p>
-        </Card>
-      </Section>
-
-      <Section title="글꼴 · 아이콘 · 라이브러리">
-        <Card className="py-2">
-          <ul>
-            {FONTS_AND_CODE.map(f => (
-              <li key={f.name} className="flex min-h-[56px] items-center gap-3 border-t border-[#eef1f5] py-2 first:border-t-0">
-                <span className="min-w-0 flex-1">
-                  <a href={f.url} target="_blank" rel="noopener noreferrer" className="block truncate text-[15px] font-semibold leading-[22px] text-ink">
-                    {f.name}
-                  </a>
-                  {f.by && <span className="block truncate text-[13px] leading-[18px] text-ink-2">{f.by}</span>}
-                </span>
-                <span className="flex-none rounded-full bg-secondary px-2.5 py-1 text-[12px] font-semibold text-primary">{f.license}</span>
-              </li>
-            ))}
-          </ul>
-        </Card>
-        <p className="mt-2 px-1 text-[13px] leading-5 text-ink-2">
-          SIL OFL 전문은 <Ext href={OFL}>openfontlicense.org</Ext>에 있어요. 서버는 Cloudflare Workers와 D1에서 돌아가요.
-        </p>
-      </Section>
-
-      <Section title="만든 사람">
-        <Card className="py-2">
-          <dl>
-            {CREDITS.map(([role, name]) => (
-              <div key={role} className="flex h-12 items-center justify-between border-t border-[#eef1f5] first:border-t-0">
-                <dt className="text-[15px] text-ink-2">{role}</dt>
-                <dd className="text-[15px] font-semibold text-ink">{name}</dd>
-              </div>
-            ))}
-          </dl>
-        </Card>
-        <p className="mt-2 px-1 text-[13px] leading-5 text-ink-2">
-          2024년 9월 15일 처음 공개했고, 2026년 11월에 처음부터 다시 만들었어요. 코드는 <Ext href="https://github.com/naco0406/linkle">GitHub</Ext>에 있어요.
-        </p>
-      </Section>
-
-      <p className="mt-8 px-1 text-center text-[12px] leading-[18px] text-ink-2">
-        위키백과(Wikipedia)는 위키미디어 재단의 등록 상표예요.
-        <br />
-        링클은 위키미디어 재단과 관계없는 개인 프로젝트예요.
-      </p>
     </main>
   )
 }
