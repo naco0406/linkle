@@ -6,6 +6,7 @@ import { now, useGame, type Slot } from '../game/store'
 import { useNavigator } from '../game/useNavigator'
 import { Help, PathTrail, Spinner, Toast, useTick } from '../ui/parts'
 import { WikiView } from '../ui/WikiView'
+import { CC_BY_SA } from '../ui/license'
 
 const TRAIL = 'items-center gap-1 overflow-x-auto whitespace-nowrap text-[14px] [scrollbar-width:none] [mask-image:linear-gradient(to_right,transparent,#000_24px)]'
 
@@ -86,6 +87,14 @@ export function Game({ run, slot = 'daily', onQuit }: { run: Run; slot?: Slot; o
           {page ? (
             <div className="mx-auto max-w-4xl">
               <WikiView page={page} onNavigate={go} />
+              {/* 위키백과 글은 CC BY-SA 4.0이다. 원문 링크는 게임 밖으로 새지 않게 도착한 뒤에 준다 */}
+              <p className="mt-8 border-t border-line pb-2 pt-3 text-[12px] leading-[18px] text-ink-2">
+                이 문서는 한국어 위키백과의 「{page.title}」 문서를 가져와 각주·탐색 상자 등을 뺀 것이에요. 글은{' '}
+                <a href={CC_BY_SA.url} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
+                  {CC_BY_SA.name}
+                </a>{' '}
+                라이선스를 따르며, 원문과 기여자는 도착한 뒤 볼 수 있어요.
+              </p>
             </div>
           ) : (
             <div className="flex h-full flex-col items-center justify-center px-4">

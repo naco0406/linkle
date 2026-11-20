@@ -4,6 +4,7 @@ import { useGame, useImmersive } from './game/store'
 import { Arrival } from './screens/Arrival'
 import { Game } from './screens/Game'
 import { Home } from './screens/Home'
+import { About } from './screens/About'
 import { Archive } from './screens/Archive'
 import { Community } from './screens/Community'
 import { PuzzlePage } from './screens/Puzzle'
@@ -53,6 +54,7 @@ export function App() {
           <Route path="/archive/:id" element={<PuzzlePage key="archive" kind="archive" />} />
           <Route path="/community" element={<Community />} />
           <Route path="/community/:id" element={<PuzzlePage key="community" kind="community" />} />
+          <Route path="/about" element={<About />} />
         </Route>
         <Route
           path="/admin"

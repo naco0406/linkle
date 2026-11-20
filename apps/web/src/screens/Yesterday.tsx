@@ -4,6 +4,7 @@ import { Link } from 'react-router'
 import { binMoves, formatClock, type DailyRecord, type YesterdayStats } from '@linkle/core'
 import { useStats } from '../game/stats'
 import { useYesterday } from '../game/yesterday'
+import { wikiUrl } from '../ui/license'
 import { Card, formatDateKo, kindOfEmoji, PathStep, Route, StatTile, TextButton } from '../ui/cards'
 
 /**
@@ -133,7 +134,7 @@ function ShortestPath({ record, verifying }: { record: DailyRecord | null; verif
           {record.path.map((p, i) => {
             const last = i === record.path.length - 1
             const kind = i === 0 ? 'start' : record.emoji ? kindOfEmoji(record.emoji[i - 1]!) : p.back ? 'back' : last ? 'goal' : 'unknown'
-            return <PathStep key={i} kind={kind} title={p.title} note={i === 0 ? '출발' : p.back ? '되돌아감' : last ? '도착' : undefined} strong={i === 0 || last} muted={p.back} />
+            return <PathStep key={i} kind={kind} title={p.title} note={i === 0 ? '출발' : p.back ? '되돌아감' : last ? '도착' : undefined} strong={i === 0 || last} muted={p.back} href={wikiUrl(p.title)} />
           })}
         </ol>
       ) : (

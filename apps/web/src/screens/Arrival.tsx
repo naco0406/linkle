@@ -4,6 +4,7 @@ import { elapsedMs, formatClock, kstDate, moveCount, type Run } from '@linkle/co
 import { useStats } from '../game/stats'
 import { now, useGame } from '../game/store'
 import { useEmoji } from '../game/useEmoji'
+import { CC_BY_SA, wikiUrl } from '../ui/license'
 import { Card, Countdown, Cta, formatDateKo, kindOfEmoji, PathStep as Step, Sq, StatTile as Tile, TextButton } from '../ui/cards'
 import { Spinner, Toast } from '../ui/parts'
 import { shareRun } from '../ui/share'
@@ -71,10 +72,10 @@ export function Arrival({
 
       <Card className="mt-3 !px-4 !pb-3 !pt-2" aria-label="지나온 길">
         <ol>
-          <Step kind="start" title={puzzle.start.title} note="출발" strong />
+          <Step kind="start" title={puzzle.start.title} note="출발" strong href={wikiUrl(puzzle.start.title)} />
           {run.events.map((e, i) => {
             const kind = kinds?.[i] ?? (e.type === 'back' ? 'back' : e.to.id === puzzle.end.id ? 'goal' : 'unknown')
-            return <Step key={i} kind={kind} title={e.to.title} note={kind === 'back' ? '되돌아감' : kind === 'goal' ? '도착' : undefined} strong={kind === 'goal'} muted={kind === 'back'} />
+            return <Step key={i} kind={kind} title={e.to.title} note={kind === 'back' ? '되돌아감' : kind === 'goal' ? '도착' : undefined} strong={kind === 'goal'} muted={kind === 'back'} href={wikiUrl(e.to.title)} />
           })}
         </ol>
         <p className="mt-1.5 flex items-center gap-1.5 border-t border-line pt-2.5 text-[13px] leading-[18px] text-ink-2">
@@ -86,6 +87,14 @@ export function Arrival({
           {!run.emoji && <Spinner className="ml-auto h-4 w-4" />}
         </p>
       </Card>
+
+      <p className="mt-2 px-1 text-[12px] leading-[18px] text-ink-2">
+        문서 이름을 누르면 위키백과 원문이 열려요. 글은 위키백과 기여자들이 썼고{' '}
+        <a href={CC_BY_SA.url} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
+          {CC_BY_SA.name}
+        </a>
+        를 따라요.
+      </p>
 
       {children && <div className="mt-3 flex flex-col gap-3">{children}</div>}
 

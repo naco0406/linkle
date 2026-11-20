@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react'
 import { ChevronRight, CircleHelp, Share2 } from 'lucide-react'
+import { Link } from 'react-router'
 import { createRun, elapsedMs, formatClock, kstDate, moveCount, type Run } from '@linkle/core'
 import { startDaily } from '../game/api'
 import { useStats } from '../game/stats'
@@ -59,6 +60,11 @@ export function Home({ run }: { run: Run | null }) {
           <YesterdayPreview />
         </div>
       )}
+
+      {/* 위키백과 글의 출처와 라이선스, 만든 사람 */}
+      <Link to="/about" className="press mx-auto mt-6 flex h-10 items-center rounded-full px-4 text-[13px] font-medium text-ink-2">
+        링클 정보 · 라이선스
+      </Link>
 
       {help && <Help onClose={() => setHelp(false)} />}
       {toast && <Toast message={toast} onDone={clearToast} />}
