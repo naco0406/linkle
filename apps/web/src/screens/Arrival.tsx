@@ -46,9 +46,9 @@ export function Arrival({
   const close = onClose ?? (() => useGame.getState().showArrival(run.runId, false))
   const tile3 = third ?? { label: '도착 순서', value: run.result?.order ?? null, unit: '번째' }
   const subtitle = daily
-    ? `${puzzle.number}번째 링클${puzzle.date ? ` · ${formatDateKo(puzzle.date).replace(/ \S+요일$/, '')}` : ''}`
+    ? `${puzzle.date ? `${formatDateKo(puzzle.date).replace(/ \S+요일$/, '')}, ` : ''}${puzzle.number}번째 링클`
     : run.mode === 'archive'
-      ? `${puzzle.number}번째 링클 · 지난 문제`
+      ? `${puzzle.number}번째 링클을 지난 문제로 풀었어요`
       : `링클 커뮤니티 ${puzzle.number}번`
 
   // 오늘의 문제로 연속 일수가 방금 늘었으면 축하 화면이 먼저 나온다

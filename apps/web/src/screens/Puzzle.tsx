@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { ChevronLeft } from 'lucide-react'
 import { Link, useParams } from 'react-router'
-import { createRun, elapsedMs, formatClock, moveCount } from '@linkle/core'
+import { createRun, elapsedMs, formatDurationShort, moveCount } from '@linkle/core'
 import { getDay, getPuzzle, startPuzzle, type PuzzleInfo } from '../game/api'
 import { runIn, useGame, useImmersive } from '../game/store'
 import { useLoad } from '../game/useLoad'
@@ -97,7 +97,8 @@ function Intro({ kind, info }: { kind: Kind; info: PuzzleInfo }) {
 
   const archive = kind === 'archive'
   const played = !!done || !!mine
-  const title = archive && info.date ? `#${info.number} · ${formatDateKo(info.date)}` : `링클 커뮤니티 #${info.number}`
+  const title = archive && info.date ? formatDateKo(info.date) : `링클 커뮤니티 #${info.number}`
+  const rank = !archive && done?.result?.rank ? done.result.rank : null
   const rate = info.plays === 0 ? null : `${Math.round((info.clears / info.plays) * 100)}`
 
   return (
@@ -106,16 +107,24 @@ function Intro({ kind, info }: { kind: Kind; info: PuzzleInfo }) {
         <div className="flex items-center gap-1.5">
           <span className="text-[15px] font-semibold leading-[22px] text-primary">{archive ? '지난 문제' : info.kind === 'official' ? '링클이 낸 문제' : `${info.author}님의 문제`}</span>
           <DifficultyChip value={info.difficulty} />
+          {archive && <span className="ml-auto font-brand text-xl leading-6 text-primary">#{info.number}</span>}
         </div>
         <p className="mt-0.5 text-[22px] font-bold leading-[31px] text-ink">{title}</p>
         <div className="mt-4">{done ? <Route start={done.puzzle.start.title} end={done.puzzle.end.title} /> : <Route />}</div>
 
         {mine && (
-          <p className="mt-3 flex items-center justify-center gap-2 rounded-xl bg-secondary py-2.5 text-[15px] leading-[22px] text-ink">
-            <span className="h-2 w-2 rounded-full bg-primary" aria-hidden />
+          <p className="mt-3 rounded-xl bg-secondary px-4 py-2.5 text-center text-[15px] leading-[22px] text-ink">
+            <span className="mb-px mr-2 inline-block h-2 w-2 rounded-full bg-primary align-middle" aria-hidden />
             <span>
-              나는 <b className="font-semibold tabular-nums text-primary">{mine.moves}번 · {formatClock(mine.ms)}</b>
-              {!archive && done?.result?.rank ? ` · ${done.result.rank}위` : ''}
+              나는 <b className="font-semibold tabular-nums text-primary">{mine.moves}번</b>, <b className="font-semibold tabular-nums text-primary">{formatDurationShort(mine.ms)}</b> 만에
+              {rank ? (
+                <>
+                  {' '}
+                  <b className="font-semibold tabular-nums text-primary">{rank}위</b>로 도착했어요
+                </>
+              ) : (
+                ' 도착했어요'
+              )}
             </span>
           </p>
         )}
@@ -137,8 +146,8 @@ function Intro({ kind, info }: { kind: Kind; info: PuzzleInfo }) {
               : '누르면 두 문서가 공개되고 시간이 흘러요. 처음 도전한 기록만 순위에 올라요'}
         </p>
         {done && (
-          <TextButton onClick={() => useGame.getState().showArrival(done.runId, true)} className="mx-auto mt-1 flex w-fit">
-            지난 결과 다시 보기 · {moveCount(done)}번 {formatClock(elapsedMs(done, done.finishedAt ?? done.startedAt))}
+          <TextButton onClick={() => useGame.getState().showArrival(done.runId, true)} className="mx-auto mt-1 !flex w-fit">
+            {mine ? '지난 결과 다시 보기' : `지난 결과 다시 보기 (${moveCount(done)}번, ${formatDurationShort(elapsedMs(done, done.finishedAt ?? done.startedAt))})`}
           </TextButton>
         )}
       </Card>

@@ -178,11 +178,14 @@ function ConfirmButton({ children, confirm, onConfirm, disabled }: { children: R
   )
 }
 
-function Section({ title, aside, children }: { title: string; aside?: ReactNode; children: ReactNode }) {
+function Section({ title, count, aside, children }: { title: string; count?: number; aside?: ReactNode; children: ReactNode }) {
   return (
     <section className="mt-6 first:mt-2">
       <div className="mb-2 flex min-h-8 items-center justify-between gap-3 px-1">
-        <h2 className="text-[17px] font-bold leading-[25px] text-ink">{title}</h2>
+        <h2 className="text-[17px] font-bold leading-[25px] text-ink">
+          {title}
+          {count !== undefined && <span className="ml-1.5 tabular-nums text-ink-2">{count}</span>}
+        </h2>
         {aside}
       </div>
       {children}
@@ -321,10 +324,12 @@ function OverviewTab({ notify }: { notify: Notify }) {
 
   return (
     <>
-      <dl className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <dl className="grid grid-cols-3 gap-2 sm:grid-cols-6">
         <StatTile label="대기열" value={total} unit="개" />
-        <StatTile label="쉬움 · 보통 · 어려움" value={`${count('easy')} · ${count('normal')} · ${count('hard')}`} />
-        <StatTile label="커뮤니티 문제" value={data.community?.n ?? 0} unit="개" />
+        <StatTile label="쉬움" value={count('easy')} unit="개" />
+        <StatTile label="보통" value={count('normal')} unit="개" />
+        <StatTile label="어려움" value={count('hard')} unit="개" />
+        <StatTile label="커뮤니티" value={data.community?.n ?? 0} unit="개" />
         <StatTile label="기기" value={data.players.toLocaleString('ko-KR')} unit="대" />
       </dl>
       {total < LOW_QUEUE && (
@@ -350,8 +355,8 @@ function OverviewTab({ notify }: { notify: Notify }) {
                   <PathLine start={d.start_title} solution={d.solution} />
                 ) : (
                   <span className="tabular-nums text-ink-2">
-                    도전 {d.plays.toLocaleString('ko-KR')} · 도착 {d.clears.toLocaleString('ko-KR')}
-                    {d.plays > 0 && ` · ${Math.round((d.clears / d.plays) * 100)}%`}
+                    {d.plays.toLocaleString('ko-KR')}명 도전, {d.clears.toLocaleString('ko-KR')}명 도착
+                    {d.plays > 0 && ` (${Math.round((d.clears / d.plays) * 100)}%)`}
                   </span>
                 )
               }
@@ -394,7 +399,7 @@ function QueueTab({ notify }: { notify: Notify }) {
   }
   return (
     <>
-      <Section title={`낼 순서 · ${data.approved.length}개`}>
+      <Section title="낼 순서" count={data.approved.length}>
         <Rows empty="대기열이 비었어요">
           {data.approved.map((q, i) => (
             <Row
@@ -433,7 +438,7 @@ function QueueTab({ notify }: { notify: Notify }) {
             />
           ))}
         </Rows>
-        <p className="mt-2 px-1 text-[13px] leading-5 text-ink-2">당긴 문제는 요일 난이도와 상관없이 먼저 나가요. 나머지는 요일에 맞는 난이도부터 골라요(월·화 쉬움, 수~금 보통, 주말 어려움).</p>
+        <p className="mt-2 px-1 text-[13px] leading-5 text-ink-2">당긴 문제는 요일 난이도와 상관없이 먼저 나가요. 나머지는 요일에 맞는 난이도부터 골라요. 월요일과 화요일은 쉬움, 수요일부터 금요일은 보통, 주말은 어려움이에요.</p>
       </Section>
       {data.rejected.length > 0 && (
         <Section title="뺀 문제">
@@ -482,7 +487,7 @@ function CommunityTab({ notify }: { notify: Notify }) {
     }
   }
   return (
-    <Section title={`링클이 낸 문제 · ${data.items.length}개`}>
+    <Section title="링클이 낸 문제" count={data.items.length}>
       <Rows empty="아직 문제가 없어요">
         {data.items.map(p => {
           const hidden = p.status !== 'published'
@@ -500,7 +505,8 @@ function CommunityTab({ notify }: { notify: Notify }) {
               }
               sub={
                 <span className="tabular-nums text-ink-2">
-                  {hidden ? '숨김 · ' : ''}도전 {p.plays.toLocaleString('ko-KR')} · 도착 {p.clears.toLocaleString('ko-KR')}
+                  {hidden ? '숨김, ' : ''}
+                  {p.plays.toLocaleString('ko-KR')}명 도전, {p.clears.toLocaleString('ko-KR')}명 도착
                 </span>
               }
               actions={
@@ -581,8 +587,8 @@ function AddResult({ notify }: { notify: Notify }) {
     setBusy(true)
     try {
       const r = await adminApi.add(pool, { start, end: run.puzzle.end, par: hops.length, difficulty, solution: hops }, pool === 'daily' && first)
-      if (r.added === 0) notify('이미 들어 있는 출발·도착이에요')
-      else notify(pool === 'daily' ? `대기열에 넣었어요 · 지금 ${r.queue}개` : '커뮤니티에 올렸어요')
+      if (r.added === 0) notify('출발과 도착이 같은 문제가 이미 있어요')
+      else notify(pool === 'daily' ? `대기열에 넣었어요. 지금 ${r.queue}개 있어요` : '커뮤니티에 올렸어요')
       drop()
     } catch (e) {
       notify(messageOf(e))
@@ -595,8 +601,8 @@ function AddResult({ notify }: { notify: Notify }) {
       <Card>
         <SolutionPath start={start.title} hops={hops} />
         <p className="mt-3 text-[14px] leading-5 text-ink-2">
-          정답 {hops.length}번 · 실제로 움직인 횟수 {moveCount(run)}번
-          {hops.length < 3 && <b className="ml-1 font-semibold text-[#c0392b]">· 3번보다 짧으면 너무 쉬워요</b>}
+          정답은 {hops.length}번, 실제로는 {moveCount(run)}번 움직였어요.
+          {hops.length < 3 && <b className="ml-1 font-semibold text-[#c0392b]">3번보다 짧으면 너무 쉬워요.</b>}
         </p>
 
         <div className="mt-5 grid gap-x-4 sm:grid-cols-2">

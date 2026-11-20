@@ -38,7 +38,7 @@ export function Community() {
 }
 
 function rate(c: PuzzleCard): string {
-  return c.plays === 0 ? '아직 도전한 사람이 없어요' : `도전 ${c.plays.toLocaleString('ko-KR')}명 · 클리어 ${Math.round((c.clears / c.plays) * 100)}%`
+  return c.plays === 0 ? '아직 도전한 사람이 없어요' : `${c.plays.toLocaleString('ko-KR')}명 중 ${c.clears.toLocaleString('ko-KR')}명 도착`
 }
 
 function CommunityPage({ sort, offset, last, onMore }: { sort: CommunitySort; offset: number; last: boolean; onMore: (next: number) => void }) {

@@ -26,7 +26,7 @@ export function About() {
           <h3 className="mb-1 mt-4 text-[14px] font-semibold text-ink">게임에 맞게 바꾼 점</h3>
           <ul className="list-disc space-y-1 pl-5 text-[14px] leading-[21px] text-ink-2">
             <li>각주, 참고 문헌, 같이 보기, 외부 링크 문단을 뺐어요.</li>
-            <li>탐색 상자, 안내 틀, 편집 링크, 소리·영상을 뺐어요.</li>
+            <li>탐색 상자, 안내 틀, 편집 링크, 소리와 영상을 뺐어요.</li>
             <li>없는 문서와 일반 문서가 아닌 곳(분류, 틀, 파일 등)으로 가는 링크는 글자만 남겼어요.</li>
           </ul>
         </Card>

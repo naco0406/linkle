@@ -1,7 +1,7 @@
 import { formatClock } from '@linkle/core'
 import { getBoard, type BoardRow } from '../game/api'
 import { useLoad } from '../game/useLoad'
-import { Card, TextButton } from './cards'
+import { Card, Parts, TextButton } from './cards'
 import { CardTitle } from '../screens/Yesterday'
 
 const MEDAL = ['bg-[#f5c542] text-white', 'bg-[#b8c3cf] text-white', 'bg-[#d89a62] text-white']
@@ -17,9 +17,7 @@ function Row({ r }: { r: BoardRow }) {
         </span>
         {!r.verified && <span className="block text-[12px] leading-4 text-ink-2">기록 확인 중</span>}
       </span>
-      <span className="flex-none text-right text-[14px] tabular-nums text-ink">
-        <b className="font-semibold text-primary">{r.moves}번</b> · {formatClock(r.ms)}
-      </span>
+      <Parts className="flex-none text-[14px] tabular-nums text-ink" items={[<b className="font-semibold text-primary">{r.moves}번</b>, formatClock(r.ms)]} />
     </li>
   )
 }

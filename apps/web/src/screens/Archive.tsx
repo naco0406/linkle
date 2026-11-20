@@ -1,6 +1,6 @@
 import { Fragment, useState } from 'react'
 import { Check } from 'lucide-react'
-import { formatClock, type Run } from '@linkle/core'
+import { formatDurationShort, type Run } from '@linkle/core'
 import { getArchive, type ArchiveItem } from '../game/api'
 import { useStats } from '../game/stats'
 import { useGame } from '../game/store'
@@ -74,8 +74,8 @@ function ArchivePage({ before, last, onMore }: { before: number | null; last: bo
                     key={item.id}
                     to={`/archive/${item.id}`}
                     lead={<Badge top={d.getUTCDate()} bottom={'일월화수목금토'[d.getUTCDay()]} />}
-                    title={`#${item.number} · ${d.getUTCMonth() + 1}월 ${d.getUTCDate()}일`}
-                    sub={r ? `${r.moves}번 · ${formatClock(r.ms)}에 도착했어요` : item.finished > 0 ? `${item.finished.toLocaleString('ko-KR')}명이 도착했어요` : '아직 아무도 도착하지 못했어요'}
+                    title={`${item.number}번째 링클`}
+                    sub={r ? `${r.moves}번 이동, ${formatDurationShort(r.ms)}` : item.finished > 0 ? `${item.finished.toLocaleString('ko-KR')}명이 도착했어요` : '아직 아무도 도착하지 못했어요'}
                     trail={r && <Check className="h-[18px] w-[18px]" strokeWidth={2.5} aria-label="푼 문제" />}
                   />
                 )

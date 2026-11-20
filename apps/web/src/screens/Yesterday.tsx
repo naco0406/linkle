@@ -1,11 +1,11 @@
 import { useState, type ReactNode } from 'react'
 import { ArrowRight, ChevronRight } from 'lucide-react'
 import { Link } from 'react-router'
-import { binMoves, formatClock, type DailyRecord, type YesterdayStats } from '@linkle/core'
+import { binMoves, formatClock, formatDurationShort, type DailyRecord, type YesterdayStats } from '@linkle/core'
 import { useStats } from '../game/stats'
 import { useYesterday } from '../game/yesterday'
 import { wikiUrl } from '../ui/license'
-import { Card, formatDateKo, kindOfEmoji, PathStep, Route, StatTile, TextButton } from '../ui/cards'
+import { Card, formatDateKo, kindOfEmoji, Parts, PathStep, Route, StatTile, TextButton } from '../ui/cards'
 
 /**
  * 어제의 기록. 누가 1등인지가 아니라 어제 사람들이 언제, 어떻게 도착했는지를 보여 준다.
@@ -17,7 +17,7 @@ export function Yesterday() {
     <main className="mx-auto flex w-full max-w-[440px] flex-1 flex-col px-4 min-[360px]:px-5 pb-6 pt-[env(safe-area-inset-top)]">
       <header className="pb-4 pt-5">
         <h1 className="text-[22px] font-bold leading-[31px] text-ink">어제의 기록</h1>
-        <p className="h-[22px] text-[15px] leading-[22px] text-ink-2">{data && data.status !== 'none' ? `#${data.number} · ${formatDateKo(data.date)}` : ''}</p>
+        <p className="h-[22px] text-[15px] leading-[22px] text-ink-2">{data && data.status !== 'none' ? `${formatDateKo(data.date)}, ${data.number}번째 링클` : ''}</p>
       </header>
       {data === null ? (
         error ? (
@@ -59,10 +59,10 @@ export function DayStats({ stats, head = true }: { stats: YesterdayStats; head?:
             )}
           </p>
           {mine && (
-            <p className="mt-3 flex items-center justify-center gap-2 rounded-xl bg-secondary py-2.5 text-[15px] leading-[22px] text-ink">
-              <span className="h-2 w-2 rounded-full bg-primary" aria-hidden />
+            <p className="mt-3 rounded-xl bg-secondary px-4 py-2.5 text-center text-[15px] leading-[22px] text-ink">
+              <span className="mb-px mr-2 inline-block h-2 w-2 rounded-full bg-primary align-middle" aria-hidden />
               <span>
-                나는 <b className="font-semibold tabular-nums text-primary">{mine.moves}번 · {formatClock(mine.ms)}</b>에 도착했어요
+                나는 <b className="font-semibold tabular-nums text-primary">{mine.moves}번</b>, <b className="font-semibold tabular-nums text-primary">{formatDurationShort(mine.ms)}</b> 만에 도착했어요
               </span>
             </p>
           )}
@@ -129,7 +129,7 @@ function ShortestPath({ record, verifying }: { record: DailyRecord | null; verif
   const [open, setOpen] = useState(false)
   return (
     <Card aria-label="가장 짧은 길">
-      <CardTitle side={record ? `${record.moves}번 · ${formatClock(record.durationMs)}` : undefined}>가장 짧은 길</CardTitle>
+      <CardTitle side={record ? <Parts className="tabular-nums" items={[`${record.moves}번`, formatClock(record.durationMs)]} /> : undefined}>가장 짧은 길</CardTitle>
       {!record ? (
         <p className="text-[15px] leading-[22px] text-ink-2">{verifying ? '위키백과에서 기록을 확인하고 있어요.' : '확인된 기록이 없어요.'}</p>
       ) : open ? (

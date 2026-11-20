@@ -4,6 +4,17 @@ import { BACK_EMOJI, GOAL_EMOJI, LEVEL_EMOJI, nextKstMidnight } from '@linkle/co
 import { now } from '../game/store'
 import { useTick } from './parts'
 
+/** 짧은 값 여럿(예: "3번", "02:31")을 가운뎃점 없이 간격으로만 나눈다 */
+export function Parts({ items, className = '' }: { items: ReactNode[]; className?: string }) {
+  return (
+    <span className={`inline-flex flex-wrap items-baseline gap-x-2 ${className}`}>
+      {items.map((p, i) => (
+        <span key={i}>{p}</span>
+      ))}
+    </span>
+  )
+}
+
 /** 흰 카드. 테두리와 그림자 없이 바탕과의 색 차이로만 구분한다 */
 export function Card({ children, className = '', lift = false, ...rest }: { children: ReactNode; className?: string; lift?: boolean } & React.HTMLAttributes<HTMLElement>) {
   return (

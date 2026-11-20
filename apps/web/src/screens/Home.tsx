@@ -1,12 +1,12 @@
 import { useCallback, useState } from 'react'
-import { ChevronRight, CircleHelp, Share2 } from 'lucide-react'
+import { Check, ChevronRight, CircleHelp, Share2 } from 'lucide-react'
 import { Link } from 'react-router'
 import { createRun, elapsedMs, formatClock, kstDate, moveCount, type Run } from '@linkle/core'
 import { startDaily } from '../game/api'
 import { useStats } from '../game/stats'
 import { now, useGame } from '../game/store'
 import { useEmoji } from '../game/useEmoji'
-import { Card, Countdown, Cta, formatDateKo, HowTo, kindOfEmoji, Route, Sq } from '../ui/cards'
+import { Card, Countdown, Cta, formatDateKo, HowTo, kindOfEmoji, Parts, Route, Sq } from '../ui/cards'
 import { Help, Spinner, Toast } from '../ui/parts'
 import { shareRun } from '../ui/share'
 import { StreakCard, StreakChip } from '../ui/Streak'
@@ -63,7 +63,7 @@ export function Home({ run }: { run: Run | null }) {
 
       {/* 위키백과 글의 출처와 라이선스 */}
       <Link to="/about" className="press mx-auto mt-6 flex h-10 items-center rounded-full px-4 text-[13px] font-medium text-ink-2">
-        출처 · 라이선스
+        출처와 라이선스
       </Link>
 
       {help && <Help onClose={() => setHelp(false)} />}
@@ -72,10 +72,18 @@ export function Home({ run }: { run: Run | null }) {
   )
 }
 
-function CardHead({ label, number }: { label: string; number: number | null }) {
+function CardHead({ label, number, done = false }: { label: string; number: number | null; done?: boolean }) {
   return (
     <div className="flex items-baseline justify-between">
-      <span className="text-[15px] font-semibold leading-[22px] text-primary">{label}</span>
+      <span className="flex items-center gap-1.5 text-[15px] font-semibold leading-[22px] text-primary">
+        {label}
+        {done && (
+          <span className="inline-flex h-5 items-center gap-0.5 rounded-full bg-flame-soft pl-1.5 pr-2 text-[12px] font-semibold">
+            <Check className="h-3 w-3" strokeWidth={3} aria-hidden />
+            도착
+          </span>
+        )}
+      </span>
       <span className="font-brand text-xl leading-6 text-primary">{number === null ? '' : `#${number}`}</span>
     </div>
   )
@@ -123,14 +131,14 @@ function DoneCard({ run, onToast }: { run: Run; onToast: (m: string) => void }) 
   useEmoji(run)
   return (
     <Card lift aria-label="오늘의 링클 결과">
-      <CardHead label="오늘의 링클 · 도착 완료" number={run.puzzle.number} />
+      <CardHead label="오늘의 링클" number={run.puzzle.number} done />
       <div className="mt-4">
         <Route start={run.puzzle.start.title} end={run.puzzle.end.title} />
       </div>
       <button onClick={() => useGame.getState().showArrival(run.runId, true)} className="press my-4 flex w-full items-center gap-3 rounded-xl text-left" aria-label="경로 다시 보기">
         <span className="flex min-w-0 flex-1 flex-wrap gap-1">{run.emoji ? run.emoji.map((e, i) => <Sq key={i} kind={kindOfEmoji(e)} size={24} />) : <Spinner className="h-6 w-6" />}</span>
         <span className="flex flex-none items-center text-[14px] tabular-nums text-ink-2">
-          {moveCount(run)}번 · {formatClock(elapsedMs(run, run.finishedAt ?? 0))}
+          <Parts items={[`${moveCount(run)}번`, formatClock(elapsedMs(run, run.finishedAt ?? 0))]} />
           <ChevronRight className="h-[18px] w-[18px] text-[#b3bcc6]" aria-hidden />
         </span>
       </button>

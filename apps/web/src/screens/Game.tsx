@@ -89,7 +89,7 @@ export function Game({ run, slot = 'daily', onQuit }: { run: Run; slot?: Slot; o
               <WikiView page={page} onNavigate={go} />
               {/* 위키백과 글은 CC BY-SA 4.0이다. 원문 링크는 게임 밖으로 새지 않게 도착한 뒤에 준다 */}
               <p className="mt-8 border-t border-line pb-2 pt-3 text-[12px] leading-[18px] text-ink-2">
-                이 문서는 한국어 위키백과의 「{page.title}」 문서를 가져와 각주·탐색 상자 등을 뺀 것이에요. 글은{' '}
+                이 문서는 한국어 위키백과의 「{page.title}」 문서를 가져와 각주와 탐색 상자 등을 뺀 것이에요. 글은{' '}
                 <a href={CC_BY_SA.url} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
                   {CC_BY_SA.name}
                 </a>{' '}
