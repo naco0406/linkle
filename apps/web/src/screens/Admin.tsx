@@ -201,14 +201,60 @@ function Pair({ start, end }: { start: string; end: string }) {
 }
 
 function PathLine({ start, solution }: { start: string; solution: string | null }) {
-  let hops: Hop[] = []
-  try {
-    hops = solution ? (JSON.parse(solution) as Hop[]) : []
-  } catch {
-    hops = []
-  }
+  const hops = hopsOf(solution)
   if (!hops.length) return <span className="text-ink-2">정답 경로 없음</span>
   return <span className="truncate text-ink-2">{[start, ...hops.map(h => h.title)].join(' › ')}</span>
+}
+
+const hopsOf = (solution: string | null): Hop[] => {
+  try {
+    const v = solution ? (JSON.parse(solution) as unknown) : null
+    return Array.isArray(v) ? (v as Hop[]) : []
+  } catch {
+    return []
+  }
+}
+
+/** 정답 경로를 칩으로. 출발과 도착은 채운 칩, 사이 문서는 옅은 칩. 누른 링크 이름이 문서 이름과 다르면(넘겨주기) 작게 덧붙인다 */
+function SolutionPath({ start, hops }: { start: string; hops: Hop[] }) {
+  if (!hops.length) return <p className="rounded-xl bg-[#f5f7fa] px-3 py-2.5 text-[14px] text-ink-2">정답 경로가 저장돼 있지 않아요</p>
+  const steps = [{ title: start, via: start }, ...hops]
+  return (
+    <ol className="flex flex-wrap items-center gap-1.5 rounded-xl bg-[#f5f7fa] px-3 py-2.5 text-[14px]">
+      {steps.map((h, i) => (
+        <li key={i} className="flex items-center gap-1.5">
+          <span className={`rounded-lg px-2 py-0.5 font-semibold leading-6 ${i === 0 || i === steps.length - 1 ? 'bg-primary text-white' : 'bg-white text-primary'}`}>
+            {h.title}
+            {h.via !== h.title && <span className="ml-1 text-[12px] font-medium opacity-70">({h.via})</span>}
+          </span>
+          {i < steps.length - 1 && <ArrowRight className="h-3.5 w-3.5 text-[#b3bcc6]" aria-hidden />}
+        </li>
+      ))}
+      <li className="ml-1 text-[13px] text-ink-2">{hops.length}번</li>
+    </ol>
+  )
+}
+
+/** 펼친 정답의 id들. 줄마다 따로 펼친다 */
+function useReveal() {
+  const [open, setOpen] = useState<Set<number>>(new Set())
+  const toggle = (id: number) =>
+    setOpen(s => {
+      const n = new Set(s)
+      if (n.has(id)) n.delete(id)
+      else n.add(id)
+      return n
+    })
+  return { isOpen: (id: number) => open.has(id), toggle }
+}
+
+function RevealButton({ open, onClick }: { open: boolean; onClick: () => void }) {
+  return (
+    <RowButton onClick={onClick} aria-expanded={open}>
+      {open ? <EyeOff className="h-4 w-4" aria-hidden /> : <Eye className="h-4 w-4" aria-hidden />}
+      {open ? '정답 접기' : '정답 보기'}
+    </RowButton>
+  )
 }
 
 function Rows({ children, empty }: { children: ReactNode[]; empty: string }) {
@@ -219,7 +265,7 @@ function Rows({ children, empty }: { children: ReactNode[]; empty: string }) {
   )
 }
 
-function Row({ lead, title, sub, actions }: { lead?: ReactNode; title: ReactNode; sub?: ReactNode; actions?: ReactNode }) {
+function Row({ lead, title, sub, actions, below }: { lead?: ReactNode; title: ReactNode; sub?: ReactNode; actions?: ReactNode; below?: ReactNode }) {
   return (
     <li className="flex min-h-[68px] flex-wrap items-center gap-x-3 gap-y-2 border-t border-[#eef1f5] py-3 first:border-t-0">
       {lead && <span className="flex-none">{lead}</span>}
@@ -228,6 +274,7 @@ function Row({ lead, title, sub, actions }: { lead?: ReactNode; title: ReactNode
         {sub && <span className="mt-0.5 flex min-w-0 text-[14px] leading-5">{sub}</span>}
       </span>
       {actions && <span className="ml-auto flex flex-none items-center gap-1.5">{actions}</span>}
+      {below && <div className="basis-full">{below}</div>}
     </li>
   )
 }
@@ -250,6 +297,7 @@ const LOW_QUEUE = 7
 function OverviewTab({ notify }: { notify: Notify }) {
   const { data, error, reload } = useLoad('admin:overview', adminApi.overview)
   const [busy, setBusy] = useState<number | null>(null)
+  const reveal = useReveal()
   if (error && !data) return <Failed onRetry={reload} />
   if (!data) return <Loading />
   const count = (d: Difficulty) => data.queue.find(q => q.difficulty === d)?.n ?? 0
@@ -306,13 +354,16 @@ function OverviewTab({ notify }: { notify: Notify }) {
                 )
               }
               actions={
-                d.date > data.today && (
+                d.date > data.today ? (
                   <ConfirmButton confirm="정말 바꿀까요?" disabled={busy !== null || d.plays > 0} onConfirm={() => void replace(d)}>
                     {busy === d.id ? <Spinner className="h-4 w-4" /> : <RefreshCw className="h-4 w-4" aria-hidden />}
                     다른 문제로
                   </ConfirmButton>
+                ) : (
+                  <RevealButton open={reveal.isOpen(d.id)} onClick={() => reveal.toggle(d.id)} />
                 )
               }
+              below={reveal.isOpen(d.id) && <SolutionPath start={d.start_title} hops={hopsOf(d.solution)} />}
             />
           ))}
         </Rows>
@@ -413,6 +464,7 @@ function QueueTab({ notify }: { notify: Notify }) {
 function CommunityTab({ notify }: { notify: Notify }) {
   const { data, error, reload } = useLoad('admin:community', adminApi.community)
   const [busy, setBusy] = useState<number | null>(null)
+  const reveal = useReveal()
   if (error && !data) return <Failed onRetry={reload} />
   if (!data) return <Loading />
   const act = async (id: number, action: 'hide' | 'show') => {
@@ -450,18 +502,20 @@ function CommunityTab({ notify }: { notify: Notify }) {
                 </span>
               }
               actions={
-                hidden ? (
-                  <RowButton disabled={busy !== null} onClick={() => void act(p.id, 'show')}>
-                    <Eye className="h-4 w-4" aria-hidden />
-                    보이기
-                  </RowButton>
-                ) : (
-                  <RowButton tone="danger" disabled={busy !== null} onClick={() => void act(p.id, 'hide')}>
-                    <EyeOff className="h-4 w-4" aria-hidden />
-                    숨기기
-                  </RowButton>
-                )
+                <>
+                  <RevealButton open={reveal.isOpen(p.id)} onClick={() => reveal.toggle(p.id)} />
+                  {hidden ? (
+                    <RowButton disabled={busy !== null} onClick={() => void act(p.id, 'show')}>
+                      보이기
+                    </RowButton>
+                  ) : (
+                    <RowButton tone="danger" disabled={busy !== null} onClick={() => void act(p.id, 'hide')}>
+                      숨기기
+                    </RowButton>
+                  )}
+                </>
               }
+              below={reveal.isOpen(p.id) && <SolutionPath start={p.start_title} hops={hopsOf(p.solution)} />}
             />
           )
         })}
@@ -537,14 +591,7 @@ function AddResult({ notify }: { notify: Notify }) {
   return (
     <Section title="이 길로 넣을까요?">
       <Card>
-        <ol className="flex flex-wrap items-center gap-1.5 text-[15px]">
-          {[start.title, ...hops.map(h => h.title)].map((t, i, all) => (
-            <li key={i} className="flex items-center gap-1.5">
-              <span className={`rounded-lg px-2 py-1 font-semibold ${i === 0 || i === all.length - 1 ? 'bg-primary text-white' : 'bg-secondary text-primary'}`}>{t}</span>
-              {i < all.length - 1 && <ArrowRight className="h-4 w-4 text-[#b3bcc6]" aria-hidden />}
-            </li>
-          ))}
-        </ol>
+        <SolutionPath start={start.title} hops={hops} />
         <p className="mt-3 text-[14px] leading-5 text-ink-2">
           정답 {hops.length}번 · 실제로 움직인 횟수 {moveCount(run)}번
           {hops.length < 3 && <b className="ml-1 font-semibold text-[#c0392b]">· 3번보다 짧으면 너무 쉬워요</b>}

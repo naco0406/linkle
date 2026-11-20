@@ -6,6 +6,7 @@ import { buildGraph } from './graph.ts'
 //   build     링크 지도 만들기 (data/graph/)
 //   used      운영에서 이미 쓴 제목 받기 (LINKLE_URL, LINKLE_ADMIN_TOKEN)
 //   upload    만든 후보를 운영에 넣기 (--pool daily|official)
+//   solve     정해진 출발·도착 쌍의 정답 경로 찾기 (--in pairs.json → out/solved.json)
 //   generate  후보 고르기 → 게임 규칙으로 경로 확인 → out/queue.sql(오늘의 문제 대기열) 또는 --pool official이면 out/official.sql(커뮤니티)
 
 const here = new URL('..', import.meta.url).pathname
@@ -37,6 +38,10 @@ if (cmd === 'build') {
     pool: opt('pool', 'daily') === 'official' ? 'official' : 'daily',
     exclude,
   })
+} else if (cmd === 'solve') {
+  // --in <파일>: [{start:{id,title}, end:{id,title}}] → out/solved.json
+  const { solve } = await import('./solve.ts')
+  await solve(GRAPH, opt('in', join(OUT, 'pairs.json')), opt('out', join(OUT, 'solved.json')))
 } else if (cmd === 'used') {
   const { fetchUsed } = await import('./remote.ts')
   await fetchUsed(opt('out', join(OUT, 'used.txt')))

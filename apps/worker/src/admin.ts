@@ -193,7 +193,7 @@ async function queueAction(request: Request, env: AdminEnv, id: number): Promise
 /** 커뮤니티의 링클이 낸 문제. 숨긴 것도 함께 */
 async function communityList(env: AdminEnv): Promise<Response> {
   const { results } = await env.DB.prepare(
-    `SELECT id, number, start_title, end_title, par, difficulty, status, plays, clears FROM puzzles WHERE kind IN ('official', 'community') ORDER BY id DESC`,
+    `SELECT id, number, start_title, end_title, par, difficulty, status, plays, clears, solution FROM puzzles WHERE kind IN ('official', 'community') ORDER BY id DESC`,
   ).all()
   return json({ items: results })
 }

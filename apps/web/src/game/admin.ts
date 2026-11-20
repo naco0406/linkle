@@ -27,7 +27,7 @@ export type Overview = {
 }
 export type QueueItem = { id: number; start_title: string; end_title: string; par: number; difficulty: Difficulty | null; solution: string | null; priority: number; created_at: number }
 export type RejectedItem = { id: number; start_title: string; end_title: string; par: number; difficulty: Difficulty | null; note: string | null }
-export type CommunityItem = { id: number; number: number; start_title: string; end_title: string; par: number | null; difficulty: Difficulty | null; status: string; plays: number; clears: number }
+export type CommunityItem = { id: number; number: number; start_title: string; end_title: string; par: number | null; difficulty: Difficulty | null; status: string; plays: number; clears: number; solution: string | null }
 export type NewPuzzle = { start: Page; end: Page; par: number; difficulty: Difficulty; solution: Hop[] }
 
 async function call<T>(path: string, body?: unknown): Promise<T> {
