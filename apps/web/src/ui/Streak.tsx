@@ -2,18 +2,29 @@ import { useEffect, useState, type CSSProperties } from 'react'
 import { streakOn, weekOf, type Stats, type WeekDay } from '@linkle/core'
 import './streak.css'
 
-const FLAME = 'M12.4 2.2c.5 3.3 2.4 5.2 4.1 7.2 1.6 1.9 3 3.9 3 6.9a7.5 7.5 0 0 1-15 0c0-2.3 1-4.2 2.3-5.6.3 1.5 1 2.5 2.1 3-.4-4.1.9-8.3 3.5-11.5z'
-const CORE = 'M12 21.6a3.7 3.7 0 0 0 3.7-3.7c0-1.6-1-2.6-1.9-3.7-.8-.9-1.5-1.8-1.8-3.1-.3 1.3-1 2.2-1.8 3.1-.9 1.1-1.9 2.1-1.9 3.7a3.7 3.7 0 0 0 3.7 3.7z'
+// Lucide의 flame과 같은 꼴. 아래 탭, 게임 방법, 깃발과 같은 선 아이콘 언어로 맞춘다(2026-11-20, 후보 B)
+const FLAME = 'M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z'
 
 /**
- * 연속 기록의 불꽃. 다른 아이콘처럼 평평한 두 색이다: 링클 파랑의 불과 옅은 심지.
- * 오늘 풀었으면 타오르고, 아직이면 회색으로 꺼져 있다. live면 불과 심지가 다른 박자로 일렁인다.
+ * 연속 기록의 불꽃. 다른 아이콘과 같은 선 아이콘이다.
+ *   켜짐  파란 선 + 옅은 파랑으로 채움
+ *   꺼짐  회색 선만
+ * live면 아래를 축으로 살짝 일렁이고, draw면 선이 그어진 뒤 안이 차오르며 불이 붙는다(축하 화면).
+ * 큰 크기에서는 선이 너무 두꺼워 보이지 않게 조금 가늘게 한다.
  */
-export function Flame({ size = 24, lit = true, live = false, className = '' }: { size?: number; lit?: boolean; live?: boolean; className?: string }) {
+export function Flame({ size = 24, lit = true, live = false, draw = false, className = '' }: { size?: number; lit?: boolean; live?: boolean; draw?: boolean; className?: string }) {
+  const stroke = size >= 64 ? 1.5 : 1.75
   return (
-    <svg viewBox="0 0 24 24" width={size} height={size} className={`flame ${live && lit ? 'flame--live' : ''} ${className}`} aria-hidden>
-      <path className="flame__outer" d={FLAME} fill={lit ? 'var(--color-primary)' : '#cbd3dd'} />
-      {lit && <path className="flame__core" d={CORE} fill="#dce7fa" />}
+    <svg viewBox="0 0 24 24" width={size} height={size} className={`flame ${live && lit ? 'flame--live' : ''} ${draw && lit ? 'flame--draw' : ''} ${className}`} aria-hidden>
+      <path
+        d={FLAME}
+        pathLength={1}
+        fill={lit ? '#dce7fa' : 'none'}
+        stroke={lit ? 'var(--color-primary)' : '#9aa5b1'}
+        strokeWidth={stroke}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   )
 }
@@ -140,7 +151,8 @@ export function StreakCelebration({ stats, today, onDone }: { stats: Stats; toda
       <div className="flex w-full max-w-sm flex-1 flex-col items-center justify-end short:w-auto short:flex-none short:justify-center">
         <div className="relative grid h-40 w-40 place-items-center short:h-28 short:w-28">
           {/* 홈 카드의 불꽃 자리와 같은 평평한 옅은 원 */}
-          <span className="cel__glow absolute inset-[6%] rounded-full bg-flame-soft" />
+          {/* 옅은 파랑으로 채운 불꽃이 묻히지 않게 흰 원 위에 둔다 */}
+          <span className="cel__glow absolute inset-[6%] rounded-full bg-white" />
           {shown === count && (
             <>
               <i className="cel__wave" aria-hidden />
@@ -153,7 +165,9 @@ export function StreakCelebration({ stats, today, onDone }: { stats: Stats; toda
           {SPARKS.map(([x, delay, size], i) => (
             <i key={i} className="cel__spark" style={{ left: `${x}%`, width: size, height: size, animationDelay: `${900 + delay}ms` }} aria-hidden />
           ))}
-          <Flame size={120} live className="cel__flame relative short:!h-20 short:!w-20" />
+          <span className="cel__flame relative grid place-items-center">
+            <Flame size={104} live draw className="short:!h-16 short:!w-16" />
+          </span>
         </div>
         {/* 숫자는 넘어가는 판처럼: 앞 숫자가 위로 빠지고 새 숫자가 아래에서 올라온다 */}
         <p className="cel__digits mt-2 text-[64px] font-extrabold leading-none tabular-nums text-flame short:mt-0 short:text-[52px]" aria-live="polite">
