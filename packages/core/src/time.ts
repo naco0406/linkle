@@ -42,3 +42,14 @@ export function formatDurationKo(ms: number): string {
   if (m > 0) return `${pad(m)}분 ${pad(s)}초`
   return `${pad(s)}초`
 }
+
+/** 공유 문구용 짧은 표기. 앞자리 0 없이: "36초", "2분 31초", "1시간 2분 3초" */
+export function formatDurationShort(ms: number): string {
+  const total = Math.floor(Math.max(0, ms) / 1000)
+  const h = Math.floor(total / 3600)
+  const m = Math.floor((total % 3600) / 60)
+  const sec = total % 60
+  if (h > 0) return `${h}시간 ${m}분 ${sec}초`
+  if (m > 0) return `${m}분 ${sec}초`
+  return `${sec}초`
+}

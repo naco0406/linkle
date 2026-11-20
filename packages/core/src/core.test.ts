@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   addFlag, applyBack, applyLink, backTarget, checkLog, createRun, currentPage, daysBetween, elapsedMs, emojiOf,
-  formatClock, formatDurationKo, kstDate, levelOf, moveCount, nextKstMidnight, pathOf, shareText, stackOf,
+  formatClock, formatDurationKo, formatDurationShort, kstDate, levelOf, moveCount, nextKstMidnight, pathOf, shareOf, shareText, stackOf,
   type Level, type MoveEvent, type Puzzle, type Run,
 } from './index.ts'
 
@@ -162,6 +162,7 @@ describe('한국 시간', () => {
     expect(formatDurationKo(9_000)).toBe('09초')
     expect(formatDurationKo(151_000)).toBe('02분 31초')
     expect(formatDurationKo(3_723_000)).toBe('01시간 02분 03초')
+    expect([9_000, 151_000, 3_723_000].map(formatDurationShort)).toEqual(['9초', '2분 31초', '1시간 2분 3초'])
   })
 })
 
@@ -170,22 +171,33 @@ describe('공유 문구', () => {
     const run = applyLink(applyLink(createRun({ mode, puzzle: p, runId: 'r', startedAt: T0 }), { to: B, via: 'b', at: 1000 }), { to: E, via: 'e', at: 151_000 })
     return { ...run, emoji: ['🟥', '🏁'] }
   }
-  it('오늘의 문제는 기존 링클의 문구를 따른다', () => {
+  it('제목, 점수, 이모지 세 덩어리. 글자판은 마지막 줄에 주소가 붙는다', () => {
     const run = { ...finished('daily', puzzle), result: { order: 7 } }
-    expect(shareText(run, { origin: 'https://linkle.example' })).toBe(
-      ['123번째 링클을 클리어했습니다!', '일일 순위 : 7등', '이동 횟수: 2', '소요 시간: 02분 31초', '', '🟥🏁', '', 'https://linkle.example/'].join('\n'),
-    )
+    expect(shareText(run, { origin: 'https://linkle.example' })).toBe(['Linkle #123 🔗', '2번 2분 31초', '', '🟥🏁', '', 'linkle.example'].join('\n'))
   })
-  it('순서를 아직 모르면 그 줄을 뺀다. 문서 제목은 어디에도 없다', () => {
-    const text = shareText(finished('daily', puzzle), { origin: 'https://linkle.example' })
-    expect(text).not.toContain('일일 순위')
-    for (const t of ['불고기', '소고기', '뉴발란스']) expect(text).not.toContain(t)
+  it('서식판은 제목에 링크를 걸고 주소 줄은 없다', () => {
+    const { html, url } = shareOf(finished('daily', puzzle), { origin: 'https://linkle.example' })
+    expect(url).toBe('https://linkle.example/')
+    expect(html).toBe('<a href="https://linkle.example/">Linkle #123</a> 🔗<br>2번 2분 31초<br><br>🟥🏁')
   })
-  it('지난 문제와 커뮤니티 문제는 구분되고, 커뮤니티는 문제 주소가 들어간다', () => {
-    expect(shareText(finished('archive', puzzle), { origin: 'https://x' })).toContain('123번째 링클(지난 문제)')
-    const c = shareText(finished('community', { ...puzzle, id: 55, kind: 'community', number: 8, date: null }), { origin: 'https://x' })
-    expect(c).toContain('링클 커뮤니티 8번 문제')
-    expect(c.endsWith('https://x/community/55')).toBe(true)
+  it('가운뎃점이 없고, 문서 제목은 어디에도 없다', () => {
+    const { text, html } = shareOf(finished('daily', puzzle), { origin: 'https://linkle.example' })
+    for (const t of ['불고기', '소고기', '뉴발란스', '·']) {
+      expect(text).not.toContain(t)
+      expect(html).not.toContain(t)
+    }
+  })
+  it('이모지를 아직 모르면 그 덩어리를 뺀다', () => {
+    const run = { ...finished('daily', puzzle), emoji: null }
+    expect(shareText(run, { origin: 'https://x' })).toBe(['Linkle #123 🔗', '2번 2분 31초', '', 'x'].join('\n'))
+  })
+  it('지난 문제와 커뮤니티 문제는 구분되고, 그 문제의 주소로 간다', () => {
+    const a = shareOf(finished('archive', puzzle), { origin: 'https://x' })
+    expect(a.text.split('\n')[1]).toBe('2번 2분 31초 (지난 문제)')
+    expect(a.url).toBe('https://x/archive/10')
+    const c = shareOf(finished('community', { ...puzzle, id: 55, kind: 'community', number: 8, date: null }), { origin: 'https://x' })
+    expect(c.text.startsWith('Linkle 커뮤니티 #8 🔗')).toBe(true)
+    expect(c.url).toBe('https://x/community/55')
   })
   it('끝나지 않은 Run은 공유할 수 없다', () => {
     expect(() => shareText(fresh(), { origin: 'https://x' })).toThrow()
