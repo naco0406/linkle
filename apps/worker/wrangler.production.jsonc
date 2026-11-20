@@ -12,8 +12,8 @@
     // 무료 요금제에서는 Worker를 거치는 요청만 하루 한도에 들어간다. API만 Worker로 보낸다.
     "run_worker_first": ["/api/*"]
   },
-  // 사용자 지정 도메인(linkle.naco.im)은 naco.im이 Cloudflare로 다시 위임되면 붙인다.
-  // 그때 아래 줄을 살린다: "routes": [{ "pattern": "linkle.naco.im", "custom_domain": true }],
+  // 공개 주소. workers.dev 주소도 함께 열어 둔다(문제 채우기 작업이 쓴다)
+  "routes": [{ "pattern": "linkle.naco.im", "custom_domain": true }],
   "workers_dev": true,
   "d1_databases": [
     {
