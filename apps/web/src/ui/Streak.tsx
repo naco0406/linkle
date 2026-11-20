@@ -1,30 +1,57 @@
-import { useEffect, useState, type CSSProperties } from 'react'
+import { useEffect, useId, useState, type CSSProperties } from 'react'
 import { streakOn, weekOf, type Stats, type WeekDay } from '@linkle/core'
 import './streak.css'
 
-// Lucide의 flame과 같은 꼴. 아래 탭, 게임 방법, 깃발과 같은 선 아이콘 언어로 맞춘다(2026-11-20, 후보 B)
-const FLAME = 'M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z'
+// Lucide의 flame과 같은 꼴을 절대 좌표로 옮긴 것. 아래 탭, 게임 방법, 깃발과 같은 선 아이콘 언어다(2026-11-20, 후보 B)
+const FLAME = 'M8.5 14.5A2.5 2.5 0 0 0 11 12C11 10.62 10.5 10 10 9C8.93 6.86 9.78 4.95 12 3C12.5 5.5 14 7.9 16 9.5C18 11.1 19 13 19 15A7 7 0 1 1 5 15C5 13.85 5.43 12.71 6 12A2.5 2.5 0 0 0 8.5 14.5Z'
+// 불끝이 오른쪽, 왼쪽으로 흔들린 꼴. 명령 순서가 같아야 사이를 부드럽게 바꿔 그린다
+const FLAME_R = 'M8.6 14.4A2.5 2.5 0 0 0 11.1 11.9C11.1 10.5 10.7 9.9 10.3 8.9C9.4 6.7 10.4 4.7 12.9 2.6C13.2 5.3 14.4 7.8 16.2 9.4C18.1 11.1 19 13 19 15A7 7 0 1 1 5 15C5 13.8 5.5 12.5 6.2 11.7A2.6 2.6 0 0 0 8.6 14.4Z'
+const FLAME_L = 'M8.4 14.6A2.5 2.5 0 0 0 10.9 12.1C10.9 10.7 10.3 10.1 9.8 9.1C8.6 7 9.2 5.1 11.3 3.3C12 5.8 13.7 8 15.8 9.6C17.9 11.2 19 13 19 15A7 7 0 1 1 5 15C5 13.9 5.4 12.8 5.9 12.2A2.4 2.4 0 0 0 8.4 14.6Z'
+const FLICKER = [FLAME, FLAME_R, FLAME, FLAME_L, FLAME].join(';')
+
+/** 움직임 줄이기 설정. 켜져 있으면 불꽃은 가만히 있다 */
+function useReducedMotion(): boolean {
+  const [reduced] = useState(() => typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches)
+  return reduced
+}
 
 /**
  * 연속 기록의 불꽃. 다른 아이콘과 같은 선 아이콘이다.
  *   켜짐  파란 선 + 옅은 파랑으로 채움
  *   꺼짐  회색 선만
- * live면 아래를 축으로 살짝 일렁이고, draw면 선이 그어진 뒤 안이 차오르며 불이 붙는다(축하 화면).
+ * live   불끝이 좌우로 살아 움직인다(모양 자체가 바뀐다. 통째로 흔들지 않는다)
+ * ignite 축하 화면용. 회색으로 꺼져 있다가 IGNITE_AT에 선이 파래지고, 안이 아래에서 위로 차오른다
  * 큰 크기에서는 선이 너무 두꺼워 보이지 않게 조금 가늘게 한다.
  */
-export function Flame({ size = 24, lit = true, live = false, draw = false, className = '' }: { size?: number; lit?: boolean; live?: boolean; draw?: boolean; className?: string }) {
+export const IGNITE_AT = 0.55
+
+export function Flame({ size = 24, lit = true, live = false, ignite = false, className = '' }: { size?: number; lit?: boolean; live?: boolean; ignite?: boolean; className?: string }) {
+  const clip = useId()
+  const reduced = useReducedMotion()
   const stroke = size >= 64 ? 1.5 : 1.75
+  const moving = live && lit && !reduced
+  const burning = ignite && lit && !reduced
+  const flicker = moving ? <animate attributeName="d" values={FLICKER} dur="1.7s" begin={burning ? `${IGNITE_AT + 0.7}s` : '0s'} repeatCount="indefinite" calcMode="spline" keyTimes="0;0.25;0.5;0.75;1" keySplines=".45 0 .55 1;.45 0 .55 1;.45 0 .55 1;.45 0 .55 1" /> : null
   return (
-    <svg viewBox="0 0 24 24" width={size} height={size} className={`flame ${live && lit ? 'flame--live' : ''} ${draw && lit ? 'flame--draw' : ''} ${className}`} aria-hidden>
-      <path
-        d={FLAME}
-        pathLength={1}
-        fill={lit ? '#dce7fa' : 'none'}
-        stroke={lit ? 'var(--color-primary)' : '#9aa5b1'}
-        strokeWidth={stroke}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+    <svg viewBox="0 0 24 24" width={size} height={size} className={`flame ${burning ? 'flame--ignite' : ''} ${className}`} aria-hidden>
+      {lit && (
+        <>
+          <defs>
+            <clipPath id={clip}>
+              {/* 차오르는 물높이. 불이 붙을 때 아래에서 위로 올라온다 */}
+              <rect x="0" width="24" height="26" y={burning ? 24 : -2}>
+                {burning && <animate attributeName="y" from="24" to="-2" begin={`${IGNITE_AT + 0.05}s`} dur="0.55s" fill="freeze" calcMode="spline" keyTimes="0;1" keySplines=".2 .8 .3 1" />}
+              </rect>
+            </clipPath>
+          </defs>
+          <path d={FLAME} fill="#dce7fa" clipPath={`url(#${clip})`}>
+            {flicker}
+          </path>
+        </>
+      )}
+      <path className="flame__line" d={FLAME} fill="none" stroke={lit ? 'var(--color-primary)' : '#9aa5b1'} strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round">
+        {flicker}
+      </path>
     </svg>
   )
 }
@@ -131,7 +158,11 @@ export function StreakCelebration({ stats, today, onDone }: { stats: Stats; toda
   const count = stats.streak
   const [shown, setShown] = useState(Math.max(count - 1, 0))
   useEffect(() => {
-    const t = setTimeout(() => setShown(count), 650)
+    const t = setTimeout(() => {
+      setShown(count)
+      // 불이 붙는 순간 짧게 떨린다(지원하는 휴대폰만)
+      navigator.vibrate?.(18)
+    }, 650)
     return () => clearTimeout(t)
   }, [count])
   const special = MILESTONE[count]
@@ -166,7 +197,7 @@ export function StreakCelebration({ stats, today, onDone }: { stats: Stats; toda
             <i key={i} className="cel__spark" style={{ left: `${x}%`, width: size, height: size, animationDelay: `${900 + delay}ms` }} aria-hidden />
           ))}
           <span className="cel__flame relative grid place-items-center">
-            <Flame size={104} live draw className="short:!h-16 short:!w-16" />
+            <Flame size={104} live ignite className="short:!h-16 short:!w-16" />
           </span>
         </div>
         {/* 숫자는 넘어가는 판처럼: 앞 숫자가 위로 빠지고 새 숫자가 아래에서 올라온다 */}
