@@ -1,4 +1,5 @@
 import { kstDate } from '@linkle/core'
+import { ADMIN_RUN_PREFIX } from './admin'
 import { ApiError, finishRun, getToday } from './api'
 import { allRuns, now, useGame } from './store'
 
@@ -20,7 +21,7 @@ let emojiTimer: ReturnType<typeof setTimeout> | undefined
  */
 export async function flushOutbox(waitForEmoji: boolean): Promise<void> {
   // 오늘의 문제부터, 그다음 지난 문제·커뮤니티 판
-  const run = allRuns(useGame.getState()).find(r => r.phase === 'finished' && r.outbox === 'pending' && sending !== r.runId)
+  const run = allRuns(useGame.getState()).find(r => r.phase === 'finished' && r.outbox === 'pending' && sending !== r.runId && !r.runId.startsWith(ADMIN_RUN_PREFIX))
   if (!run) return
   if (!run.emoji && waitForEmoji) {
     emojiTimer ??= setTimeout(() => {
@@ -43,7 +44,7 @@ export async function flushOutbox(waitForEmoji: boolean): Promise<void> {
     sending = null
   }
   // 보낼 판이 더 있으면 이어서 보낸다
-  if (allRuns(useGame.getState()).some(r => r.phase === 'finished' && r.outbox === 'pending' && r.runId !== run.runId)) void flushOutbox(false)
+  if (allRuns(useGame.getState()).some(r => r.phase === 'finished' && r.outbox === 'pending' && r.runId !== run.runId && !r.runId.startsWith(ADMIN_RUN_PREFIX))) void flushOutbox(false)
 }
 
 let checking = false

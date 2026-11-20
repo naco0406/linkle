@@ -41,6 +41,8 @@ type GameState = {
   flag(slot: Slot, name: string): void
   setEmoji(runId: string, emoji: string[]): void
   showArrival(runId: string, show: boolean): void
+  /** 자리의 판을 치운다(관리자 연습 판) */
+  drop(slot: Slot): void
 }
 
 export const runIn = (s: Pick<GameState, 'run' | 'others'>, slot: Slot): Run | null => (slot === 'daily' ? s.run : (s.others[String(slot)] ?? null))
@@ -117,6 +119,12 @@ export const useGame = create<GameState>()(
         back: slot => update(slot, r => applyBack(r, now() - r.startedAt)),
         flag: (slot, name) => update(slot, r => (r.phase === 'playing' ? addFlag(r, name) : r)),
         setEmoji: (runId, emoji) => updateById(runId, r => ({ ...r, emoji })),
+        drop: slot => {
+          if (slot === 'daily') return set({ run: null })
+          const others = { ...get().others }
+          delete others[String(slot)]
+          set({ others })
+        },
       }
     },
     {

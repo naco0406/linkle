@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react'
 import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation } from 'react-router'
 import { useGame, useImmersive } from './game/store'
 import { Arrival } from './screens/Arrival'
@@ -8,6 +9,9 @@ import { Community } from './screens/Community'
 import { PuzzlePage } from './screens/Puzzle'
 import { Yesterday } from './screens/Yesterday'
 import { TabBar } from './ui/TabBar'
+
+// 관리자 화면은 따로 받는다. 일반 방문자의 첫 화면을 무겁게 하지 않는다
+const Admin = lazy(() => import('./screens/Admin').then(m => ({ default: m.Admin })))
 
 /** 오늘의 게임. 어느 화면을 보일지는 주소가 아니라 Run의 상태가 정한다 */
 function Daily() {
@@ -50,6 +54,14 @@ export function App() {
           <Route path="/community" element={<Community />} />
           <Route path="/community/:id" element={<PuzzlePage key="community" kind="community" />} />
         </Route>
+        <Route
+          path="/admin"
+          element={
+            <Suspense fallback={null}>
+              <Admin />
+            </Suspense>
+          }
+        />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

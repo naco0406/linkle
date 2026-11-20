@@ -15,6 +15,7 @@ export type QueueRow = {
   par: number | null
   difficulty: Difficulty | null
   solution: string | null
+  priority?: number
 }
 
 /**
@@ -32,7 +33,10 @@ export function wantedDifficulty(date: string): Difficulty {
  */
 export function chooseOrder(queue: QueueRow[], recent: Set<number>, want: Difficulty): QueueRow[] {
   const fresh = queue.filter(q => !recent.has(q.start_id) && !recent.has(q.end_id))
-  return [...fresh.filter(q => q.difficulty === want), ...fresh.filter(q => q.difficulty !== want)]
+  // 관리자가 앞으로 당긴 문제(priority > 0)는 난이도와 상관없이 먼저 낸다
+  const pinned = fresh.filter(q => (q.priority ?? 0) > 0)
+  const rest = fresh.filter(q => (q.priority ?? 0) <= 0)
+  return [...pinned, ...rest.filter(q => q.difficulty === want), ...rest.filter(q => q.difficulty !== want)]
 }
 
 /** 저장된 정답 예시를 이동 로그 꼴로 바꾼다. 경로 확인(verifyPath)에 그대로 넣는다 */
@@ -58,7 +62,7 @@ const TRIES = 4
 export async function assignDay(db: D1Database, api: WikiApi, date: string, now: number): Promise<string> {
   if (await findDaily(db, date)) return 'exists'
   const [queue, recent] = await db.batch([
-    db.prepare(`SELECT id, start_id, start_title, end_id, end_title, par, difficulty, solution FROM puzzle_queue WHERE status = 'approved' AND pool = 'daily' ORDER BY id LIMIT 40`),
+    db.prepare(`SELECT id, start_id, start_title, end_id, end_title, par, difficulty, solution, priority FROM puzzle_queue WHERE status = 'approved' AND pool = 'daily' ORDER BY priority DESC, id LIMIT 40`),
     db.prepare(`SELECT start_id, end_id FROM puzzles WHERE kind = 'daily' AND date >= ?1`).bind(addDays(date, -30)),
   ])
   const recentPages = new Set((recent?.results as { start_id: number; end_id: number }[]).flatMap(r => [r.start_id, r.end_id]))

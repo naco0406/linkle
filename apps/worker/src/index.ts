@@ -16,6 +16,8 @@ interface Env {
   WIKI_USER_AGENT?: string
   /** 관리용 API의 열쇠(admin.ts). wrangler secret으로 넣는다 */
   ADMIN_TOKEN?: string
+  /** 관리자 화면 비밀번호. 사용자가 wrangler secret put으로 직접 정한다 */
+  ADMIN_PASSWORD?: string
 }
 
 const DEFAULT_USER_AGENT = 'Linkle-daily-check/1.0'
@@ -60,7 +62,7 @@ const PUZZLE_PATH = /^\/api\/puzzles\/(\d{1,9})(\/board)?$/
 
 /** 경로가 몇 개뿐이라 프레임워크 없이 직접 가른다 */
 function route(request: Request, path: string, env: Env): Promise<Response> | Response {
-  if (path.startsWith('/api/admin/')) return admin(request, env, path)
+  if (path.startsWith('/api/admin/')) return admin(request, env, wikiApi(env.WIKI_USER_AGENT || DEFAULT_USER_AGENT), path)
   if (path === '/api/health') return json({ ok: true, serverNow: Date.now(), date: kstDate(Date.now()) })
   if (path === '/api/today') {
     allow(request, 'GET')

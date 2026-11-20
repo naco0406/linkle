@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useRef, useState } from 'react'
-import { ChevronRight, CircleHelp, Flag, Footprints, Timer, Undo2 } from 'lucide-react'
+import { ChevronRight, CircleHelp, Flag, Footprints, Timer, Undo2, X } from 'lucide-react'
 import { backTarget, elapsedMs, formatClock, moveCount, pathOf, stackOf, type Run } from '@linkle/core'
 import { getModel } from '../game/emoji'
 import { now, useGame, type Slot } from '../game/store'
@@ -13,7 +13,7 @@ const TRAIL = 'items-center gap-1 overflow-x-auto whitespace-nowrap text-[14px] 
  * 게임 화면. 위에서부터 목표, 지나온 길, 문서, 그리고 되돌아가기와 숫자.
  * 문서만 스크롤되고 나머지는 늘 보인다. 화면 높이는 dvh로 잡아 모바일 브라우저의 주소창이 접히고 펴져도 맞는다.
  */
-export function Game({ run, slot = 'daily' }: { run: Run; slot?: Slot }) {
+export function Game({ run, slot = 'daily', onQuit }: { run: Run; slot?: Slot; onQuit?: () => void }) {
   const { page, busy, opening, error, go, back, retry, dismissError } = useNavigator(run, slot)
   const [help, setHelp] = useState(false)
   const scroller = useRef<HTMLDivElement>(null)
@@ -67,6 +67,12 @@ export function Game({ run, slot = 'daily' }: { run: Run; slot?: Slot }) {
         <button onClick={() => setHelp(true)} aria-label="게임 방법" className="press grid h-10 w-10 flex-none place-items-center rounded-full text-ink">
           <CircleHelp className="h-6 w-6" strokeWidth={1.75} />
         </button>
+        {/* 관리자 연습 판에만 있다. 오늘의 문제는 그만둘 수 없다 */}
+        {onQuit && (
+          <button onClick={onQuit} aria-label="그만두기" className="press -ml-2 grid h-10 w-10 flex-none place-items-center rounded-full text-ink">
+            <X className="h-6 w-6" strokeWidth={1.75} />
+          </button>
+        )}
       </header>
 
       {/* 세로 화면에서는 지나온 길이 머리 아래에 한 줄을 차지한다 */}

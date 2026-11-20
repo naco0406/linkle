@@ -155,6 +155,10 @@ describe('출제 순서', () => {
     const q = [row(1, 10, 11, 'normal'), row(2, 12, 13, 'hard'), row(3, 14, 15, 'hard'), row(4, 16, 99, 'hard')]
     expect(chooseOrder(q, new Set([14, 99]), 'hard').map(r => r.id)).toEqual([2, 1])
   })
+  it('관리자가 당긴 문제는 난이도와 상관없이 먼저 낸다. 당긴 것끼리는 받은 순서', () => {
+    const q = [{ ...row(1, 10, 11, 'easy'), priority: 5 }, row(2, 12, 13, 'hard'), { ...row(3, 14, 15, 'normal'), priority: 9 }, { ...row(4, 16, 17, 'easy'), priority: 3 }]
+    expect(chooseOrder(q, new Set([16]), 'hard').map(r => r.id)).toEqual([1, 3, 2])
+  })
   it('정답 예시를 이동 로그로 바꾼다', () => {
     expect(solutionEvents('[{"id":2,"title":"커피","via":"커피"}]')).toEqual([{ type: 'link', to: { id: 2, title: '커피' }, via: '커피', at: 0 }])
     expect(solutionEvents(null)).toBeNull()
