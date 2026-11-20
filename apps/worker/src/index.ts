@@ -1,6 +1,7 @@
 import { kstDate, nextKstMidnight } from '@linkle/core'
 import { boardOf, findDaily, findPuzzle, findRunForFinish, listArchive, listCommunity, puzzleInfo, rankOf, saveFinish, startRun, type CommunitySort } from './db.ts'
 import { HttpError, json, readJson } from './http.ts'
+import { admin } from './admin.ts'
 import { toPublic } from './daily.ts'
 import { dailyJob, ensureStats, olderDayJob, verifyLeaders, yesterdayOf } from './job.ts'
 import { runKindFor, settle } from './rules.ts'
@@ -13,6 +14,8 @@ interface Env {
   DB: D1Database
   /** 위키백과에 보내는 User-Agent. 연락처를 넣으면 요청 제한이 넉넉해진다(설계 문서 4.1). 비우면 기본값 */
   WIKI_USER_AGENT?: string
+  /** 관리용 API의 열쇠(admin.ts). wrangler secret으로 넣는다 */
+  ADMIN_TOKEN?: string
 }
 
 const DEFAULT_USER_AGENT = 'Linkle-daily-check/1.0'
@@ -57,6 +60,7 @@ const PUZZLE_PATH = /^\/api\/puzzles\/(\d{1,9})(\/board)?$/
 
 /** 경로가 몇 개뿐이라 프레임워크 없이 직접 가른다 */
 function route(request: Request, path: string, env: Env): Promise<Response> | Response {
+  if (path.startsWith('/api/admin/')) return admin(request, env, path)
   if (path === '/api/health') return json({ ok: true, serverNow: Date.now(), date: kstDate(Date.now()) })
   if (path === '/api/today') {
     allow(request, 'GET')

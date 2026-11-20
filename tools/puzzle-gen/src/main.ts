@@ -4,6 +4,8 @@ import { buildGraph } from './graph.ts'
 // 문제 생성 도구.
 //   download  덤프 받기 (data/)
 //   build     링크 지도 만들기 (data/graph/)
+//   used      운영에서 이미 쓴 제목 받기 (LINKLE_URL, LINKLE_ADMIN_TOKEN)
+//   upload    만든 후보를 운영에 넣기 (--pool daily|official)
 //   generate  후보 고르기 → 게임 규칙으로 경로 확인 → out/queue.sql(오늘의 문제 대기열) 또는 --pool official이면 out/official.sql(커뮤니티)
 
 const here = new URL('..', import.meta.url).pathname
@@ -35,6 +37,12 @@ if (cmd === 'build') {
     pool: opt('pool', 'daily') === 'official' ? 'official' : 'daily',
     exclude,
   })
+} else if (cmd === 'used') {
+  const { fetchUsed } = await import('./remote.ts')
+  await fetchUsed(opt('out', join(OUT, 'used.txt')))
+} else if (cmd === 'upload') {
+  const { upload } = await import('./remote.ts')
+  await upload(opt('file', join(OUT, 'candidates.json')), opt('pool', 'daily') === 'official' ? 'official' : 'daily')
 } else {
   console.log('사용법: node src/main.ts download | build | generate [--count 40] [--seed 1] [--pool daily|official] [--exclude titles.txt]')
   process.exit(1)

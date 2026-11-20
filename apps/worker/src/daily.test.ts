@@ -162,3 +162,18 @@ describe('출제 순서', () => {
     expect(solutionEvents('[]')).toBeNull()
   })
 })
+
+describe('관리용 API의 후보 확인', async () => {
+  const { parseItem } = await import('./admin.ts')
+  const ok = { start: { id: 1, title: '올림픽' }, end: { id: 2, title: '백과사전' }, par: 3, difficulty: 'easy', solution: [{ id: 5, title: '노르웨이', via: '노르웨이' }, { id: 2, title: '백과사전', via: '백과사전' }], ways: 9 }
+  it('필요한 칸만 남긴다', () => {
+    expect(parseItem(ok)).toEqual({ start: ok.start, end: ok.end, par: 3, difficulty: 'easy', solution: ok.solution })
+  })
+  it('정답 예시가 도착 문서에서 끝나지 않거나, 모양이 틀리면 받지 않는다', () => {
+    expect(parseItem({ ...ok, solution: [{ id: 5, title: '노르웨이', via: '노르웨이' }] })).toBeNull()
+    expect(parseItem({ ...ok, difficulty: 'impossible' })).toBeNull()
+    expect(parseItem({ ...ok, end: ok.start })).toBeNull()
+    expect(parseItem({ ...ok, par: 0 })).toBeNull()
+    expect(parseItem(null)).toBeNull()
+  })
+})

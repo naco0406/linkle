@@ -1,11 +1,11 @@
-# 문제 채우기: 한 달에 한 번, 위키백과 덤프로 링크 지도를 만들어 다음 달 치 문제를 대기열에 넣는다.
-# 출제는 Worker가 매일 대기열에서 하나씩 꺼내 한다(apps/worker/src/schedule.ts). 이 작업은 대기열만 채운다.
+# 문제 채우기: 한 달에 한 번, 위키백과 덤프로 링크 지도를 만들어
+#   오늘의 문제 대기열에 40개, 커뮤니티의 "링클이 낸 문제"에 8개를 넣는다.
+# 출제는 Worker가 매일 대기열에서 하나씩 꺼내 한다(apps/worker/src/schedule.ts). 이 작업은 넣기만 한다.
 #
-# 처음 한 번 설정할 것 (저장소 Settings → Secrets and variables → Actions)
-#   secrets.CLOUDFLARE_API_TOKEN   D1 편집 권한이 있는 Cloudflare API 토큰
-#   secrets.CLOUDFLARE_ACCOUNT_ID  Cloudflare 계정 id
-#   vars.WIKI_USER_AGENT           (선택) 연락처가 담긴 User-Agent. 있으면 위키백과 요청 제한이 넉넉해진다
-# 토큰이 없으면 후보만 만들고 대기열에는 넣지 않는다(결과는 실행 기록의 첨부 파일로 남는다).
+# 쓰는 값 (저장소 Settings → Secrets and variables → Actions)
+#   secrets.LINKLE_ADMIN_TOKEN  Worker의 관리용 API 열쇠(Worker 비밀값 ADMIN_TOKEN과 같은 값)
+#   vars.LINKLE_URL             서비스 주소
+#   vars.WIKI_USER_AGENT        (선택) 연락처가 담긴 User-Agent. 있으면 위키백과 요청 제한이 넉넉해져 빨리 끝난다
 name: 문제 채우기
 
 on:
@@ -14,14 +14,22 @@ on:
     - cron: '0 18 2 * *'
   workflow_dispatch:
     inputs:
-      count:
-        description: 만들 문제 수
+      daily:
+        description: 오늘의 문제 대기열에 넣을 수
         default: '40'
+      official:
+        description: 커뮤니티에 올릴 수
+        default: '8'
 
 jobs:
   fill:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 240
+    env:
+      LINKLE_URL: ${{ vars.LINKLE_URL }}
+      LINKLE_ADMIN_TOKEN: ${{ secrets.LINKLE_ADMIN_TOKEN }}
+      WIKI_USER_AGENT: ${{ vars.WIKI_USER_AGENT }}
+      WIKI_INTERVAL_MS: ${{ vars.WIKI_USER_AGENT && '1500' || '6500' }}
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -33,30 +41,25 @@ jobs:
 
       - name: 덤프 받기 (약 540 MB)
         run: pnpm --filter puzzle-gen download
-        env:
-          WIKI_USER_AGENT: ${{ vars.WIKI_USER_AGENT }}
       - name: 링크 지도 만들기
         run: pnpm --filter puzzle-gen build-graph
-      - name: 후보 고르기와 게임 규칙으로 길 확인
-        run: pnpm --filter puzzle-gen generate --count ${{ inputs.count || '40' }}
-        env:
-          WIKI_USER_AGENT: ${{ vars.WIKI_USER_AGENT }}
-          WIKI_INTERVAL_MS: ${{ vars.WIKI_USER_AGENT && '1000' || '3000' }}
+
+      - name: 이미 쓴 문서 받기
+        run: pnpm --filter puzzle-gen used
+      - name: 오늘의 문제 후보 만들기
+        run: pnpm --filter puzzle-gen generate --count ${{ inputs.daily || '40' }} --exclude out/used.txt
+      - name: 오늘의 문제 대기열에 넣기
+        run: pnpm --filter puzzle-gen upload --pool daily
+
+      - name: 이미 쓴 문서 다시 받기
+        run: pnpm --filter puzzle-gen used
+      - name: 커뮤니티 문제 만들기
+        run: pnpm --filter puzzle-gen generate --pool official --count ${{ inputs.official || '8' }} --exclude out/used.txt
+      - name: 커뮤니티에 올리기
+        run: pnpm --filter puzzle-gen upload --pool official
 
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: puzzle-candidates
           path: tools/puzzle-gen/out/
-
-      - name: 대기열에 넣기
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: |
-          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
-            echo "Cloudflare 토큰이 없어 대기열에 넣지 않습니다."
-            exit 0
-          fi
-          cd apps/worker
-          pnpm exec wrangler d1 migrations apply linkle --remote -c wrangler.production.jsonc
-          pnpm exec wrangler d1 execute linkle --remote -c wrangler.production.jsonc --file ../../tools/puzzle-gen/out/queue.sql

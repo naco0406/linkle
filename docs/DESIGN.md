@@ -601,14 +601,15 @@ EmbeddingGemma, "제목 + 첫 문단" 입력, 목표 "뉴발란스" (블로그 6
 
 | 단계 | 누가 | 언제 |
 |---|---|---|
-| 덤프 받기 → 지도 → 후보 40개 → `puzzle_queue`에 넣기 | GitHub Actions (`.github/workflows/puzzles.yml`) | 매달 3일. 손으로도 돌릴 수 있다 |
+| 덤프 받기 → 지도 → 오늘의 문제 후보 40개, 커뮤니티 문제 8개 → 관리용 API로 넣기 | GitHub Actions (`.github/workflows/puzzles.yml`) | 매달 3일. 손으로도 돌릴 수 있다 |
 | 오늘·내일 문제가 없으면 대기열에서 꺼내 붙이기 | Worker 예약 작업 (`apps/worker/src/schedule.ts`) | 매시 5분 |
 
 - 꺼낼 때 정답 예시의 링크가 지금 위키백과에서도 이어지는지 MediaWiki API로 다시 확인한다(8.2와 같은 방법). 그사이 편집으로 끊겼으면 그 문제는 빼고(`rejected`, 이유를 `note`에) 다음 것을 본다.
 - 최근 30일 안에 출발이나 도착으로 나온 문서는 건너뛴다.
 - 내일 문제를 하루 앞서 붙여 두므로, 자정에 문제가 비지 않는다.
 - 대기열이 일주일 치 아래로 줄면 Worker 로그에 남긴다.
-- GitHub Actions는 공개 저장소라 무료다. 저장소에 Cloudflare API 토큰을 넣어야 대기열에 쓸 수 있다. 토큰이 없으면 후보만 만들어 첨부 파일로 남긴다.
+- GitHub Actions는 공개 저장소라 무료다. 운영 DB에는 Worker의 관리용 API(`/api/admin/*`, `apps/worker/src/admin.ts`)로 넣는다. 이 API로는 문제를 넣고 이미 쓴 제목을 읽는 것만 할 수 있다. 열쇠는 Worker 비밀값 `ADMIN_TOKEN`과 저장소 비밀값 `LINKLE_ADMIN_TOKEN`에 같은 값으로 두었다(2026-11-20). Cloudflare API 토큰은 저장소에 두지 않는다.
+- 열쇠를 바꿀 때는 새 값을 만들어 두 곳에 함께 넣는다. 어느 한쪽만 바뀌면 문제 채우기가 401로 멈춘다.
 
 ### 7.6 남는 한계
 

@@ -5,7 +5,9 @@
   "scripts": {
     "download": "node src/main.ts download",
     "build-graph": "node --max-old-space-size=6144 src/main.ts build",
-    "generate": "node --max-old-space-size=6144 src/main.ts generate"
+    "generate": "node --max-old-space-size=6144 src/main.ts generate",
+    "used": "node src/main.ts used",
+    "upload": "node src/main.ts upload"
   },
   "dependencies": {
     "@linkle/core": "workspace:*",
