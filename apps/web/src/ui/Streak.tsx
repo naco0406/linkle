@@ -1,4 +1,4 @@
-import { useEffect, useId, useState, type CSSProperties } from 'react'
+import { useEffect, useState, type CSSProperties } from 'react'
 import { streakOn, weekOf, type Stats, type WeekDay } from '@linkle/core'
 import './streak.css'
 
@@ -6,27 +6,14 @@ const FLAME = 'M12.4 2.2c.5 3.3 2.4 5.2 4.1 7.2 1.6 1.9 3 3.9 3 6.9a7.5 7.5 0 0 
 const CORE = 'M12 21.6a3.7 3.7 0 0 0 3.7-3.7c0-1.6-1-2.6-1.9-3.7-.8-.9-1.5-1.8-1.8-3.1-.3 1.3-1 2.2-1.8 3.1-.9 1.1-1.9 2.1-1.9 3.7a3.7 3.7 0 0 0 3.7 3.7z'
 
 /**
- * 연속 기록의 불꽃. 링클의 파랑으로 탄다: 바깥 불, 가운데 불, 하얀 심지 세 겹.
- * 오늘 풀었으면 타오르고, 아직이면 회색으로 꺼져 있다. live면 겹마다 다른 박자로 일렁인다.
+ * 연속 기록의 불꽃. 다른 아이콘처럼 평평한 두 색이다: 링클 파랑의 불과 옅은 심지.
+ * 오늘 풀었으면 타오르고, 아직이면 회색으로 꺼져 있다. live면 불과 심지가 다른 박자로 일렁인다.
  */
 export function Flame({ size = 24, lit = true, live = false, className = '' }: { size?: number; lit?: boolean; live?: boolean; className?: string }) {
-  const id = useId()
   return (
     <svg viewBox="0 0 24 24" width={size} height={size} className={`flame ${live && lit ? 'flame--live' : ''} ${className}`} aria-hidden>
-      <defs>
-        <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#8fb5f7" />
-          <stop offset="0.55" stopColor="#4f7fdb" />
-          <stop offset="1" stopColor="#2f5fc4" />
-        </linearGradient>
-      </defs>
-      <path className="flame__outer" d={FLAME} fill={lit ? `url(#${id})` : '#cbd3dd'} />
-      {lit && (
-        <g transform="translate(12 22) scale(1.32) translate(-12 -22)">
-          <path className="flame__mid" d={CORE} fill="#a9c6fa" />
-        </g>
-      )}
-      {lit && <path className="flame__core" d={CORE} fill="#f4f8ff" />}
+      <path className="flame__outer" d={FLAME} fill={lit ? 'var(--color-primary)' : '#cbd3dd'} />
+      {lit && <path className="flame__core" d={CORE} fill="#dce7fa" />}
     </svg>
   )
 }
@@ -55,7 +42,7 @@ export function WeekRow({ week, litDate }: { week: WeekDay[]; /** 방금 채워�
             <span
               className={`relative grid h-9 w-9 place-items-center rounded-full ${
                 d.state === 'done'
-                  ? `bg-gradient-to-b from-[#6f9cef] to-[#3366cc] text-white ${d.date === litDate ? 'day--lit' : ''}`
+                  ? `bg-primary text-white ${d.date === litDate ? 'day--lit' : ''}`
                   : today
                     ? 'day--today bg-flame-soft'
                     : d.state === 'missed'
@@ -152,7 +139,8 @@ export function StreakCelebration({ stats, today, onDone }: { stats: Stats; toda
       {/* 세로 화면: 불꽃 → 문구 → 이번 주 → 버튼. 눕힌 화면: 왼쪽에 불꽃과 숫자, 오른쪽에 나머지 */}
       <div className="flex w-full max-w-sm flex-1 flex-col items-center justify-end short:w-auto short:flex-none short:justify-center">
         <div className="relative grid h-40 w-40 place-items-center short:h-28 short:w-28">
-          <span className="cel__glow absolute inset-0 rounded-full bg-[radial-gradient(closest-side,#cfe0ff,transparent)]" />
+          {/* 홈 카드의 불꽃 자리와 같은 평평한 옅은 원 */}
+          <span className="cel__glow absolute inset-[6%] rounded-full bg-flame-soft" />
           {shown === count && (
             <>
               <i className="cel__wave" aria-hidden />
