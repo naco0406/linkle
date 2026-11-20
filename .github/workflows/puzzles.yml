@@ -2,6 +2,9 @@
 #   오늘의 문제 대기열에 40개, 커뮤니티의 "링클이 낸 문제"에 8개를 넣는다.
 # 출제는 Worker가 매일 대기열에서 하나씩 꺼내 한다(apps/worker/src/schedule.ts). 이 작업은 넣기만 한다.
 #
+# 저장소가 공개라 실행 기록과 결과물을 누구나 본다. 그래서 문제 이름과 정답 경로는 기록에 찍지 않고(CI에서는 개수만),
+# 만든 후보 파일도 결과물로 올리지 않는다. 넣은 문제는 관리자 화면(/admin)에서 확인한다.
+#
 # 쓰는 값 (저장소 Settings → Secrets and variables → Actions)
 #   secrets.LINKLE_ADMIN_TOKEN  Worker의 관리용 API 열쇠(Worker 비밀값 ADMIN_TOKEN과 같은 값)
 #   vars.LINKLE_URL             서비스 주소
@@ -57,9 +60,3 @@ jobs:
         run: pnpm --filter puzzle-gen generate --pool official --count ${{ inputs.official || '8' }} --exclude out/used.txt
       - name: 커뮤니티에 올리기
         run: pnpm --filter puzzle-gen upload --pool official
-
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: puzzle-candidates
-          path: tools/puzzle-gen/out/

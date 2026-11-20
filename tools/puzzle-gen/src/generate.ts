@@ -23,6 +23,12 @@ export type Candidate = {
 }
 
 const log = (msg: string) => console.log(`[${new Date().toISOString().slice(11, 19)}] ${msg}`)
+
+/**
+ * CI(GitHub Actions)에서는 문제 이름과 정답 경로를 찍지 않는다. 저장소가 공개라 실행 기록을 누구나 본다.
+ * 손으로 돌릴 때는 검토하려고 다 찍는다.
+ */
+const HIDE = !!process.env.CI
 /** 위키백과가 제목을 저장하는 꼴: 첫 글자는 대문자 */
 const norm = (t: string) => t.charAt(0).toUpperCase() + t.slice(1)
 
@@ -123,7 +129,11 @@ export async function generate(o: { graphDir: string; outDir: string; count: num
     found.push(c)
     used.add(s)
     used.add(e)
-    log(`${found.length}/${o.count} ${st} → ${et} · ${par}번 · ${c.difficulty} · 길 ${c.ways} · 유사도 ${c.similarity} · ${[st, ...solution.map(h => h.title)].join(' > ')}`)
+    log(
+      HIDE
+        ? `${found.length}/${o.count} · ${par}번 · ${c.difficulty}`
+        : `${found.length}/${o.count} ${st} → ${et} · ${par}번 · ${c.difficulty} · 길 ${c.ways} · 유사도 ${c.similarity} · ${[st, ...solution.map(h => h.title)].join(' > ')}`,
+    )
   }
   log(`시도 ${tally.tried} · 주제가 가까워 뺌 ${tally.close} · 게임에서 막혀 뺌 ${tally.blocked} · 위키백과 요청 ${wiki.requests}`)
 
