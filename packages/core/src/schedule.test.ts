@@ -17,6 +17,11 @@ describe('앞으로의 일정', () => {
       ['2026-12-09', 2],
     ])
   })
+  it('원하는 난이도가 없으면 가까운 난이도부터 낸다', () => {
+    // 토요일(어려움)인데 어려움이 없으면 쉬움보다 보통이 먼저
+    const q = [row(1, 'easy'), row(2, 'normal')]
+    expect(projectSchedule(q, [], '2026-12-05')[0]?.row.id).toBe(2)
+  })
   it('당긴 문제는 요일과 상관없이 먼저 낸다', () => {
     const q = [row(1, 'easy'), row(2, 'normal', 20, 21, 100)]
     expect(projectSchedule(q, [], '2026-12-05')[0]?.row.id).toBe(2)

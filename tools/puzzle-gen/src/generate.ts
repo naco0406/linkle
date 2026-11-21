@@ -3,7 +3,7 @@ import { join } from 'node:path'
 import { levelOf } from '@linkle/core'
 import { embed, loadModel, makeLead, score01, type ModelMeta } from '@linkle/embed'
 import { bfs, inDegree, loadGraph, outDegree, samplePath, type Graph } from './graph.ts'
-import { canEnd, canStart, difficultyOf, RULES, seeded, shuffle, type Difficulty } from './pick.ts'
+import { canEnd, canStart, difficultyOf, quotas, RULES, seeded, shuffle, type Difficulty } from './pick.ts'
 import { buildPool } from './pool.ts'
 import { Wiki } from './wiki.ts'
 
@@ -77,18 +77,30 @@ export async function generate(o: { graphDir: string; outDir: string; count: num
   // 이미 대기열이나 문제에 쓴 문서는 다시 쓰지 않는다. 오늘의 문제와 커뮤니티 문제가 겹치면 답이 샌다
   const used = new Set<number>((o.exclude ?? []).map(t => g.byTitle.get(t)).filter((n): n is number => n !== undefined))
   const found: Candidate[] = []
-  const tally = { tried: 0, close: 0, blocked: 0 }
+  const tally = { tried: 0, close: 0, blocked: 0, full: 0 }
+  // 오늘의 문제는 난이도별 개수를 맞춘다(요일 비율). 커뮤니티 문제는 비율을 따지지 않는다
+  const want = o.pool === 'official' ? null : quotas(o.count)
+  const need = (d: Difficulty) => !want || found.filter(c => c.difficulty === d).length < want[d]
+  // 첫 바퀴는 비율을 지키고, 그래도 모자라면 두 번째 바퀴에서 아무 난이도나 채운다
+  for (const relaxed of want ? [false, true] : [true]) {
   for (const s of starts) {
     if (found.length >= o.count) break
     if (used.has(s)) continue
     const reach = bfs(g, s, RULES.maxDist)
-    // 너무 쉽지도(지도에서 3번 미만) 너무 멀지도 않은 도착 문서 하나
-    const options = shuffle(
-      [...ends].filter(e => !used.has(e) && e !== s && reach.dist[e]! >= RULES.minDist && reach.dist[e]! <= RULES.maxDist),
-      rand,
-    )
+    // 너무 쉽지도(지도에서 3번 미만) 너무 멀지도 않은 도착 문서. 인기 문서끼리는 거의 3번 안에 닿아
+    // 3~4번 중에서 고르게 뽑으면 4번(어려움)이 열에 하나꼴이다. 어려움이 모자라면 4번 거리부터 고른다
+    const at = (k: number) => [...ends].filter(e => !used.has(e) && e !== s && reach.dist[e] === k)
+    const far = at(RULES.maxDist)
+    const near = Array.from({ length: RULES.maxDist - RULES.minDist }, (_, i) => at(RULES.minDist + i)).flat()
+    const pickFar = far.length > 0 && (need('hard') || near.length === 0) && !(relaxed && !need('hard') && near.length > 0)
+    const options = shuffle(pickFar ? far : near, rand)
     const e = options[0]
     if (e === undefined) continue
+    // 4번 거리를 못 찾은 출발에서 어려움만 모자라면, 쉬움·보통이 다 찼을 때는 넘어간다
+    if (!relaxed && !pickFar && !need('easy') && !need('normal')) {
+      tally.full++
+      continue
+    }
     tally.tried++
     const [st, et] = [g.titles[s]!, g.titles[e]!]
 
@@ -126,6 +138,11 @@ export async function generate(o: { graphDir: string; outDir: string; count: num
       difficulty: difficultyOf(par, reach.ways[e]!, inDegree(g, e)),
       solution,
     }
+    if (!relaxed && !need(c.difficulty)) {
+      // 이 난이도는 이미 찼다. 출발 문서는 다음 바퀴에 다시 쓸 수 있게 남겨 둔다
+      tally.full++
+      continue
+    }
     found.push(c)
     used.add(s)
     used.add(e)
@@ -135,7 +152,9 @@ export async function generate(o: { graphDir: string; outDir: string; count: num
         : `${found.length}/${o.count} ${st} → ${et} · ${par}번 · ${c.difficulty} · 길 ${c.ways} · 유사도 ${c.similarity} · ${[st, ...solution.map(h => h.title)].join(' > ')}`,
     )
   }
-  log(`시도 ${tally.tried} · 주제가 가까워 뺌 ${tally.close} · 게임에서 막혀 뺌 ${tally.blocked} · 위키백과 요청 ${wiki.requests}`)
+  }
+  const mix = (['easy', 'normal', 'hard'] as const).map(d => `${d} ${found.filter(c => c.difficulty === d).length}${want ? `/${want[d]}` : ''}`).join(' · ')
+  log(`시도 ${tally.tried} · 주제가 가까워 뺌 ${tally.close} · 게임에서 막혀 뺌 ${tally.blocked} · 난이도가 차서 넘김 ${tally.full} · ${mix} · 위키백과 요청 ${wiki.requests}`)
 
   mkdirSync(o.outDir, { recursive: true })
   writeFileSync(join(o.outDir, 'candidates.json'), JSON.stringify(found, null, 1))

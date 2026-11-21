@@ -31,13 +31,26 @@ export const canEnd = (g: Graph, n: number, r: Rules = RULES) => inDegree(g, n) 
 export type Difficulty = 'easy' | 'normal' | 'hard'
 
 /**
- * 예상 난이도. 최단 거리(par), 그 거리로 가는 길의 수, 도착 문서로 들어오는 링크 수로 매긴다.
+ * 예상 난이도. 최단 거리(par)를 먼저 보고, 3번 거리는 그 거리로 가는 길의 수로 가른다.
+ *   4번 이상 → 어려움, 3번이고 길 20개 이상 → 쉬움, 나머지 → 보통
+ * 예전에는 4번이어도 길이 6개 이하이거나 도착으로 들어오는 링크가 150개 이하일 때만 어려움이었다.
+ * 후보가 인기 문서라 둘 다 드물어서 어려움이 거의 나오지 않았다(2026-11-21, 대기열 58개 중 0개).
  * 링크 지도에는 게임이 지우는 링크도 있어 길의 수가 실제보다 많게 나온다. 실제 플레이 기록으로 기준을 고쳐 간다.
  */
-export function difficultyOf(par: number, ways: number, endIn: number): Difficulty {
-  if (par <= 3 && ways >= 20) return 'easy'
-  if (par >= 4 && (ways <= 6 || endIn <= 150)) return 'hard'
+export function difficultyOf(par: number, ways: number, _endIn: number): Difficulty {
+  if (par >= 4) return 'hard'
+  if (ways >= 20) return 'easy'
   return 'normal'
+}
+
+/**
+ * 한 번 채울 때 난이도별로 몇 개를 만들지. 출제 요일(월화 쉬움, 수목금 보통, 주말 어려움)의 비율 2:3:2에 맞춘다.
+ * 대기열이 요일과 같은 비율로 줄어 어느 난이도도 먼저 바닥나지 않는다.
+ */
+export function quotas(count: number): Record<Difficulty, number> {
+  const easy = Math.round((count * 2) / 7)
+  const hard = Math.round((count * 2) / 7)
+  return { easy, normal: count - easy - hard, hard }
 }
 
 /** 시드가 같으면 같은 수열. 같은 날 다시 돌려도 같은 후보가 나오게 한다 */

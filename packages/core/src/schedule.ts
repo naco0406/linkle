@@ -13,22 +13,26 @@ export const RECENT_DAYS = 30
 
 /**
  * 요일마다 내고 싶은 난이도. 주초는 쉽게, 주말은 어렵게(시간이 많은 날).
- * 대기열에 맞는 것이 없으면 아무 난이도나 낸다.
+ * 대기열에 맞는 것이 없으면 가까운 난이도를 낸다(chooseOrder).
  */
 export function wantedDifficulty(date: string): Difficulty {
   const weekday = (new Date(`${date}T00:00:00Z`).getUTCDay() + 6) % 7 // 0 = 월요일
   return weekday <= 1 ? 'easy' : weekday <= 4 ? 'normal' : 'hard'
 }
 
+const LEVEL: Record<Difficulty, number> = { easy: 0, normal: 1, hard: 2 }
+
 /**
  * 대기열에서 낼 순서를 정한다. 최근 30일 안에 출발이나 도착으로 나온 문서는 건너뛴다.
- * 관리자가 당긴 문제가 먼저, 그다음 원하는 난이도, 그다음 대기열 순서대로.
+ * 관리자가 당긴 문제가 먼저, 그다음 원하는 난이도, 그다음 가까운 난이도(어려움이 없으면 보통, 쉬움 순), 같은 거리면 대기열 순서대로.
  */
 export function chooseOrder<T extends ScheduleRow>(queue: T[], recent: Set<number>, want: Difficulty): T[] {
   const fresh = queue.filter(q => !recent.has(q.start_id) && !recent.has(q.end_id))
   const pinned = fresh.filter(q => (q.priority ?? 0) > 0)
   const rest = fresh.filter(q => (q.priority ?? 0) <= 0)
-  return [...pinned, ...rest.filter(q => q.difficulty === want), ...rest.filter(q => q.difficulty !== want)]
+  // 난이도가 없는 문제는 보통으로 본다. sort는 안정 정렬이라 같은 거리 안에서는 대기열 순서가 유지된다
+  const gap = (q: T) => Math.abs(LEVEL[q.difficulty ?? 'normal'] - LEVEL[want])
+  return [...pinned, ...[...rest].sort((a, b) => gap(a) - gap(b))]
 }
 
 /** 이미 날짜가 붙은 오늘의 문제 */

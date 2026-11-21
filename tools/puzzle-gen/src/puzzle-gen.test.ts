@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { bfs, samplePath } from './graph.ts'
 import { queueSql, type Candidate } from './generate.ts'
-import { difficultyOf, seeded, shuffle, titleOk } from './pick.ts'
+import { difficultyOf, quotas, seeded, shuffle, titleOk } from './pick.ts'
 import { columnsOf, parseValues, type Value } from './sql.ts'
 
 describe('덤프 읽기', () => {
@@ -74,8 +74,12 @@ describe('후보 규칙', () => {
     expect(difficultyOf(3, 50, 800)).toBe('easy')
     expect(difficultyOf(3, 4, 800)).toBe('normal')
     expect(difficultyOf(4, 3, 800)).toBe('hard')
-    expect(difficultyOf(4, 30, 100)).toBe('hard')
-    expect(difficultyOf(4, 30, 800)).toBe('normal')
+    // 4번 거리는 길이 많고 인기 있는 도착이어도 어려움이다
+    expect(difficultyOf(4, 300, 2000)).toBe('hard')
+  })
+  it('한 번 채울 때 난이도 비율은 요일과 같은 2:3:2', () => {
+    expect(quotas(40)).toEqual({ easy: 11, normal: 18, hard: 11 })
+    expect(quotas(7)).toEqual({ easy: 2, normal: 3, hard: 2 })
   })
   it('시드가 같으면 같은 순서', () => {
     expect(shuffle([1, 2, 3, 4, 5], seeded(3))).toEqual(shuffle([1, 2, 3, 4, 5], seeded(3)))
