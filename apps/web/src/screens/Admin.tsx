@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
-import { ArrowRight, ArrowUpToLine, Eye, EyeOff, LogOut, RefreshCw, RotateCcw, Trash2 } from 'lucide-react'
-import { createRun, moveCount, type Page } from '@linkle/core'
+import { ArrowRight, ArrowUpToLine, ChevronUp, Eye, EyeOff, LogOut, PinOff, RefreshCw, RotateCcw, Route, Trash2 } from 'lucide-react'
+import { addDays, createRun, moveCount, type Page } from '@linkle/core'
 import { ApiError } from '../game/api'
 import { ADMIN_RUN_PREFIX, ADMIN_SLOT, adminApi, guessDifficulty, solutionOf, type AdminDay, type Difficulty, type Hop, type Overview } from '../game/admin'
 import { now, runIn, useGame } from '../game/store'
 import { useLoad } from '../game/useLoad'
-import { Card, Cta, formatDateKo, StatTile, TextButton } from '../ui/cards'
+import { Card, Cta, formatDateKo, TextButton } from '../ui/cards'
 import { DifficultyChip, Segmented } from '../ui/list'
 import { Spinner, Toast } from '../ui/parts'
 import { WikiSearch } from '../ui/WikiSearch'
@@ -130,19 +130,22 @@ function Console({ onOut }: { onOut: () => void }) {
     onOut()
   }
   return (
-    <main className="mx-auto w-full max-w-[960px] px-4 min-[360px]:px-5 pb-12 pt-[env(safe-area-inset-top)]">
-      <header className="flex h-16 items-center gap-2.5">
-        <Logo />
-        <h1 className="flex-1 text-[19px] font-bold text-ink">링클 관리</h1>
-        <TextButton onClick={logout} className="h-10 text-[15px] text-ink-2!">
-          <LogOut className="h-[18px] w-[18px]" aria-hidden />
-          나가기
-        </TextButton>
-      </header>
-      <div className="max-w-[520px]">
-        <Segmented label="관리 화면" value={tab} options={TABS} onChange={setTab} />
+    <main className="mx-auto w-full max-w-[960px] px-4 pb-16 min-[360px]:px-5 sm:px-6">
+      {/* 머리와 탭은 위에 붙어 있어 긴 목록을 내려도 다른 탭으로 바로 간다 */}
+      <div className="sticky top-0 z-20 -mx-4 bg-secondary px-4 pt-[max(env(safe-area-inset-top),8px)] min-[360px]:-mx-5 min-[360px]:px-5 sm:-mx-6 sm:px-6">
+        <header className="flex h-14 items-center gap-2.5">
+          <Logo />
+          <h1 className="flex-1 text-[19px] font-bold text-ink">링클 관리</h1>
+          <TextButton onClick={logout} className="-mr-2 h-10 text-[15px] text-ink-2!">
+            <LogOut className="h-[18px] w-[18px]" aria-hidden />
+            나가기
+          </TextButton>
+        </header>
+        <div className="pt-1 sm:max-w-[520px]">
+          <Segmented label="관리 화면" value={tab} options={TABS} onChange={setTab} />
+        </div>
       </div>
-      <div className="mt-2">
+      <div className="pt-3">
         {tab === 'overview' && <OverviewTab notify={setToast} />}
         {tab === 'queue' && <QueueTab notify={setToast} />}
         {tab === 'community' && <CommunityTab notify={setToast} />}
@@ -156,17 +159,17 @@ function Console({ onOut }: { onOut: () => void }) {
 type Notify = (message: string) => void
 
 /** 줄마다 붙는 작은 단추. 모두 높이 36으로 같다 */
-function RowButton({ children, tone = 'plain', ...rest }: { tone?: 'plain' | 'danger' } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
+function RowButton({ children, tone = 'plain', className = '', ...rest }: { tone?: 'plain' | 'danger' } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
   const color = tone === 'danger' ? 'bg-[#fdeeed] text-[#c0392b]' : 'bg-secondary text-primary'
   return (
-    <button {...rest} className={`press inline-flex h-9 flex-none items-center justify-center gap-1 rounded-full px-3.5 text-[14px] font-semibold disabled:opacity-40 ${color}`}>
+    <button {...rest} className={`press inline-flex h-9 flex-none items-center justify-center gap-1 rounded-full px-3.5 text-[14px] font-semibold disabled:opacity-40 ${color} ${className}`}>
       {children}
     </button>
   )
 }
 
 /** 되돌리기 어려운 일은 두 번 눌러야 한다. 처음 누르면 문구가 바뀌고 4초 안에 다시 눌러야 한다 */
-function ConfirmButton({ children, confirm, onConfirm, disabled, tone = 'danger' }: { children: ReactNode; confirm: string; onConfirm: () => void; disabled?: boolean; tone?: 'plain' | 'danger' }) {
+function ConfirmButton({ children, confirm, onConfirm, disabled, tone = 'danger', className }: { children: ReactNode; confirm: string; onConfirm: () => void; disabled?: boolean; tone?: 'plain' | 'danger'; className?: string }) {
   const [armed, setArmed] = useState(false)
   useEffect(() => {
     if (!armed) return
@@ -174,7 +177,7 @@ function ConfirmButton({ children, confirm, onConfirm, disabled, tone = 'danger'
     return () => clearTimeout(t)
   }, [armed])
   return (
-    <RowButton tone={tone} disabled={disabled} onClick={() => (armed ? (setArmed(false), onConfirm()) : setArmed(true))}>
+    <RowButton tone={tone} disabled={disabled} className={className} onClick={() => (armed ? (setArmed(false), onConfirm()) : setArmed(true))}>
       {armed ? confirm : children}
     </RowButton>
   )
@@ -182,8 +185,8 @@ function ConfirmButton({ children, confirm, onConfirm, disabled, tone = 'danger'
 
 function Section({ title, count, aside, children }: { title: string; count?: number; aside?: ReactNode; children: ReactNode }) {
   return (
-    <section className="mt-6 first:mt-2">
-      <div className="mb-2 flex min-h-8 items-center justify-between gap-3 px-1">
+    <section className="mt-8 first:mt-0">
+      <div className="mb-3 flex min-h-9 items-center justify-between gap-3 px-1">
         <h2 className="text-[17px] font-bold leading-[25px] text-ink">
           {title}
           {count !== undefined && <span className="ml-1.5 tabular-nums text-ink-2">{count}</span>}
@@ -253,10 +256,13 @@ function useReveal() {
   return { isOpen: (id: number) => open.has(id), toggle }
 }
 
+/** 줄의 첫 단추 폭. 바뀌는 단추(정답 보기/접기, 맨 앞으로/당김 풀기)가 같은 자리를 차지해 줄끼리 단추가 맞는다 */
+const ACTION_W = 'min-w-[112px]'
+
 function RevealButton({ open, onClick }: { open: boolean; onClick: () => void }) {
   return (
-    <RowButton onClick={onClick} aria-expanded={open}>
-      {open ? <EyeOff className="h-4 w-4" aria-hidden /> : <Eye className="h-4 w-4" aria-hidden />}
+    <RowButton onClick={onClick} aria-expanded={open} className={ACTION_W}>
+      {open ? <ChevronUp className="h-4 w-4" aria-hidden /> : <Route className="h-4 w-4" aria-hidden />}
       {open ? '정답 접기' : '정답 보기'}
     </RowButton>
   )
@@ -264,7 +270,7 @@ function RevealButton({ open, onClick }: { open: boolean; onClick: () => void })
 
 function Rows({ children, empty }: { children: ReactNode[]; empty: string }) {
   return (
-    <Card className="px-4 py-1">
+    <Card className="!py-1 sm:!px-6">
       {children.length === 0 ? <p className="py-5 text-center text-[15px] text-ink-2">{empty}</p> : <ul>{children}</ul>}
     </Card>
   )
@@ -274,7 +280,7 @@ function Row({ lead, title, sub, actions, below }: { lead?: ReactNode; title: Re
   // 넓은 화면: [꼬리표 | 제목·설명 | 단추] 한 줄. 좁은 화면: 단추가 제목 아래 오른쪽으로 내려간다
   const cols = lead ? 'grid-cols-[auto_minmax(0,1fr)] sm:grid-cols-[auto_minmax(0,1fr)_auto]' : 'grid-cols-[minmax(0,1fr)] sm:grid-cols-[minmax(0,1fr)_auto]'
   return (
-    <li className={`grid min-h-[68px] items-center gap-x-3 gap-y-2 border-t border-[#eef1f5] py-3 first:border-t-0 ${cols}`}>
+    <li className={`grid min-h-[72px] items-center gap-x-3.5 gap-y-2.5 border-t border-[#eef1f5] py-3.5 first:border-t-0 ${cols}`}>
       {lead && <span className="self-start sm:self-center">{lead}</span>}
       <span className="min-w-0">
         <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">{title}</span>
@@ -304,15 +310,33 @@ const LOW_QUEUE = 7
 const kstTime = (at: number) =>
   new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(at)
 
-/** 문제 채우기 상태. Worker가 대기열을 보고 GitHub Actions를 부른다(worker/src/refill.ts) */
 /** GitHub가 거절한 까닭. 401은 토큰이 틀리거나 만료, 403·404는 이 저장소의 Actions 쓰기 권한이 없을 때 */
 const githubSays = (status: number) =>
   status === 401 ? '토큰이 맞지 않거나 만료됐어요' : status === 403 || status === 404 ? '토큰에 이 저장소의 Actions 쓰기 권한이 없어요' : status === 0 ? 'GitHub에 닿지 못했어요' : 'GitHub가 받지 않았어요'
 
-/** 문제 채우기 상태. Worker가 대기열을 보고 GitHub Actions를 부른다(worker/src/refill.ts). "지금 채우기"로 직접 부를 수도 있다 */
-function RefillNote({ refill, total, notify, reload }: { refill: Overview['refill']; total: number; notify: Notify; reload: () => void }) {
-  const { last, below, canDispatch } = refill
+/** 난이도 막대와 범례의 색. 유사도 칸의 초록·노랑·빨강과 같은 값이다 */
+const DIFF_BAR: [Difficulty, string, string][] = [
+  ['easy', '쉬움', 'bg-s4'],
+  ['normal', '보통', 'bg-s3'],
+  ['hard', '어려움', 'bg-s1'],
+]
+
+const monthDay = (date: string) => {
+  const [, m, d] = date.split('-')
+  return `${Number(m)}월 ${Number(d)}일`
+}
+
+/**
+ * 개요 맨 위. 오늘의 문제 대기열이 얼마나 남았고 언제까지 버티는지, 난이도가 어떻게 나뉘는지,
+ * 문제 채우기(Worker가 대기열을 보고 GitHub Actions를 부른다, worker/src/refill.ts)가 어떤 상태인지 한 카드에 둔다.
+ */
+function QueueSummary({ data, notify, reload }: { data: Overview; notify: Notify; reload: () => void }) {
+  const { last, below, canDispatch } = data.refill
   const [busy, setBusy] = useState(false)
+  const count = (d: Difficulty) => data.queue.find(q => q.difficulty === d)?.n ?? 0
+  const total = data.queue.reduce((n, q) => n + q.n, 0)
+  // 이미 날짜가 붙은 마지막 날(보통 내일) 다음부터 대기열이 하루에 하나씩 나간다
+  const lastSet = data.days.reduce((m, d) => (d.date > m ? d.date : m), data.today)
   const call = async () => {
     setBusy(true)
     try {
@@ -325,29 +349,79 @@ function RefillNote({ refill, total, notify, reload }: { refill: Overview['refil
       setBusy(false)
     }
   }
-  const text = !canDispatch
-    ? `Worker에 GITHUB_DISPATCH_TOKEN이 없어 대기열이 줄어도 자동으로 채우지 못해요.`
+  const warning = !canDispatch
+    ? 'Worker에 GITHUB_DISPATCH_TOKEN이 없어 대기열이 줄어도 자동으로 채우지 못해요.'
     : last && !last.ok
       ? `${kstTime(last.at)}에 문제 채우기를 부르지 못했어요. ${githubSays(last.status)} (${last.status}). 자동으로는 다음 날 다시 불러요.`
       : total < LOW_QUEUE && !(last && Date.now() - last.at < 24 * 3600_000)
         ? `대기열이 ${total}개 남았는데 문제 채우기가 아직 불리지 않았어요.`
         : null
+
   return (
-    // 좁은 화면에서는 버튼이 문구 아래로 내려간다
-    <Card className={`mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 !py-3 ${text ? '!bg-[#fdf3d8]' : ''}`}>
-      <p className={`min-w-0 flex-1 basis-[240px] text-[14px] leading-[21px] ${text ? 'text-[#7a5400]' : 'text-ink-2'}`}>
-        {text ?? (
-          <>
-            대기열이 {below}개 아래로 줄면 문제 채우기를 자동으로 불러요.
-            {last && ` 마지막으로 부른 때는 ${kstTime(last.at)}이에요.`}
-          </>
+    <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_220px]">
+      <Card className="sm:!p-6">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h2 className="text-[14px] font-semibold leading-5 text-ink-2">오늘의 문제 대기열</h2>
+            <p className="mt-1 text-[32px] font-bold leading-10 tabular-nums text-primary">
+              {total}
+              <span className="ml-0.5 text-[18px] font-semibold">개</span>
+            </p>
+            <p className="text-[14px] leading-5 text-ink-2">{total > 0 ? `${monthDay(addDays(lastSet, total))}까지 낼 문제가 있어요` : `${monthDay(addDays(lastSet, 1))}부터 낼 문제가 없어요`}</p>
+          </div>
+          <ConfirmButton tone="plain" confirm="40개 더 넣을까요?" disabled={busy || !canDispatch} onConfirm={() => void call()} className="mt-0.5">
+            {busy ? <Spinner className="h-4 w-4" /> : <RefreshCw className="h-4 w-4" aria-hidden />}
+            지금 채우기
+          </ConfirmButton>
+        </div>
+
+        {total > 0 && (
+          <div className="mt-5">
+            <div className="flex h-2 gap-0.5 overflow-hidden rounded-full" aria-hidden>
+              {DIFF_BAR.map(([d, , color]) => count(d) > 0 && <span key={d} className={color} style={{ flexGrow: count(d) }} />)}
+            </div>
+            <ul className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-[14px] leading-5 text-ink-2">
+              {DIFF_BAR.map(([d, label, color]) => (
+                <li key={d} className="flex items-center gap-1.5">
+                  <span className={`h-2 w-2 rounded-full ${color}`} aria-hidden />
+                  {label}
+                  <b className="font-semibold tabular-nums text-ink">{count(d)}</b>
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
-      </p>
-      <ConfirmButton tone="plain" confirm="40개 더 넣을까요?" disabled={busy || !canDispatch} onConfirm={() => void call()}>
-        {busy ? <Spinner className="h-4 w-4" /> : <RefreshCw className="h-4 w-4" aria-hidden />}
-        지금 채우기
-      </ConfirmButton>
-    </Card>
+
+        <div className="mt-5 border-t border-[#eef1f5] pt-4">
+          {warning ? (
+            <p className="rounded-xl bg-[#fdf3d8] px-3.5 py-2.5 text-[14px] leading-[21px] text-[#7a5400]">{warning}</p>
+          ) : (
+            <p className="text-[13px] leading-5 text-ink-2">
+              {below}개 아래로 줄면 문제 채우기를 자동으로 불러요.
+              {last && ` 마지막으로 부른 때는 ${kstTime(last.at)}이에요.`}
+            </p>
+          )}
+        </div>
+      </Card>
+      <dl className="grid grid-cols-2 gap-3 md:grid-cols-1">
+        <SideStat label="커뮤니티 문제" value={data.community?.n ?? 0} unit="개" note={`${(data.community?.plays ?? 0).toLocaleString('ko-KR')}명 도전, ${(data.community?.clears ?? 0).toLocaleString('ko-KR')}명 도착`} />
+        <SideStat label="기기" value={data.players.toLocaleString('ko-KR')} unit="대" note="게임을 시작해 본 기기" />
+      </dl>
+    </div>
+  )
+}
+
+/** 대기열 카드 옆의 작은 숫자 카드. 넓은 화면에서는 대기열 카드 높이를 둘이 나눠 채운다 */
+function SideStat({ label, value, unit, note }: { label: string; value: string | number; unit: string; note: string }) {
+  return (
+    <div className="flex flex-col justify-center rounded-[20px] bg-white px-4 py-4 sm:px-5">
+      <dt className="text-[14px] font-semibold leading-5 text-ink-2">{label}</dt>
+      <dd className="mt-1 text-[24px] font-bold leading-8 tabular-nums text-primary">
+        {value}
+        <span className="ml-0.5 text-[15px] font-semibold">{unit}</span>
+      </dd>
+      <dd className="text-[13px] leading-5 text-ink-2">{note}</dd>
+    </div>
   )
 }
 
@@ -357,8 +431,6 @@ function OverviewTab({ notify }: { notify: Notify }) {
   const reveal = useReveal()
   if (error && !data) return <Failed onRetry={reload} />
   if (!data) return <Loading />
-  const count = (d: Difficulty) => data.queue.find(q => q.difficulty === d)?.n ?? 0
-  const total = data.queue.reduce((n, q) => n + q.n, 0)
   const days = [...data.days].reverse()
 
   const replace = async (day: AdminDay) => {
@@ -376,15 +448,7 @@ function OverviewTab({ notify }: { notify: Notify }) {
 
   return (
     <>
-      <dl className="grid grid-cols-3 gap-2 sm:grid-cols-6">
-        <StatTile label="대기열" value={total} unit="개" />
-        <StatTile label="쉬움" value={count('easy')} unit="개" />
-        <StatTile label="보통" value={count('normal')} unit="개" />
-        <StatTile label="어려움" value={count('hard')} unit="개" />
-        <StatTile label="커뮤니티" value={data.community?.n ?? 0} unit="개" />
-        <StatTile label="기기" value={data.players.toLocaleString('ko-KR')} unit="대" />
-      </dl>
-      <RefillNote refill={data.refill} total={total} notify={notify} reload={reload} />
+      <QueueSummary data={data} notify={notify} reload={reload} />
       <Section title="날짜별 오늘의 문제" aside={<RowButton onClick={reload}><RefreshCw className="h-4 w-4" aria-hidden />새로고침</RowButton>}>
         <Rows empty="정해진 문제가 없어요">
           {days.map(d => (
@@ -410,7 +474,7 @@ function OverviewTab({ notify }: { notify: Notify }) {
               }
               actions={
                 d.date > data.today ? (
-                  <ConfirmButton confirm="정말 바꿀까요?" disabled={busy !== null || d.plays > 0} onConfirm={() => void replace(d)}>
+                  <ConfirmButton confirm="정말 바꿀까요?" disabled={busy !== null || d.plays > 0} onConfirm={() => void replace(d)} className={ACTION_W}>
                     {busy === d.id ? <Spinner className="h-4 w-4" /> : <RefreshCw className="h-4 w-4" aria-hidden />}
                     다른 문제로
                   </ConfirmButton>
@@ -422,7 +486,7 @@ function OverviewTab({ notify }: { notify: Notify }) {
             />
           ))}
         </Rows>
-        <p className="mt-2 px-1 text-[13px] leading-5 text-ink-2">예정된 문제를 바꾸면 그 문제는 대기열에서 빠지고, 대기열 맨 앞(당겨 둔 문제가 먼저) 문제가 그 날에 들어가요.</p>
+        <p className="mt-3 px-1 text-[13px] leading-5 text-ink-2">예정된 문제를 바꾸면 그 문제는 대기열에서 빠지고, 대기열 맨 앞(당겨 둔 문제가 먼저) 문제가 그 날에 들어가요.</p>
       </Section>
     </>
   )
@@ -468,11 +532,12 @@ function QueueTab({ notify }: { notify: Notify }) {
               actions={
                 <>
                   {q.priority > 0 ? (
-                    <RowButton disabled={busy !== null} onClick={() => void act(q.id, 'unpin', '당긴 것을 풀었어요')}>
+                    <RowButton disabled={busy !== null} onClick={() => void act(q.id, 'unpin', '당긴 것을 풀었어요')} className={ACTION_W}>
+                      <PinOff className="h-4 w-4" aria-hidden />
                       당김 풀기
                     </RowButton>
                   ) : (
-                    <RowButton disabled={busy !== null} onClick={() => void act(q.id, 'first', '맨 앞으로 당겼어요')}>
+                    <RowButton disabled={busy !== null} onClick={() => void act(q.id, 'first', '맨 앞으로 당겼어요')} className={ACTION_W}>
                       <ArrowUpToLine className="h-4 w-4" aria-hidden />
                       맨 앞으로
                     </RowButton>
@@ -486,7 +551,7 @@ function QueueTab({ notify }: { notify: Notify }) {
             />
           ))}
         </Rows>
-        <p className="mt-2 px-1 text-[13px] leading-5 text-ink-2">당긴 문제는 요일 난이도와 상관없이 먼저 나가요. 나머지는 요일에 맞는 난이도부터 골라요. 월요일과 화요일은 쉬움, 수요일부터 금요일은 보통, 주말은 어려움이에요.</p>
+        <p className="mt-3 px-1 text-[13px] leading-5 text-ink-2">당긴 문제는 요일 난이도와 상관없이 먼저 나가요. 나머지는 요일에 맞는 난이도부터 골라요. 월요일과 화요일은 쉬움, 수요일부터 금요일은 보통, 주말은 어려움이에요.</p>
       </Section>
       {data.rejected.length > 0 && (
         <Section title="뺀 문제">
@@ -561,11 +626,13 @@ function CommunityTab({ notify }: { notify: Notify }) {
                 <>
                   <RevealButton open={reveal.isOpen(p.id)} onClick={() => reveal.toggle(p.id)} />
                   {hidden ? (
-                    <RowButton disabled={busy !== null} onClick={() => void act(p.id, 'show')}>
+                    <RowButton disabled={busy !== null} onClick={() => void act(p.id, 'show')} className="min-w-[92px]">
+                      <Eye className="h-4 w-4" aria-hidden />
                       보이기
                     </RowButton>
                   ) : (
-                    <RowButton tone="danger" disabled={busy !== null} onClick={() => void act(p.id, 'hide')}>
+                    <RowButton tone="danger" disabled={busy !== null} onClick={() => void act(p.id, 'hide')} className="min-w-[92px]">
+                      <EyeOff className="h-4 w-4" aria-hidden />
                       숨기기
                     </RowButton>
                   )}
@@ -576,7 +643,7 @@ function CommunityTab({ notify }: { notify: Notify }) {
           )
         })}
       </Rows>
-      <p className="mt-2 px-1 text-[13px] leading-5 text-ink-2">숨겨도 순위표와 푼 기록은 남아요. 주소를 아는 사람은 계속 풀 수 있어요.</p>
+      <p className="mt-3 px-1 text-[13px] leading-5 text-ink-2">숨겨도 순위표와 푼 기록은 남아요. 주소를 아는 사람은 계속 풀 수 있어요.</p>
     </Section>
   )
 }

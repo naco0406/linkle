@@ -54,7 +54,7 @@ export function Segmented<T extends string>({ value, options, onChange, label }:
           role="tab"
           aria-selected={v === value}
           onClick={() => onChange(v)}
-          className={`press h-10 rounded-full text-[15px] font-semibold transition-colors ${v === value ? 'bg-white text-primary shadow-[0_1px_2px_rgb(30_50_90/0.08)]' : 'text-ink-2'}`}
+          className={`press h-10 rounded-full text-[14px] font-semibold transition-colors min-[360px]:text-[15px] ${v === value ? 'bg-white text-primary shadow-[0_1px_2px_rgb(30_50_90/0.08)]' : 'text-ink-2'}`}
         >
           {text}
         </button>
