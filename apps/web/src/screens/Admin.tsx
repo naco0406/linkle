@@ -292,11 +292,19 @@ function Row({ lead, title, sub, actions, below }: { lead?: ReactNode; title: Re
   )
 }
 
+/**
+ * 줄 맨 앞 꼬리표. 날짜("11.22", 굵은 15px로 44px)는 양옆에 10px씩 남도록 64px,
+ * 순서와 번호(두 자리까지)는 정사각형 48px.
+ */
+const LEAD = 'grid h-12 flex-none place-items-center content-center rounded-[14px]'
+const LEAD_DATE = `${LEAD} w-16`
+const LEAD_NUM = `${LEAD} w-12`
+
 function DateBadge({ date, today }: { date: string; today: string }) {
   const label = date === today ? '오늘' : date > today ? '예정' : null
   const [, m, d] = date.split('-')
   return (
-    <span className={`grid h-11 w-11 place-items-center content-center rounded-[14px] ${label === '오늘' ? 'bg-primary text-white' : 'bg-secondary text-primary'}`}>
+    <span className={`${LEAD_DATE} gap-0.5 ${label === '오늘' ? 'bg-primary text-white' : 'bg-secondary text-primary'}`}>
       <span className="text-[15px] font-bold leading-[18px] tabular-nums">
         {Number(m)}.{Number(d)}
       </span>
@@ -517,7 +525,7 @@ function QueueTab({ notify }: { notify: Notify }) {
             <Row
               key={q.id}
               lead={
-                <span className={`grid h-11 w-11 place-items-center rounded-[14px] text-[16px] font-bold tabular-nums ${q.priority > 0 ? 'bg-primary text-white' : 'bg-secondary text-primary'}`}>
+                <span className={`${LEAD_NUM} text-[16px] font-bold tabular-nums ${q.priority > 0 ? 'bg-primary text-white' : 'bg-secondary text-primary'}`}>
                   {i + 1}
                 </span>
               }
@@ -607,7 +615,7 @@ function CommunityTab({ notify }: { notify: Notify }) {
           return (
             <Row
               key={p.id}
-              lead={<span className={`grid h-11 w-11 place-items-center rounded-[14px] text-[16px] font-bold tabular-nums ${hidden ? 'bg-[#eef1f5] text-ink-2' : 'bg-secondary text-primary'}`}>{p.number}</span>}
+              lead={<span className={`${LEAD_NUM} text-[16px] font-bold tabular-nums ${hidden ? 'bg-[#eef1f5] text-ink-2' : 'bg-secondary text-primary'}`}>{p.number}</span>}
               title={
                 <>
                   <span className={hidden ? 'min-w-0 opacity-50' : 'min-w-0'}>
