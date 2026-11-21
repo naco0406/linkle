@@ -1,0 +1,131 @@
+{
+  "dist": "../../../../apps/web/dist",
+  "mocks": "./mocks.mjs",
+  "apiPrefix": "/api/",
+  "viewport": [
+    1280,
+    800
+  ],
+  "scale": 2,
+  "allowHosts": [
+    "cdn.jsdelivr.net",
+    "fonts.googleapis.com",
+    "fonts.gstatic.com"
+  ],
+  "shots": [
+    {
+      "name": "overview",
+      "path": "/admin#overview",
+      "waitFor": "text=날짜별 오늘의 문제",
+      "viewport": [
+        1280,
+        1240
+      ],
+      "displayScale": 0.5,
+      "pins": [
+        {
+          "n": 1,
+          "loc": "css=main section >> nth=0"
+        },
+        {
+          "n": 2,
+          "loc": "role=heading[name=\"날짜별 오늘의 문제\"]"
+        },
+        {
+          "n": 5,
+          "loc": "role=button[name=\"다른 문제로\"]"
+        },
+        {
+          "n": 6,
+          "loc": "text=96명 도전, 61명 도착 (64%)"
+        }
+      ],
+      "split": [
+        800
+      ],
+      "probe": {
+        "페이지 제목": "role=heading[name=\"링클 관리\"]",
+        "탭": "role=tablist",
+        "탭(선택)": "role=tab[selected=true]",
+        "카드": "css=main section >> nth=0",
+        "섹션 제목": "role=heading[name=\"날짜별 오늘의 문제\"]",
+        "줄": "css=main li >> nth=1",
+        "작은 단추": "role=button[name=\"정답 보기\"] >> nth=0",
+        "난이도 칩": "text=보통 >> nth=0",
+        "줄 제목": "text=아인슈타인",
+        "줄 설명": "text=96명 도전, 61명 도착 (64%)",
+        "숫자": "text=2,417"
+      }
+    },
+    {
+      "name": "queue",
+      "path": "/admin#queue",
+      "waitFor": "text=낼 순서",
+      "viewport": [
+        1280,
+        1240
+      ],
+      "displayScale": 0.5,
+      "pins": [
+        {
+          "n": 3,
+          "loc": "css=main ul >> nth=0 >> css=li >> nth=1 >> css=span >> nth=0"
+        },
+        {
+          "n": 4,
+          "loc": "text=마라톤 › 그리스 › 북유럽 › 오로라"
+        },
+        {
+          "n": 5,
+          "loc": "role=button[name=\"빼기\"] >> nth=1"
+        }
+      ],
+      "split": [
+        800
+      ]
+    },
+    {
+      "name": "community",
+      "path": "/admin#community",
+      "waitFor": "text=링클이 낸 문제",
+      "displayScale": 0.5,
+      "pins": [
+        {
+          "n": 7,
+          "loc": "text=312명 도전, 221명 도착"
+        }
+      ]
+    },
+    {
+      "name": "add",
+      "path": "/admin#add",
+      "waitFor": "text=출발과 도착 고르기",
+      "displayScale": 0.5,
+      "pins": [
+        {
+          "n": 8,
+          "loc": "role=heading[name=\"출발과 도착 고르기\"]"
+        }
+      ]
+    },
+    {
+      "name": "overview-phone",
+      "path": "/admin#overview",
+      "waitFor": "text=날짜별 오늘의 문제",
+      "viewport": [
+        390,
+        1600
+      ],
+      "displayScale": 0.5,
+      "pins": [
+        {
+          "n": 9,
+          "loc": "css=main ul >> nth=1 >> css=li >> nth=0"
+        }
+      ],
+      "split": [
+        800
+      ]
+    }
+  ]
+}

@@ -3,7 +3,8 @@ import { ApiError } from './api'
 
 // 관리자 화면이 부르는 API(apps/worker/src/admin.ts). 로그인하면 서버가 쿠키를 주고, 이후 요청은 그 쿠키로 들어간다.
 
-export type Difficulty = 'easy' | 'normal' | 'hard'
+export type { Difficulty } from '@linkle/core'
+import type { Difficulty } from '@linkle/core'
 export type Hop = { id: number; title: string; via: string }
 
 export type AdminDay = {
@@ -21,13 +22,43 @@ export type AdminDay = {
 export type Overview = {
   today: string
   days: AdminDay[]
-  queue: { difficulty: Difficulty | null; n: number }[]
+  /** 대기열의 난이도별 수. unreviewed는 그중 아직 안 본 문제 */
+  queue: { difficulty: Difficulty | null; n: number; unreviewed: number }[]
   community: { n: number; plays: number | null; clears: number | null } | null
   players: number
   /** 대기열이 below개 아래로 줄면 Worker가 문제 채우기를 부른다. last는 마지막으로 부른 결과 */
   refill: { last: { at: number; ok: boolean; status: number; left: number } | null; below: number; canDispatch: boolean }
 }
-export type QueueItem = { id: number; start_title: string; end_title: string; par: number; difficulty: Difficulty | null; solution: string | null; priority: number; created_at: number }
+export type QueueItem = {
+  id: number
+  start_id: number
+  start_title: string
+  end_id: number
+  end_title: string
+  par: number
+  difficulty: Difficulty | null
+  solution: string | null
+  priority: number
+  created_at: number
+  /** 관리자가 봤다고 남긴 때. 비어 있으면 안 본 문제 */
+  reviewed_at: number | null
+}
+/** 날짜가 붙은 오늘의 문제(최근 30일과 앞으로) */
+export type PlacedDay = {
+  id: number
+  date: string
+  number: number
+  start_id: number
+  start_title: string
+  end_id: number
+  end_title: string
+  difficulty: Difficulty | null
+  par: number | null
+  plays: number
+  solution: string | null
+}
+export type QueueData = { today: string; approved: QueueItem[]; rejected: RejectedItem[]; placed: PlacedDay[] }
+export type QueueAction = 'reject' | 'restore' | 'first' | 'unpin' | 'ok' | 'unreview'
 export type RejectedItem = { id: number; start_title: string; end_title: string; par: number; difficulty: Difficulty | null; note: string | null }
 export type CommunityItem = { id: number; number: number; start_title: string; end_title: string; par: number | null; difficulty: Difficulty | null; status: string; plays: number; clears: number; solution: string | null }
 export type NewPuzzle = { start: Page; end: Page; par: number; difficulty: Difficulty; solution: Hop[] }
@@ -56,12 +87,13 @@ export const adminApi = {
   login: (password: string) => call<{ ok: true }>('login', { password }),
   logout: () => call<{ ok: true }>('logout', {}),
   overview: () => call<Overview>('overview'),
-  queue: () => call<{ approved: QueueItem[]; rejected: RejectedItem[] }>('queue'),
-  queueAction: (id: number, action: 'reject' | 'restore' | 'first' | 'unpin') => call<{ ok: true }>(`queue/${id}`, { action }),
+  queue: () => call<QueueData>('queue'),
+  queueAction: (id: number, action: QueueAction) => call<{ ok: true }>(`queue/${id}`, { action }),
   community: () => call<{ items: CommunityItem[] }>('community'),
   refill: () => call<{ at: number; ok: boolean; status: number; left: number }>('refill', {}),
   puzzleAction: (id: number, action: 'hide' | 'show' | 'replace') => call<{ ok: true }>(`puzzles/${id}`, { action }),
-  add: (pool: 'daily' | 'official', item: NewPuzzle, first: boolean) => call<{ added: number; queue: number }>('puzzles', { pool, items: [item], first }),
+  // 관리자가 직접 풀어 넣은 문제는 이미 본 문제다
+  add: (pool: 'daily' | 'official', item: NewPuzzle, first: boolean) => call<{ added: number; queue: number }>('puzzles', { pool, items: [item], first, reviewed: true }),
 }
 
 /**

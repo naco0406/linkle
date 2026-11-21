@@ -1,4 +1,4 @@
-import { addDays, kstDate } from '@linkle/core'
+import { addDays, kstDate, RECENT_DAYS } from '@linkle/core'
 import { HttpError, json, readJson } from './http.ts'
 import { canCallNow, dispatchRefill, queueLeft, readRefill, REFILL_BELOW, type RefillState } from './refill.ts'
 import { fillUpcoming } from './schedule.ts'
@@ -118,19 +118,21 @@ async function usedTitles(env: AdminEnv): Promise<Response> {
  * 같은 출발·도착 쌍은 한 번만 들어간다. first가 참이면 대기열 맨 앞에 둔다(관리자가 직접 넣은 문제).
  */
 async function addPuzzles(request: Request, env: AdminEnv): Promise<Response> {
-  const body = (await readJson(request, 256 * 1024)) as { pool?: unknown; items?: unknown; first?: unknown }
+  const body = (await readJson(request, 256 * 1024)) as { pool?: unknown; items?: unknown; first?: unknown; reviewed?: unknown }
   const pool = body.pool === 'official' ? 'official' : body.pool === 'daily' ? 'daily' : null
   if (!pool || !Array.isArray(body.items) || body.items.length > 100) throw new HttpError(400, 'invalid_body')
   const items = body.items.map(parseItem)
   if (items.some(i => i === null)) throw new HttpError(400, 'invalid_item')
   const now = Date.now()
   const priority = body.first === true ? Math.floor(now / 1000) : 0
+  // 관리자 화면에서 직접 풀어 넣은 문제는 이미 본 문제다. 문제 채우기로 들어온 것은 안 본 문제로 남는다
+  const reviewed = body.reviewed === true ? now : null
   const statements = (items as AdminItem[]).map(c =>
     pool === 'daily'
       ? env.DB.prepare(
-          `INSERT OR IGNORE INTO puzzle_queue (start_id, start_title, end_id, end_title, par, difficulty, solution, status, pool, created_at, priority)
-           VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 'approved', 'daily', ?8, ?9)`,
-        ).bind(c.start.id, c.start.title, c.end.id, c.end.title, c.par, c.difficulty, JSON.stringify(c.solution), now, priority)
+          `INSERT OR IGNORE INTO puzzle_queue (start_id, start_title, end_id, end_title, par, difficulty, solution, status, pool, created_at, priority, reviewed_at)
+           VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 'approved', 'daily', ?8, ?9, ?10)`,
+        ).bind(c.start.id, c.start.title, c.end.id, c.end.title, c.par, c.difficulty, JSON.stringify(c.solution), now, priority, reviewed)
       : env.DB.prepare(
           `INSERT OR IGNORE INTO puzzles (kind, number, start_id, start_title, end_id, end_title, par, difficulty, solution, status, created_at)
            SELECT 'official', COALESCE(MAX(number), 0) + 1, ?1, ?2, ?3, ?4, ?5, ?6, ?7, 'published', ?8 FROM puzzles WHERE kind = 'official'`,
@@ -142,15 +144,17 @@ async function addPuzzles(request: Request, env: AdminEnv): Promise<Response> {
   return json({ pool, received: items.length, added, queue: left?.n ?? 0 })
 }
 
-/** 한눈에: 오늘·내일 문제, 대기열의 난이도별 수, 최근 며칠의 도착 인원 */
+/** 한눈에: 최근 14일과 내일의 오늘의 문제, 대기열의 난이도별 수와 안 본 문제 수 */
 async function overview(env: AdminEnv): Promise<Response> {
   const today = kstDate(Date.now())
   const [days, queue, community, players, refill] = await env.DB.batch([
     env.DB.prepare(
       `SELECT id, date, number, start_title, end_title, difficulty, par, plays, clears, solution FROM puzzles
-       WHERE kind = 'daily' AND date >= ?1 ORDER BY date LIMIT 14`,
-    ).bind(addDays(today, -6)),
-    env.DB.prepare(`SELECT difficulty, COUNT(*) AS n FROM puzzle_queue WHERE status = 'approved' AND pool = 'daily' GROUP BY difficulty`),
+       WHERE kind = 'daily' AND date >= ?1 ORDER BY date LIMIT 20`,
+    ).bind(addDays(today, -13)),
+    env.DB.prepare(
+      `SELECT difficulty, COUNT(*) AS n, SUM(reviewed_at IS NULL) AS unreviewed FROM puzzle_queue WHERE status = 'approved' AND pool = 'daily' GROUP BY difficulty`,
+    ),
     env.DB.prepare(`SELECT COUNT(*) AS n, SUM(plays) AS plays, SUM(clears) AS clears FROM puzzles WHERE kind = 'official' AND status = 'published'`),
     env.DB.prepare(`SELECT COUNT(*) AS n FROM players`),
     env.DB.prepare(`SELECT value FROM job_state WHERE key = 'refill'`),
@@ -177,16 +181,23 @@ async function refillNow(env: AdminEnv): Promise<Response> {
   return json(await dispatchRefill(env.DB, env.GITHUB_DISPATCH_TOKEN, now, left))
 }
 
-/** 대기열. 낼 순서대로, 뺀 문제도 최근 것 몇 개 */
+/**
+ * 대기열. 낼 순서대로(당긴 것 먼저, 그다음 들어온 순서), 뺀 문제도 최근 것 몇 개.
+ * placed는 최근 30일과 앞으로 날짜가 붙은 오늘의 문제다. 화면이 이것으로 앞으로의 일정을 계산한다(@linkle/core projectSchedule)
+ */
 async function queueList(env: AdminEnv): Promise<Response> {
-  const [approved, rejected] = await env.DB.batch([
+  const today = kstDate(Date.now())
+  const [approved, rejected, placed] = await env.DB.batch([
     env.DB.prepare(
-      `SELECT id, start_title, end_title, par, difficulty, solution, priority, created_at FROM puzzle_queue
+      `SELECT id, start_id, start_title, end_id, end_title, par, difficulty, solution, priority, created_at, reviewed_at FROM puzzle_queue
        WHERE status = 'approved' AND pool = 'daily' ORDER BY priority DESC, id`,
     ),
     env.DB.prepare(`SELECT id, start_title, end_title, par, difficulty, note FROM puzzle_queue WHERE status = 'rejected' ORDER BY id DESC LIMIT 20`),
+    env.DB.prepare(
+      `SELECT id, date, number, start_id, start_title, end_id, end_title, difficulty, par, plays, solution FROM puzzles WHERE kind = 'daily' AND date >= ?1 ORDER BY date`,
+    ).bind(addDays(today, -RECENT_DAYS)),
   ])
-  return json({ approved: approved?.results ?? [], rejected: rejected?.results ?? [] })
+  return json({ today, approved: approved?.results ?? [], rejected: rejected?.results ?? [], placed: placed?.results ?? [] })
 }
 
 async function queueAction(request: Request, env: AdminEnv, id: number): Promise<Response> {
@@ -196,11 +207,14 @@ async function queueAction(request: Request, env: AdminEnv, id: number): Promise
     restore: `UPDATE puzzle_queue SET status = 'approved', note = NULL, priority = 0 WHERE id = ?1 AND status = 'rejected'`,
     first: `UPDATE puzzle_queue SET priority = ?2 WHERE id = ?1 AND status = 'approved'`,
     unpin: `UPDATE puzzle_queue SET priority = 0 WHERE id = ?1`,
+    // 훑어보기: 봤다고 남긴다. 되돌리기(unreview)는 실수로 누른 것을 다시 안 본 문제로 돌린다
+    ok: `UPDATE puzzle_queue SET reviewed_at = ?2 WHERE id = ?1 AND status = 'approved'`,
+    unreview: `UPDATE puzzle_queue SET reviewed_at = NULL WHERE id = ?1`,
   }
   const q = typeof action === 'string' ? sql[action] : undefined
   if (!q) throw new HttpError(400, 'invalid_action')
   const stmt = env.DB.prepare(q)
-  const r = await (action === 'first' ? stmt.bind(id, Math.floor(Date.now() / 1000)) : stmt.bind(id)).run()
+  const r = await (action === 'first' ? stmt.bind(id, Math.floor(Date.now() / 1000)) : action === 'ok' ? stmt.bind(id, Date.now()) : stmt.bind(id)).run()
   if (!r.meta.changes) throw new HttpError(409, 'no_change')
   return json({ ok: true })
 }

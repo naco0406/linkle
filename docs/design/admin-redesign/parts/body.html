@@ -1,0 +1,310 @@
+<!-- bd:icons --><!-- /bd:icons -->
+
+<nav class="bd-nav"><div class="bd-nav-inner"><b>링클 관리자 화면 시안</b>
+  <a href="#dirs">방향</a><a href="#diag">지금 화면</a><a href="#s-today">오늘</a><a href="#s-plan">일정</a><a href="#s-community">커뮤니티</a><a href="#s-add">문제 넣기</a><a href="#s-phone">휴대폰</a><a href="#spec">규격</a><a href="#rules">규칙</a><a href="#refs">레퍼런스</a><a href="#next">순서 · 질문</a>
+</div></nav>
+
+<main class="bd-wrap" style="word-break:keep-all">
+
+<section class="bd-hero">
+  <div class="bd-kicker">링클 · 관리자 화면(/admin) 시안 v1 · 2026-11-21 · 기준: main 5b97d3c</div>
+  <h1>관리자 화면을 열면 "오늘 볼 것"과 "어느 날 무엇이 나가는지"가 먼저 보이게 해요</h1>
+  <p class="bd-lead">지금 관리자 화면은 데이터 종류(개요, 대기열, 커뮤니티)로 나뉘어 있어서, 운영자가 매일 하는 일(내일 문제 확인, 새로 들어온 문제 훑어보기, 어제 결과 보기)을 탭 사이를 오가며 맞춰야 해요. 대기열을 날짜 칸에 펼치고, 첫 화면 맨 위에 할 일을 두는 쪽으로 다시 그렸어요. <b>아직 구현 전</b>이고, 화면 속 문제 이름과 숫자는 예시예요(오늘을 12월 3일로 두었어요).</p>
+  <div class="bd-legend">
+    <span><i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#3366cc;margin-right:6px"></i>안 본 문제</span>
+    <span>정해짐: 날짜가 붙은 문제</span><span>예상: 요일 난이도로 미리 계산한 날짜</span>
+    <span class="bd-muted">본 문제와 지난 날은 점 없이 글자만</span>
+  </div>
+  <div class="bd-grid3" style="margin-top:48px">
+    <div class="bd-card"><span class="bd-proposed">제안</span><h3 style="margin-top:10px">첫 화면은 "오늘"</h3><p class="bd-small bd-muted">맨 위 할 일 줄, 오늘과 내일 문제, 최근 14일 도착률을 한 화면에 둬요. 난이도 예상이 맞았는지도 여기서 보여요.</p></div>
+    <div class="bd-card"><span class="bd-proposed">제안</span><h3 style="margin-top:10px">대기열은 "일정"으로</h3><p class="bd-small bd-muted">남은 문제를 나갈 날짜 칸에 펼치고, 하나를 고르면 옆에서 두 문서 설명과 정답 경로를 보며 괜찮아요 또는 빼기로 훑어봐요.</p></div>
+    <div class="bd-card"><span class="bd-decided">결정됨</span><h3 style="margin-top:10px">지금 정해 둔 것은 그대로</h3><p class="bd-small bd-muted">평면 단색과 브랜드 파랑, 비밀번호로 들어오기, 대기열이 10개 아래면 문제 채우기를 자동으로 부르기, 위험한 일은 두 번 눌러 확인하기.</p></div>
+  </div>
+</section>
+
+<section class="bd-chapter" id="dirs">
+  <div class="bd-kicker">00 · 방향</div>
+  <h2>관리자 화면을 데이터 종류로 나눌지, 운영자의 하루로 나눌지가 갈림길이에요</h2>
+  <p class="bd-lead">쓰는 사람은 운영자 한 명이고, 하루에 한두 번 휴대폰이나 노트북으로 열어요. 하는 일은 대부분 "내일 문제가 괜찮은지 보고, 새로 들어온 문제 중 이상한 것을 뺀다"예요. 셋을 그려 봤고, <b>A를 추천해요</b>.</p>
+  <div class="bd-grid3">
+    <div class="bd-card bd-dir pick">
+      <div class="bd-dir-head"><span class="bd-tag pick">A · 오늘과 일정</span><span class="bd-proposed">추천</span></div>
+      <h3>할 일 줄, 오늘과 내일, 날짜 칸 일정</h3>
+      <div class="bd-wire nosb"><div class="m"><div class="blk" style="min-height:24px"><span>탭 오늘, 일정, 커뮤니티, 문제 넣기</span></div>
+        <div class="blk"><span>할 일 줄</span><div class="g-list" style="min-height:10px"></div></div>
+        <div class="cols"><div class="blk"><span>오늘</span><div class="g-metrics"><i></i></div></div><div class="blk"><span>내일</span><div class="g-metrics"><i></i></div></div></div>
+        <div class="blk key" style="height:62px"><span>일정 탭: 날짜 칸 목록 + 옆 패널</span><div class="g-table"></div></div>
+      </div></div>
+      <p class="bd-wire-cap"><b>핵심 한 수</b> · 대기열을 나갈 날짜 칸에 펼쳐요. "2번째"가 아니라 "12월 6일 일요일"로 보여요</p>
+      <div class="bd-pc"><div><h4>좋은 점</h4><ul><li>내일 이후가 날짜로 보여 이상한 문제가 언제 나가는지 바로 알아요</li><li>훑어보기를 일정 안에서 해요. 따로 배울 화면이 없어요</li></ul></div><div><h4>대가</h4><ul><li>예상 날짜는 출제 때 경로 확인에서 빠지면 하루씩 밀려요. "예상"이라고 꼭 적어야 해요</li><li>출제 순서 계산을 브라우저에도 둬야 해요</li></ul></div></div>
+      <p class="bd-prec">선례 · <a href="#refs">Buffer 대기열 슬롯</a> · <a href="#refs">Shopify 홈 할 일</a> · <a href="#refs">Linear 트리아지</a>(B에서 빌림)</p>
+    </div>
+    <div class="bd-card bd-dir">
+      <div class="bd-dir-head"><span class="bd-tag">B · 훑어보기함</span></div>
+      <h3>새로 들어온 문제를 한 장씩 넘기기</h3>
+      <div class="bd-wire nosb"><div class="m"><div class="blk" style="min-height:24px"><span>탭 훑어보기, 대기열, 커뮤니티, 문제 넣기</span></div>
+        <div class="blk"><span>남은 수 18</span><div class="g-metrics"><i></i></div></div>
+        <div class="blk key" style="height:78px"><span>한 문제 크게 · 남기기 / 빼기</span><div class="g-list"></div></div>
+        <div class="blk ghost"><span>대기열(지금 그대로)</span><div class="g-list" style="min-height:10px"></div></div>
+      </div></div>
+      <p class="bd-wire-cap"><b>핵심 한 수</b> · 40개가 들어오면 받은편지함처럼 하나씩 판단해요</p>
+      <div class="bd-pc"><div><h4>좋은 점</h4><ul><li>훑어보기가 가장 빨라요. 단축키 두 개로 끝나요</li></ul></div><div><h4>대가</h4><ul><li>한 달에 한 번 쓰는 화면이 첫 자리를 차지해요</li><li>어느 날 나가는지는 여전히 안 보여요</li></ul></div></div>
+      <p class="bd-prec">선례 · <a href="#refs">Linear 트리아지</a> · <a href="#refs">YouTube 댓글 검토</a></p>
+    </div>
+    <div class="bd-card bd-dir">
+      <div class="bd-dir-head"><span class="bd-tag">C · 지금 구조 다듬기</span></div>
+      <h3>탭 넷 그대로, 표와 메뉴로 정리</h3>
+      <div class="bd-wire nosb"><div class="m"><div class="blk" style="min-height:24px"><span>탭 개요, 대기열, 커뮤니티, 문제 넣기</span></div>
+        <div class="blk"><span>대기열 요약</span><div class="g-bars"><i style="height:50%"></i><i style="height:80%"></i><i style="height:40%"></i></div></div>
+        <div class="blk key" style="height:86px"><span>표 · 줄 끝 ⋯ 메뉴</span><div class="g-table"></div></div>
+      </div></div>
+      <p class="bd-wire-cap"><b>핵심 한 수</b> · 줄마다 있던 빨간 단추를 ⋯ 메뉴로 넣어요</p>
+      <div class="bd-pc"><div><h4>좋은 점</h4><ul><li>API와 데이터를 바꾸지 않아 하루면 끝나요</li></ul></div><div><h4>대가</h4><ul><li>날짜를 모르는 문제와 할 일이 없는 첫 화면은 그대로예요</li></ul></div></div>
+      <p class="bd-prec">선례 · <a href="#refs">Vercel 배포 목록</a>. 이 정리는 A의 1단계로 함께 들어가요</p>
+    </div>
+  </div>
+</section>
+
+<section class="bd-chapter" id="diag">
+  <div class="bd-kicker">01 · 지금 화면 진단</div>
+  <h2>화면은 깔끔해졌지만, 운영자가 매일 하는 판단은 아직 머릿속에서 해야 해요</h2>
+  <p class="bd-lead">main(5b97d3c)을 빌드해 가짜 API로 띄워 찍었어요. 12월 3일, 대기열 32개, 그중 18개를 아직 안 본 상태예요. 숫자는 다 있지만 "그래서 오늘 무엇을 봐야 하는지"와 "어느 날 무엇이 나가는지"를 화면이 말해 주지 않아요.</p>
+  <div class="bd-shots">
+    <figure><div class="bd-shotbox"><img class="bd-shot" src="shots/overview@1.png" data-pins="shots/pins.json#overview@1" alt=""></div><figcaption class="bd-cap">개요 — 숫자 카드와 날짜별 목록(진단 1 · 2 · 5 · 6)</figcaption></figure>
+    <figure><div class="bd-shotbox"><img class="bd-shot" src="shots/queue@1.png" data-pins="shots/pins.json#queue@1" alt=""></div><figcaption class="bd-cap">대기열 — 32줄이 같은 모양(진단 3 · 4 · 5)</figcaption></figure>
+    <figure><div class="bd-shotbox"><img class="bd-shot" src="shots/community.png" data-pins="shots/pins.json#community" alt=""></div><figcaption class="bd-cap">커뮤니티 — 숨긴 문제가 사이에 섞임(진단 7)</figcaption></figure>
+    <figure><div class="bd-shotbox"><img class="bd-shot" src="shots/add.png" data-pins="shots/pins.json#add" alt=""></div><figcaption class="bd-cap">문제 넣기 — 고르기 전 안내가 없음(진단 8)</figcaption></figure>
+  </div>
+  <div class="bd-shots" style="grid-template-columns: 300px 1fr; align-items: start; margin-top: 24px">
+    <figure><div class="bd-shotbox"><img class="bd-shot" src="shots/overview-phone@1.png" data-pins="shots/pins.json#overview-phone@1" alt=""></div><figcaption class="bd-cap">휴대폰 390 — 단추가 줄 아래로(진단 9)</figcaption></figure>
+    <ol class="bd-diag">
+      <li><b>첫 화면이 오늘 할 일을 말하지 않아요.</b> 대기열 수와 기기 수는 있지만, 새로 들어온 문제를 봐야 하는지, 내일 문제는 괜찮은지는 운영자가 탭을 돌며 판단해요. <span class="bd-src">Admin.tsx — OverviewTab, QueueSummary</span></li>
+      <li><b>앞으로 나갈 날은 내일 하루만 보여요.</b> 날짜별 목록 8줄 중 6줄이 지난 날이에요. 모레부터는 대기열 탭을 보고 짐작해야 해요. <span class="bd-src">worker/src/admin.ts — overview(): date &gt;= today−6</span></li>
+      <li><b>대기열의 번호는 실제로 나가는 순서가 아니에요.</b> "2 마라톤 → 오로라"지만 주말에는 어려움이 먼저 나가서 실제로는 12월 9일에 나가요. 번호를 믿고 "다음 문제"를 판단하면 틀려요. <span class="bd-src">schedule.ts — wantedDifficulty, chooseOrder · Admin.tsx — QueueTab {i + 1}</span></li>
+      <li><b>자동으로 들어온 문제를 훑어본 흔적이 남지 않아요.</b> 32줄이 모두 같은 모양이라 어디까지 봤는지 몰라요. 문서가 무엇인지(설명)도 없어 제목만 보고 민감한 소재인지 판단해야 해요. 설계 문서 7.6은 "자동으로 들어온 문제는 관리자 화면에서 훑어보고 뺀다"고 적었어요. <span class="bd-src">docs/DESIGN.md 7.6 · Admin.tsx — QueueTab</span></li>
+      <li><b>빨간 단추가 줄마다 있어요.</b> 대기열 32줄에 "빼기"가 32개이고, 개요 맨 위 줄에서 가장 눈에 띄는 것도 빨간 "다른 문제로"예요. 가장 드물게 할 일이 가장 크게 보여요. <span class="bd-src">Admin.tsx — RowButton tone="danger" · ConfirmButton</span></li>
+      <li><b>결과가 문장으로만 있어 날짜끼리 비교가 안 돼요.</b> "96명 도전, 61명 도착 (64%)"이 줄마다 있지만, 쉬움 날 89%, 어려움 날 48%처럼 난이도 예상이 맞았는지는 직접 세어야 해요. 설계 문서 7.4는 이 값으로 난이도 기준을 고쳐 간다고 했어요. <span class="bd-src">Admin.tsx — OverviewTab sub · DESIGN.md 7.4</span></li>
+      <li><b>커뮤니티 목록은 정렬도 비교도 안 돼요.</b> 도착률이 없고, 숨긴 문제가 목록 사이에 흐리게 섞여 있어요. 줄마다 단추가 둘이에요. <span class="bd-src">Admin.tsx — CommunityTab</span></li>
+      <li><b>문제 넣기는 고른 뒤에야 문제를 알려 줘요.</b> 최근 30일에 쓴 문서인지는 출제할 때 서버가 건너뛰며 알게 되고, 화면은 넓은 빈자리로 남아요. <span class="bd-src">schedule.ts — 최근 30일 건너뛰기 · Admin.tsx — AddTab</span></li>
+      <li><b>휴대폰에서는 줄이 두 배로 길어져요.</b> 단추가 제목 아래로 내려가 8일을 보려면 세 화면을 내려야 해요. <span class="bd-src">Admin.tsx — Row(sm 미만에서 단추 줄바꿈)</span></li>
+    </ol>
+  </div>
+</section>
+
+<!-- ───── 02 · 오늘 ───── -->
+<section class="bd-chapter" id="s-today">
+  <div class="bd-kicker">02 · 오늘 — 첫 화면</div>
+  <h2>첫 화면 맨 위 한 줄이 오늘 해야 할 일을 말해요</h2>
+  <p class="bd-lead">지금은 숫자 카드 세 장과 지난 날 목록이었어요. 맨 위에 할 일 줄을 두고, 그 아래 오늘과 내일을 나란히, 그 아래 최근 14일 도착률을 난이도 색으로 그려요. 운영자가 여는 이유 셋(볼 것이 있나, 내일은 괜찮나, 난이도가 맞았나)에 위에서부터 답하게 했어요.</p>
+  <div class="bd-compare">
+    <figure><figcaption>지금 <span>main 기준 캡처</span></figcaption>
+      <div class="bd-frame"><div class="bd-chrome"><i></i><i></i><i></i><span class="url">linkle.naco.im<b>/admin#overview</b></span></div>
+        <div class="bd-screen"><img src="shots/overview@1.png" alt=""></div></div></figure>
+    <figure><figcaption>시안 <span>오늘 탭</span></figcaption>
+      <div class="bd-frame"><div class="bd-chrome"><i></i><i></i><i></i><span class="url">linkle.naco.im<b>/admin#today</b></span></div>
+        <div class="bd-screen"><!--TODAY--></div></div></figure>
+  </div>
+  <div class="bd-frame-wrap"><div class="bd-frame" id="f-today">
+    <div class="bd-chrome"><i></i><i></i><i></i><span class="tab">링클 관리</span><span class="url">linkle.naco.im<b>/admin#today</b></span></div>
+    <div class="bd-screen"><!--TODAY:pins--></div>
+  </div></div>
+  <ol class="bd-notes">
+    <li><b>할 일 줄 — 볼 것이 있을 때만 나타나요.</b> 안 본 문제, 문제 채우기 실패, 대기열 부족처럼 운영자가 움직여야 하는 것만 한 줄씩 쌓여요. 아무 일도 없으면 줄이 사라져 "오늘은 볼 것이 없다"는 것 자체가 답이 돼요. Shopify 홈의 할 일 묶음에서 가져왔어요.</li>
+    <li><b>오늘 카드 — 도착률 옆에 같은 난이도 날의 평균.</b> 64%만으로는 잘 된 건지 알 수 없어요. "보통 날 평균 71%"를 붙여 오늘 문제가 예상보다 어려웠는지 바로 읽혀요.</li>
+    <li><b>내일 카드 — 정답 경로를 펼친 채로.</b> 아직 아무도 시작하지 않은 문제라 정답을 숨길 이유가 없어요. "다른 문제로"는 빨강을 빼고, 지금처럼 두 번 눌러야 바뀌어요.</li>
+    <li><b>최근 14일 도착률 — 막대 색이 그날의 난이도.</b> 초록 막대가 높고 빨강 막대가 낮으면 난이도 예상이 맞은 거예요. 오른쪽에 난이도별 평균을 적어 7.4의 기준을 고칠 때 근거로 써요.</li>
+    <li><b>남은 문제 — 날짜로 말해요.</b> "32개"보다 "1월 5일까지"가 운영자에게 필요한 답이에요. 문제 채우기 상태는 할 일이 생길 때만 맨 위 줄로 올라가요.</li>
+  </ol>
+</section>
+
+<!-- ───── 03 · 일정 ───── -->
+<section class="bd-chapter" id="s-plan">
+  <div class="bd-kicker">03 · 일정 — 대기열을 날짜 칸에</div>
+  <h2>남은 문제가 "몇 번째"가 아니라 "어느 날"로 보여요</h2>
+  <p class="bd-lead">지금 대기열은 1부터 32까지 번호가 붙지만, 실제 출제는 요일 난이도에 따라 순서가 바뀌어요. 서버의 출제 규칙을 브라우저에서 그대로 돌려 각 문제에 예상 날짜를 붙이고, 하나를 고르면 옆 패널에서 두 문서 설명과 정답 경로를 보며 훑어봐요. 넓은 화면에서는 목록과 패널이 나란히, 휴대폰에서는 아래에서 올라오는 시트로 열려요.</p>
+  <div class="bd-compare">
+    <figure><figcaption>지금 <span>main 기준 캡처</span></figcaption>
+      <div class="bd-frame"><div class="bd-chrome"><i></i><i></i><i></i><span class="url">linkle.naco.im<b>/admin#queue</b></span></div>
+        <div class="bd-screen"><img src="shots/queue@1.png" alt=""></div></div></figure>
+    <figure><figcaption>시안 <span>일정 탭</span></figcaption>
+      <div class="bd-frame"><div class="bd-chrome"><i></i><i></i><i></i><span class="url">linkle.naco.im<b>/admin#plan</b></span></div>
+        <div class="bd-screen"><!--PLAN--></div></div></figure>
+  </div>
+  <div class="bd-frame-wrap"><div class="bd-frame" id="f-plan">
+    <div class="bd-chrome"><i></i><i></i><i></i><span class="tab">링클 관리</span><span class="url">linkle.naco.im<b>/admin#plan</b></span></div>
+    <div class="bd-screen"><!--PLAN:pins--></div>
+  </div></div>
+  <ol class="bd-notes">
+    <li><b>날짜 칸 — 정해진 날과 예상한 날을 글자로 구분해요.</b> 내일(12.4)은 이미 붙은 문제라 "정해짐", 그 뒤는 서버와 같은 규칙(요일 난이도, 당긴 문제 먼저, 최근 30일 문서 건너뛰기)으로 계산한 "예상"이에요. Buffer가 대기열 글을 다음 빈 칸에 자동으로 넣는 방식과 같아요.</li>
+    <li><b>훑어보기 필터와 파란 점.</b> 안 본 문제에만 점이 붙고, "안 본 문제 18"을 누르면 그것만 날짜순으로 남아요. 괜찮아요를 누르면 점이 사라지고 다음 안 본 문제로 넘어가요.</li>
+    <li><b>두 문서 설명 — 제목만으로 판단하지 않게.</b> 고른 문제의 출발과 도착 문서 첫 줄을 위키백과에서 받아 보여요. 민감한 소재, 동명이인, 너무 낯선 주제를 여기서 걸러요.</li>
+    <li><b>빼면 무엇이 바뀌는지 한 줄로.</b> "빼면 12월 6일에는 해리 포터 → 상대성 이론이 나가요"처럼 결과를 먼저 보여 줘요. 빼기는 되돌릴 수 있어 두 번 누르지 않아요.</li>
+    <li><b>단축키 — 한 손으로 끝까지.</b> J/K로 다음과 이전, Y는 괜찮아요, X는 빼기예요. Linear 트리아지의 1/2 단축키에서 가져왔어요. 휴대폰에서는 시트의 큰 단추가 같은 일을 해요.</li>
+  </ol>
+</section>
+
+<!-- ───── 04 · 커뮤니티 ───── -->
+<section class="bd-chapter" id="s-community">
+  <div class="bd-kicker">04 · 커뮤니티</div>
+  <h2>커뮤니티는 숫자를 비교하는 표가 돼요</h2>
+  <p class="bd-lead">지금은 줄마다 문장 한 줄과 단추 둘이었어요. 도전과 도착률을 열로 세워 정렬하고, 숨긴 문제는 따로 모으고, 숨기기는 줄 끝 ⋯ 메뉴로 넣어요. 운영자가 여기서 하는 일은 "너무 쉽거나 어려운 문제 찾기"와 가끔 숨기기라서, 비교가 먼저예요.</p>
+  <div class="bd-compare">
+    <figure><figcaption>지금 <span>main 기준 캡처</span></figcaption>
+      <div class="bd-frame"><div class="bd-chrome"><i></i><i></i><i></i><span class="url">linkle.naco.im<b>/admin#community</b></span></div>
+        <div class="bd-screen"><img src="shots/community.png" alt=""></div></div></figure>
+    <figure><figcaption>시안 <span>커뮤니티 탭</span></figcaption>
+      <div class="bd-frame"><div class="bd-chrome"><i></i><i></i><i></i><span class="url">linkle.naco.im<b>/admin#community</b></span></div>
+        <div class="bd-screen"><!--COMM--></div></div></figure>
+  </div>
+  <div class="bd-frame-wrap"><div class="bd-frame" id="f-community">
+    <div class="bd-chrome"><i></i><i></i><i></i><span class="tab">링클 관리</span><span class="url">linkle.naco.im<b>/admin#community</b></span></div>
+    <div class="bd-screen"><!--COMM:pins--></div>
+  </div></div>
+  <ol class="bd-notes">
+    <li><b>보이는 문제와 숨긴 문제를 나눠요.</b> 숨긴 문제가 목록 사이에 흐리게 섞이지 않아요. YouTube 댓글 검토의 두 탭 구조와 같아요.</li>
+    <li><b>도착률 열 — 막대와 숫자를 함께.</b> 35%와 91%가 한눈에 갈려요. 열 머리를 누르면 그 값으로 정렬해요.</li>
+    <li><b>숨기기는 ⋯ 메뉴 안에.</b> 메뉴에 "목록에서 빠져요. 순위표와 기록은 남아요"를 적어, 누르기 전에 결과를 알게 해요. Vercel 배포 목록의 줄 메뉴에서 가져왔어요.</li>
+  </ol>
+</section>
+
+<!-- ───── 05 · 문제 넣기 ───── -->
+<section class="bd-chapter" id="s-add">
+  <div class="bd-kicker">05 · 문제 넣기</div>
+  <h2>문제 넣기는 고르는 순간 걸리는 것을 알려 줘요</h2>
+  <p class="bd-lead">지금은 두 입력칸과 빈 화면이었고, 최근에 쓴 문서인지는 출제 때 서버가 건너뛰며 알게 됐어요. 세 단계를 위에 보이고, 문서를 고르면 그 아래에 설명과 경고를 바로 붙이고, 오른쪽에 좋은 문제의 조건(설계 문서 7.1)을 둬요.</p>
+  <div class="bd-compare">
+    <figure><figcaption>지금 <span>main 기준 캡처</span></figcaption>
+      <div class="bd-frame"><div class="bd-chrome"><i></i><i></i><i></i><span class="url">linkle.naco.im<b>/admin#add</b></span></div>
+        <div class="bd-screen"><img src="shots/add.png" alt=""></div></div></figure>
+    <figure><figcaption>시안 <span>문제 넣기 탭</span></figcaption>
+      <div class="bd-frame"><div class="bd-chrome"><i></i><i></i><i></i><span class="url">linkle.naco.im<b>/admin#add</b></span></div>
+        <div class="bd-screen"><!--ADD--></div></div></figure>
+  </div>
+  <div class="bd-frame-wrap"><div class="bd-frame" id="f-add">
+    <div class="bd-chrome"><i></i><i></i><i></i><span class="tab">링클 관리</span><span class="url">linkle.naco.im<b>/admin#add</b></span></div>
+    <div class="bd-screen"><!--ADD:pins--></div>
+  </div></div>
+  <ol class="bd-notes">
+    <li><b>세 단계를 위에.</b> 고르기, 직접 풀어 보기, 넣을 곳 고르기 중 어디에 있는지 보여요. 풀다가 돌아와도 길을 잃지 않아요.</li>
+    <li><b>고른 문서 아래에 첫 줄 설명.</b> 검색 목록에서 본 설명이 고른 뒤에도 남아, 동명의 다른 문서를 고르지 않았는지 다시 확인해요.</li>
+    <li><b>최근 30일 경고 — 고르는 순간.</b> 이미 있는 관리용 API(<code>/api/admin/used</code>)로 최근에 쓴 문서를 받아 바로 알려요. 넣는 것을 막지는 않고, 언제부터 나갈 수 있는지만 적어요.</li>
+    <li><b>좋은 문제의 조건을 곁에.</b> 자동 출제가 지키는 조건과 같은 기준을 사람이 넣을 때도 보게 해요.</li>
+  </ol>
+</section>
+
+<!-- ───── 06 · 휴대폰 ───── -->
+<section class="bd-chapter" id="s-phone">
+  <div class="bd-kicker">06 · 휴대폰</div>
+  <h2>휴대폰에서는 줄에 단추를 두지 않고, 누르면 시트가 올라와요</h2>
+  <p class="bd-lead">지금은 줄마다 단추가 아래로 내려가 한 줄이 두 배였어요. 줄은 날짜, 문제, 난이도만 한 줄로 두고, 누르면 아래에서 시트가 올라와 설명과 단추를 보여 줘요. 8일이 한 화면에 들어와요.</p>
+  <div class="bd-row">
+    <div class="bd-cell"><h3 class="bd-sub">오늘</h3>
+      <div class="bd-frame-wrap"><div class="bd-frame phone" id="f-phone-today"><div class="bd-status"><span>9:41</span><span class="island"></span><span class="bat"></span></div><div class="bd-screen" style="height:800px"><!--PHONE-TODAY--></div></div></div>
+      <ol class="bd-notes"><li><b>할 일 줄이 맨 위.</b> 휴대폰에서 열자마자 볼 것이 있는지 알 수 있어요.</li><li><b>남은 문제는 날짜로.</b> 오늘과 내일 카드 아래에 "1월 5일까지"만 두고, 커뮤니티와 기기 수는 휴대폰에서 빼요.</li></ol>
+    </div>
+    <div class="bd-cell"><h3 class="bd-sub">일정에서 하나를 누른 순간</h3>
+      <div class="bd-frame-wrap"><div class="bd-frame phone" id="f-phone-plan"><div class="bd-status"><span>9:41</span><span class="island"></span><span class="bat"></span></div><div class="bd-screen" style="height:800px;position:relative;overflow:hidden"><!--PHONE-PLAN--></div></div></div>
+      <ol class="bd-notes"><li><b>줄은 한 줄 높이.</b> 날짜, 문제, 난이도만 두고 단추를 빼서 8일이 한 화면에 들어와요.</li><li><b>시트에 설명과 두 단추.</b> 괜찮아요와 빼기가 엄지 닿는 아래에 있어요. 시트를 내리면 목록으로 돌아가요.</li></ol>
+    </div>
+  </div>
+</section>
+
+<section class="bd-chapter" id="spec">
+  <div class="bd-kicker">07 · 시각 규격</div>
+  <h2>새 색 없이, 지금 관리자 화면의 부품과 값으로 그렸어요</h2>
+  <div class="bd-grid2">
+    <div class="bd-card"><h3>격자 · 여백</h3><table class="bd-table">
+      <tr><th>칸</th><th>값</th></tr>
+      <tr><td>페이지</td><td>최대 1120(지금 960) · 좌우 24 · 휴대폰 16</td></tr>
+      <tr><td>머리 · 탭</td><td>머리 56 · <code>Segmented</code> 520 · 탭 40 · 위에 붙음(지금과 같음)</td></tr>
+      <tr><td>카드</td><td><code>Card</code> 흰 바탕 · 모서리 20 · 안쪽 20/24 · 카드 사이 16</td></tr>
+      <tr><td>줄</td><td><code>Row</code> 위아래 12 · 구분선 #eef1f5 · 고른 줄 바탕 <code>--color-secondary</code></td></tr>
+      <tr><td>날짜 꼬리표</td><td><code>DateBadge</code> 64×48(휴대폰 56×44) · 모서리 14</td></tr>
+      <tr><td>일정 패널</td><td>넓은 화면 목록 1fr + 패널 420 · 1024 아래에서 시트</td></tr>
+    </table></div>
+    <div class="bd-card"><h3>글자 · 색</h3>
+      <div class="bd-ts"><span>머리 제목</span><span class="v">19/28 · 700</span></div>
+      <div class="bd-ts"><span>카드 제목</span><span class="v">17/25 · 700</span></div>
+      <div class="bd-ts"><span>문제(줄)</span><span class="v">16/22 · 600 · 패널은 22/30 · 700</span></div>
+      <div class="bd-ts"><span>설명</span><span class="v">14/20 · <code>--color-ink-2</code></span></div>
+      <div class="bd-ts"><span>큰 숫자</span><span class="v">32/40 · 700 · <code>--color-primary</code></span></div>
+      <div class="bd-ts"><span>난이도 색</span><span class="v"><code>--color-s4</code> 쉬움 · <code>--color-s3</code> 보통 · <code>--color-s1</code> 어려움</span></div>
+      <p class="bd-small bd-muted" style="margin-top:12px">새로 필요한 부품: 할 일 줄, 도착률 막대, 문서 설명 카드, 단축키 표시, 떠 있는 메뉴, 단계 표시, 아래 시트. 모두 기존 토큰(바탕, 잉크, 파랑, 난이도 색)으로만 그렸어요.</p>
+    </div>
+  </div>
+</section>
+
+<section class="bd-chapter" id="rules">
+  <div class="bd-kicker">08 · 설계 규칙</div>
+  <h2>구현할 때 지킬 것</h2>
+  <div class="bd-grid2">
+    <div class="bd-card"><h3>화면 말 대응표</h3><p class="bd-small bd-muted">관리자 화면도 코드 이름을 쓰지 않아요.</p><table class="bd-table">
+      <tr><th>내부 말</th><th>화면</th></tr>
+      <tr><td><code>puzzle_queue</code> (approved)</td><td>남은 문제 · 일정</td></tr>
+      <tr><td><code>status = 'rejected'</code></td><td>뺀 문제</td></tr>
+      <tr><td><code>priority &gt; 0</code></td><td>당김</td></tr>
+      <tr><td><code>par</code></td><td>정답 n번</td></tr>
+      <tr><td><code>kind = 'official'</code></td><td>링클이 낸 문제</td></tr>
+      <tr><td><code>reviewed_at</code>(새 칸)</td><td>본 문제 · 안 본 문제</td></tr>
+      <tr><td><code>workflow_dispatch</code></td><td>문제 채우기</td></tr>
+    </table></div>
+    <div class="bd-card"><h3>규칙</h3>
+      <div class="bd-rule"><span class="no">1</span><div><b>예상 날짜는 서버와 같은 코드로 계산해요.</b> <code>wantedDifficulty</code>와 <code>chooseOrder</code>를 <code>packages/core</code>로 옮겨 Worker와 화면이 함께 써요. 두 곳에 따로 쓰면 언젠가 날짜가 어긋나요.</div></div>
+      <div class="bd-rule"><span class="no">2</span><div><b>"예상"은 늘 글자로 적어요.</b> 출제 때 경로 확인에서 빠지면 하루씩 밀려요. 정해진 날(<code>puzzles</code>에 있는 날)만 "정해짐"이에요.</div></div>
+      <div class="bd-rule"><span class="no">3</span><div><b>빨강은 확인 단계에서만.</b> 줄과 카드의 기본 단추는 옅은 파랑이고, 되돌릴 수 없는 일은 두 번 눌러 확인해요(지금 규칙 그대로).</div></div>
+      <div class="bd-rule"><span class="no">4</span><div><b>할 일 줄은 움직여야 할 것만.</b> 정보(남은 날짜, 기기 수)는 카드에 두고, 줄에는 "안 본 문제", "채우기 실패", "대기열 부족"만 올려요.</div></div>
+      <div class="bd-rule"><span class="no">5</span><div><b>위키백과 설명은 고른 문제 하나만 받아요.</b> 목록 전체를 미리 받지 않아요. 서버를 거치지 않고 브라우저가 직접 받아 무료 한도에 들지 않아요.</div></div>
+      <div class="bd-rule"><span class="no">6</span><div><b>정답은 지난 문제에서만 접어 둬요.</b> 내일과 예정 문제는 아무도 풀지 않아 펼쳐 둬요(지금 규칙 그대로).</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="bd-chapter" id="refs">
+  <div class="bd-kicker">09 · 레퍼런스</div>
+  <h2>참고한 제품과 문서</h2>
+  <div class="bd-grid2 bd-refs">
+    <div class="bd-card"><h3>날짜 칸 · 일정</h3><ul>
+      <li><a href="https://support.buffer.com/en-us/articles/setting-up-your-timezones-and-posting-schedules-P4iSag90Fl">Buffer · Setting up your timezones and posting schedules</a> — <span class="bd-muted">대기열 글이 가장 이른 빈 칸으로 자동 배정되고, 날짜를 직접 정한 글만 따로 표시하는 방식. 일정 탭의 "예상 / 정해짐"으로 가져왔어요. 칸 편집 화면은 하루 한 문제라 가져오지 않았어요.</span></li>
+      <li><a href="https://support.buffer.com/en-us/articles/how-to-use-buffers-calendar-feature-FSSKbH32DN">Buffer · How to use Buffer's calendar feature</a> — <span class="bd-muted">월 보기와 끌어서 옮기기는 휴대폰에서 다루기 어려워 가져오지 않았어요.</span></li>
+      <li><a href="https://help.hootsuite.com/hc/en-us/articles/1260804251130">Hootsuite · Manage your content calendar in the mobile app (2026-11)</a> — <span class="bd-muted">하루 보기에 발행된 것과 예약된 것을 함께 두는 방식. 오늘 탭의 오늘·내일 카드로 가져왔어요.</span></li>
+    </ul></div>
+    <div class="bd-card"><h3>훑어보기 · 할 일</h3><ul>
+      <li><a href="https://linear.app/docs/triage">Linear · Triage</a> — <span class="bd-muted">새로 들어온 것만 모으는 곳과 받아들이기/거절 두 동작, 숫자 단축키. 안 본 문제 필터와 Y/X 단축키로 가져왔어요. 중복 표시와 미루기는 운영자 한 명에게 필요 없어 뺐어요.</span></li>
+      <li><a href="https://help.shopify.com/en/manual/shopify-admin/shopify-home">Shopify · Shopify Home</a> — <span class="bd-muted">첫 화면 맨 위에 종류별로 묶인 할 일과 건수. 할 일 줄로 가져왔어요. 돌아가며 바뀌는 추천 카드는 가져오지 않았어요.</span></li>
+      <li><a href="https://support.stripe.com/questions/dashboard-home-charts-overview">Stripe · Dashboard home page charts</a> — <span class="bd-muted">지표 옆에 비교 기준을 두는 방식. 도착률 옆 "같은 난이도 날 평균"으로 가져왔어요. 위젯 꾸미기는 지표가 적어 뺐어요.</span></li>
+    </ul></div>
+    <div class="bd-card"><h3>목록 · 메뉴</h3><ul>
+      <li><a href="https://vercel.com/docs/deployments/managing-deployments">Vercel · Managing Deployments (2026-09)</a> — <span class="bd-muted">위험한 동작을 줄 끝 ⋯ 메뉴에 넣고 잃는 것을 한 줄로 알리는 방식. 커뮤니티의 숨기기로 가져왔어요. 필터 네 종은 문제 수가 적어 뺐어요.</span></li>
+      <li><a href="https://support.google.com/youtube/answer/15535966">YouTube · Moderate comments</a> — <span class="bd-muted">보이는 것과 보류한 것을 두 탭으로 나누는 방식. 커뮤니티의 보이는 문제 / 숨긴 문제로 가져왔어요.</span></li>
+    </ul></div>
+    <div class="bd-card"><h3>레포 안의 근거</h3><ul>
+      <li><code>docs/DESIGN.md</code> 7.1 · 7.4 · 7.5 · 7.6 · 7.7 — <span class="bd-muted">좋은 문제의 조건, 난이도 기준과 보정, 출제 규칙, 자동 문제를 훑어보고 빼는 일, 지금 관리자 화면의 기능.</span></li>
+      <li><code>apps/worker/src/schedule.ts</code> — <span class="bd-muted">요일 난이도, 당긴 문제 먼저, 최근 30일 건너뛰기. 예상 날짜 계산의 근거.</span></li>
+      <li>못 연 문서: Reddit 검토 대기열, Later 일정 안내(둘 다 접근 거부). 근거로 쓰지 않았어요.</li>
+    </ul></div>
+  </div>
+</section>
+
+<section class="bd-chapter" id="next">
+  <div class="bd-kicker">10 · 나눠 올릴 순서와 열린 질문</div>
+  <h2>데이터를 바꾸지 않는 정리부터, 새 칸이 필요한 훑어보기는 마지막에 올려요</h2>
+  <div class="bd-grid2">
+    <div class="bd-card"><h3>나눠 올릴 순서</h3>
+      <div class="bd-rule"><span class="no">1</span><div><b>목록 정리</b> — 줄 끝 ⋯ 메뉴, 휴대폰 한 줄 줄과 시트, 커뮤니티 표와 두 탭. API는 그대로예요.</div></div>
+      <div class="bd-rule"><span class="no">2</span><div><b>일정 탭</b> — 출제 규칙을 <code>packages/core</code>로 옮기고 예상 날짜를 붙여요. Worker 동작은 바뀌지 않고, 시험으로 두 곳이 같은 날짜를 내는지 고정해요.</div></div>
+      <div class="bd-rule"><span class="no">3</span><div><b>오늘 탭</b> — 개요 API의 지난 날을 14일로 늘리고, 할 일 줄과 도착률 막대를 그려요.</div></div>
+      <div class="bd-rule"><span class="no">4</span><div><b>훑어보기</b> — <code>puzzle_queue.reviewed_at</code>(마이그레이션 0005)과 "괜찮아요" 동작, 위키백과 설명, 단축키. 문제 채우기로 들어온 문제는 안 본 상태로 들어와요.</div></div>
+      <div class="bd-rule"><span class="no">5</span><div><b>문제 넣기</b> — 단계 표시, 고른 문서 설명, 최근 30일 경고.</div></div>
+    </div>
+    <div class="bd-card"><h3>열린 질문</h3>
+      <div class="bd-rule q"><div><b>Q1 · 첫 탭</b> — (가) 오늘 / (나) 일정. 시안은 (가)로 그렸어요. 볼 것이 없는 날이 대부분이라 한 화면으로 끝나는 쪽이 낫다고 봤어요.</div></div>
+      <div class="bd-rule q"><div><b>Q2 · "봤다"를 어디에 남길지</b> — (가) DB의 새 칸 / (나) 이 기기에만. 시안은 (가)예요. 노트북과 휴대폰을 오가도 어디까지 봤는지 이어져요.</div></div>
+      <div class="bd-rule q"><div><b>Q3 · 날짜를 직접 고정할지</b> — (가) 지금처럼 "맨 앞으로"만 / (나) Buffer처럼 특정 날짜에 고정. 시안은 (가)예요. 고정은 요일 난이도 규칙과 부딪혀요.</div></div>
+      <div class="bd-rule q"><div><b>Q4 · 훑어보지 않은 문제가 나갈 차례가 되면</b> — (가) 그대로 내고 할 일 줄에 알림 / (나) 안 본 문제는 건너뛰기. 시안은 (가)예요. (나)는 운영자가 바쁜 주에 문제가 비어요.</div></div>
+    </div>
+  </div>
+</section>
+
+<footer class="bd-foot">main 5b97d3c · 2026-11-21. 화면 속 문제 이름과 숫자는 예시예요.</footer>
+</main>
+</body></html>

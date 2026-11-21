@@ -1,10 +1,11 @@
-import { addDays, kstDate, type MoveEvent, type Page } from '@linkle/core'
+import { addDays, chooseOrder, kstDate, RECENT_DAYS, wantedDifficulty, type Difficulty, type MoveEvent, type Page } from '@linkle/core'
 import { findDaily } from './db.ts'
 import { verifyPath, type WikiApi } from './verify.ts'
 
-// 대기열에서 오늘의 문제를 하루씩 꺼내 날짜에 붙인다. 순수 함수와 DB 작업을 함께 둔다.
+// 대기열에서 오늘의 문제를 하루씩 꺼내 날짜에 붙인다. 순서 규칙(wantedDifficulty, chooseOrder)은 관리자 화면도 쓰므로 packages/core에 있다.
 
-export type Difficulty = 'easy' | 'normal' | 'hard'
+export type { Difficulty } from '@linkle/core'
+export { chooseOrder, wantedDifficulty }
 
 export type QueueRow = {
   id: number
@@ -16,27 +17,6 @@ export type QueueRow = {
   difficulty: Difficulty | null
   solution: string | null
   priority?: number
-}
-
-/**
- * 요일마다 내고 싶은 난이도. 주초는 쉽게, 주말은 어렵게(시간이 많은 날).
- * 대기열에 맞는 것이 없으면 아무 난이도나 낸다.
- */
-export function wantedDifficulty(date: string): Difficulty {
-  const weekday = (new Date(`${date}T00:00:00Z`).getUTCDay() + 6) % 7 // 0 = 월요일
-  return weekday <= 1 ? 'easy' : weekday <= 4 ? 'normal' : 'hard'
-}
-
-/**
- * 대기열에서 낼 순서를 정한다. 최근 30일 안에 출발이나 도착으로 나온 문서는 건너뛴다.
- * 원하는 난이도를 먼저, 그다음은 대기열 순서대로.
- */
-export function chooseOrder(queue: QueueRow[], recent: Set<number>, want: Difficulty): QueueRow[] {
-  const fresh = queue.filter(q => !recent.has(q.start_id) && !recent.has(q.end_id))
-  // 관리자가 앞으로 당긴 문제(priority > 0)는 난이도와 상관없이 먼저 낸다
-  const pinned = fresh.filter(q => (q.priority ?? 0) > 0)
-  const rest = fresh.filter(q => (q.priority ?? 0) <= 0)
-  return [...pinned, ...rest.filter(q => q.difficulty === want), ...rest.filter(q => q.difficulty !== want)]
 }
 
 /** 저장된 정답 예시를 이동 로그 꼴로 바꾼다. 경로 확인(verifyPath)에 그대로 넣는다 */
@@ -63,7 +43,7 @@ export async function assignDay(db: D1Database, api: WikiApi, date: string, now:
   if (await findDaily(db, date)) return 'exists'
   const [queue, recent] = await db.batch([
     db.prepare(`SELECT id, start_id, start_title, end_id, end_title, par, difficulty, solution, priority FROM puzzle_queue WHERE status = 'approved' AND pool = 'daily' ORDER BY priority DESC, id LIMIT 40`),
-    db.prepare(`SELECT start_id, end_id FROM puzzles WHERE kind = 'daily' AND date >= ?1`).bind(addDays(date, -30)),
+    db.prepare(`SELECT start_id, end_id FROM puzzles WHERE kind = 'daily' AND date >= ?1`).bind(addDays(date, -RECENT_DAYS)),
   ])
   const recentPages = new Set((recent?.results as { start_id: number; end_id: number }[]).flatMap(r => [r.start_id, r.end_id]))
   const order = chooseOrder((queue?.results ?? []) as QueueRow[], recentPages, wantedDifficulty(date))

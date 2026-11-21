@@ -10,6 +10,8 @@ const API = 'https://ko.wikipedia.org/w/api.php'
 const DEBOUNCE_MS = 300
 
 type Hit = Page & { description: string | null; thumb: string | null; disambig: boolean; from: string | null }
+/** 고른 문서. 검색 목록에 보이던 짧은 설명을 함께 넘긴다 */
+export type Picked = Page & { description?: string | null }
 
 async function suggest(q: string, signal: AbortSignal): Promise<Hit[]> {
   const params = new URLSearchParams({
@@ -49,7 +51,7 @@ async function suggest(q: string, signal: AbortSignal): Promise<Hit[]> {
  * 문서 하나를 고르는 입력칸. 고르면 이름이 칸에 남고, 지우기 단추로 다시 고른다.
  * 한글 조합 중에는 Enter가 글자를 확정하는 데 쓰이므로 고르지 않는다.
  */
-export function WikiSearch({ label, value, onChange, placeholder }: { label: string; value: Page | null; onChange: (p: Page | null) => void; placeholder?: string }) {
+export function WikiSearch({ label, value, onChange, placeholder }: { label: string; value: Picked | null; onChange: (p: Picked | null) => void; placeholder?: string }) {
   const [text, setText] = useState('')
   const [hits, setHits] = useState<Hit[]>([])
   const [active, setActive] = useState(0)
@@ -91,7 +93,7 @@ export function WikiSearch({ label, value, onChange, placeholder }: { label: str
 
   const pick = (h: Hit) => {
     if (h.disambig) return
-    onChange({ id: h.id, title: h.title })
+    onChange({ id: h.id, title: h.title, description: h.description })
     setText('')
     setOpen(false)
   }

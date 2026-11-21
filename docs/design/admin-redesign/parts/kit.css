@@ -1,0 +1,183 @@
+/* 제품 키트 — apps/web 관리자 화면(apps/web/src/screens/Admin.tsx)의 실측 값(shots/probe-overview.json, tokens.json)으로 썼다.
+   이름은 Admin.tsx 의 컴포넌트를 따른다: Logo · Segmented · Card · Section · Row · RowButton · DifficultyChip · SolutionPath · DateBadge */
+.bd-screen { --primary: #3366cc; --primary-dark: #2957b3; --secondary: #f3f7ff; --ink: #444f5b; --ink-2: #6b7682; --line: #e5e5e5;
+  --divider: #eef1f5; --seg: #e6ecf6; --muted-bg: #f5f7fa; --arrow: #b3bcc6;
+  --s1: #e5534b; --s3: #eab308; --s4: #57ab5a;
+  --warn-bg: #fdf3d8; --warn: #7a5400; --danger-bg: #fdeeed; --danger: #c0392b;
+  font-family: "Pretendard Variable", Pretendard, system-ui, sans-serif; font-size: 16px; line-height: 24px; color: var(--ink); background: var(--secondary); }
+.bd-screen svg { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.bd-screen h4, .bd-screen p, .bd-screen ul, .bd-screen ol, .bd-screen li { margin: 0; padding: 0; list-style: none; }
+.k-num { font-variant-numeric: tabular-nums; }
+.k-page { max-width: 1120px; margin: 0 auto; padding: 0 24px 40px; }
+.k-page.narrow { max-width: 960px; }
+.k-gap { height: 16px; }
+
+/* <Logo> + 머리 — 36 · 모서리 11 · Rhodium Libre 20 */
+.k-head { display: flex; align-items: center; gap: 10px; height: 56px; padding-top: 8px; }
+.k-logo { width: 36px; height: 36px; border-radius: 11px; background: var(--primary); color: #fff; display: grid; place-items: center; font-family: "Rhodium Libre", serif; font-size: 20px; line-height: 1; }
+.k-h1 { font-size: 19px; line-height: 28px; font-weight: 700; }
+.k-out { margin-left: auto; display: flex; align-items: center; gap: 6px; height: 40px; color: var(--ink-2); font-size: 15px; font-weight: 500; }
+.k-out svg { width: 18px; height: 18px; stroke-width: 1.75; }
+.k-headrow { display: flex; align-items: center; gap: 16px; padding-top: 4px; }
+
+/* <Segmented> — 바탕 #e6ecf6 · 안쪽 4 · 탭 40 · 15/600 */
+.k-seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; background: var(--seg); border-radius: 999px; padding: 4px; width: 520px; }
+.k-seg b { height: 40px; border-radius: 999px; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 15px; font-weight: 600; color: var(--ink-2); }
+.k-seg b.on { background: #fff; color: var(--primary); box-shadow: 0 1px 2px rgb(30 50 90 / .08); }
+.k-seg b i { font-style: normal; font-size: 13px; font-weight: 600; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.k-seg b.on i { color: var(--primary); }
+.k-seg.sm { width: auto; display: inline-grid; }
+.k-seg.sm b { height: 32px; padding: 0 14px; font-size: 14px; }
+
+/* <Card> — 흰 바탕 · 모서리 20 · 안쪽 20/24 */
+.k-card { background: #fff; border-radius: 20px; padding: 20px 24px; }
+.k-card.tight { padding: 16px 20px; }
+.k-h2 { font-size: 17px; line-height: 25px; font-weight: 700; }
+.k-label { font-size: 14px; line-height: 20px; font-weight: 600; color: var(--ink-2); }
+.k-sub { font-size: 14px; line-height: 20px; color: var(--ink-2); }
+.k-small { font-size: 13px; line-height: 20px; color: var(--ink-2); }
+.k-big { font-size: 32px; line-height: 40px; font-weight: 700; color: var(--primary); font-variant-numeric: tabular-nums; }
+.k-big small { font-size: 18px; font-weight: 600; margin-left: 2px; }
+.k-mid { font-size: 24px; line-height: 32px; font-weight: 700; color: var(--primary); font-variant-numeric: tabular-nums; }
+.k-mid small { font-size: 15px; font-weight: 600; margin-left: 2px; }
+.k-sechead { display: flex; align-items: center; justify-content: space-between; min-height: 36px; padding: 0 4px; margin-bottom: 12px; }
+
+/* <RowButton> — 높이 36 · 완전히 둥근 · 14/600 */
+.k-btn { height: 36px; border-radius: 999px; padding: 0 14px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; font-size: 14px; font-weight: 600; background: var(--secondary); color: var(--primary); white-space: nowrap; }
+.k-btn.danger { background: var(--danger-bg); color: var(--danger); }
+.k-btn.solid { background: var(--primary); color: #fff; }
+.k-btn.ghost { background: transparent; padding: 0 8px; }
+.k-btn.icon { width: 36px; padding: 0; color: var(--ink-2); background: transparent; }
+.k-btn.icon svg { width: 18px; height: 18px; }
+.k-btn.lg { height: 44px; padding: 0 20px; font-size: 15px; }
+/* <Cta> — 56 · 18/500 */
+.k-cta { height: 56px; border-radius: 28px; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 500; }
+
+/* <DifficultyChip> — 20 · 12/600 */
+.k-chip { display: inline-flex; align-items: center; height: 20px; padding: 0 8px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; flex: none; }
+.k-chip.easy { background: #e7f4e8; color: #2f7d38; }
+.k-chip.normal { background: #fdf3d8; color: #9a6a00; }
+.k-chip.hard { background: #fde7e6; color: #c0392b; }
+.k-chip.plain { background: var(--muted-bg); color: var(--ink-2); }
+
+/* <Pair> — 16/22 · 600 · 화살표 16 #b3bcc6 */
+.k-pair { display: flex; align-items: center; gap: 6px; font-size: 16px; line-height: 22px; font-weight: 600; min-width: 0; white-space: nowrap; }
+.k-pair svg { color: var(--arrow); }
+.k-pair.lg { font-size: 22px; line-height: 30px; font-weight: 700; gap: 8px; }
+.k-pair.lg svg { width: 20px; height: 20px; }
+.k-no { font-size: 14px; font-weight: 600; color: var(--primary); font-variant-numeric: tabular-nums; }
+
+/* <DateBadge> — 64×48 · 모서리 14 */
+.k-date { width: 64px; height: 48px; border-radius: 14px; background: var(--secondary); color: var(--primary); display: grid; place-content: center; text-align: center; gap: 2px; flex: none; }
+.k-date b { font-size: 15px; line-height: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.k-date span { font-size: 11px; line-height: 12px; font-weight: 500; color: var(--ink-2); }
+.k-date.today { background: var(--primary); color: #fff; }
+.k-date.today span { color: rgb(255 255 255 / .8); }
+.k-date.sm { width: 56px; height: 44px; border-radius: 12px; }
+
+/* <Row> — 위 구분선 #eef1f5 · 위아래 14 */
+.k-rows { background: #fff; border-radius: 20px; padding: 4px 24px; }
+.k-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 14px; padding: 12px 0; border-top: 1px solid var(--divider); position: relative; }
+.k-row:first-child { border-top: 0; }
+.k-row .t { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.k-row .s { margin-top: 2px; font-size: 14px; line-height: 20px; color: var(--ink-2); display: flex; align-items: center; gap: 10px; white-space: nowrap; }
+.k-row.sel::before { content: ""; position: absolute; inset: 2px -12px; border-radius: 14px; background: var(--secondary); z-index: 0; }
+.k-row > * { position: relative; z-index: 1; }
+.k-weekhead { padding: 14px 0 6px; font-size: 13px; line-height: 20px; font-weight: 600; color: var(--ink-2); border-top: 1px solid var(--divider); }
+.k-weekhead:first-child { border-top: 0; padding-top: 10px; }
+.k-new { width: 8px; height: 8px; border-radius: 50%; background: var(--primary); flex: none; }
+.k-tag { display: inline-flex; align-items: center; gap: 3px; font-size: 13px; color: var(--ink-2); }
+.k-tag svg { width: 14px; height: 14px; }
+
+/* <SolutionPath> — 바탕 #f5f7fa · 모서리 12 · 칩 모서리 8 */
+.k-path { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; background: var(--muted-bg); border-radius: 12px; padding: 10px 12px; font-size: 14px; }
+.k-path b { border-radius: 8px; padding: 1px 8px; line-height: 24px; font-weight: 600; background: #fff; color: var(--primary); }
+.k-path b.end { background: var(--primary); color: #fff; }
+.k-path svg { width: 14px; height: 14px; color: var(--arrow); }
+.k-path span { margin-left: 4px; font-size: 13px; color: var(--ink-2); }
+
+/* 경고 — 바탕 #fdf3d8 · 글자 #7a5400 */
+.k-warn { background: var(--warn-bg); color: var(--warn); border-radius: 12px; padding: 10px 14px; font-size: 14px; line-height: 21px; }
+
+/* 난이도 막대 */
+.k-dbar { display: flex; gap: 2px; height: 8px; border-radius: 999px; overflow: hidden; }
+.k-dbar i { display: block; }
+.k-legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 14px; line-height: 20px; color: var(--ink-2); }
+.k-legend span { display: flex; align-items: center; gap: 6px; }
+.k-legend i { width: 8px; height: 8px; border-radius: 50%; }
+.k-legend b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+.bg-s1 { background: var(--s1); } .bg-s3 { background: var(--s3); } .bg-s4 { background: var(--s4); }
+
+/* 새로 필요: 할 일 줄 */
+.k-todo { display: flex; align-items: center; gap: 12px; background: #fff; border-radius: 16px; padding: 12px 12px 12px 20px; }
+.k-todo .k-new { width: 10px; height: 10px; }
+.k-todo p { flex: 1; font-size: 15px; line-height: 22px; font-weight: 600; }
+.k-todo p span { font-weight: 400; color: var(--ink-2); margin-left: 6px; }
+
+/* 새로 필요: 날짜별 도착률 막대 */
+.k-chart { display: grid; grid-template-columns: repeat(14, 1fr); gap: 8px; align-items: end; height: 176px; padding-top: 8px; }
+.k-chart div { display: flex; flex-direction: column; align-items: center; gap: 6px; height: 100%; justify-content: flex-end; }
+.k-chart i { width: 100%; max-width: 28px; border-radius: 6px 6px 3px 3px; display: block; }
+.k-chart i.today { outline: 2px solid var(--primary); outline-offset: 2px; }
+.k-chart-x { display: grid; grid-template-columns: repeat(14, 1fr); gap: 8px; margin-top: 8px; font-size: 12px; line-height: 16px; color: var(--ink-2); text-align: center; font-variant-numeric: tabular-nums; }
+.k-chart-x b { color: var(--primary); font-weight: 700; }
+.k-axis { position: relative; }
+.k-axis::before { content: ""; position: absolute; left: 0; right: 0; top: 40%; border-top: 1px dashed var(--line); }
+
+/* 새로 필요: 문서 설명 카드(위키백과 요약) */
+.k-doc { border: 1px solid var(--divider); border-radius: 14px; padding: 12px 14px; }
+.k-doc h4 { font-size: 15px; line-height: 22px; font-weight: 700; }
+.k-doc p { margin-top: 2px; font-size: 13px; line-height: 19px; color: var(--ink-2); }
+.k-doc .role { display: block; font-size: 12px; line-height: 16px; font-weight: 600; color: var(--ink-2); }
+
+/* 새로 필요: 단축키 표시 */
+.k-kbd { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 6px; border: 1px solid var(--line); background: #fff; font-size: 12px; font-weight: 600; color: var(--ink-2); line-height: 1; }
+.k-keys { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; color: var(--ink-2); }
+.k-keys span { display: flex; align-items: center; gap: 6px; }
+
+/* 새로 필요: 표(커뮤니티) */
+.k-table { width: 100%; border-collapse: collapse; font-size: 15px; }
+.k-table th { text-align: left; font-size: 13px; line-height: 20px; font-weight: 600; color: var(--ink-2); padding: 12px 8px; border-bottom: 1px solid var(--divider); white-space: nowrap; }
+.k-table th.r, .k-table td.r { text-align: right; }
+.k-table td { padding: 0 8px; height: 56px; border-top: 1px solid var(--divider); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.k-table tr:nth-child(2) td { border-top: 0; }
+.k-table tr.muted td { color: var(--ink-2); }
+.k-rate { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
+.k-rate i { width: 72px; height: 6px; border-radius: 999px; background: var(--seg); position: relative; overflow: hidden; display: block; }
+.k-rate i b { position: absolute; inset: 0 auto 0 0; background: var(--primary); border-radius: 999px; }
+.k-sort { display: inline-flex; align-items: center; gap: 4px; }
+.k-sort svg { width: 14px; height: 14px; }
+
+/* 새로 필요: 떠 있는 메뉴(팝오버) */
+.k-menu { position: absolute; background: #fff; border-radius: 14px; box-shadow: 0 8px 28px -8px rgb(30 50 90 / .28), 0 0 0 1px rgb(30 50 90 / .06); padding: 6px; width: 248px; z-index: 5; }
+.k-menu > div { display: flex; gap: 10px; padding: 10px; border-radius: 10px; font-size: 14px; line-height: 20px; }
+.k-menu > div.on { background: var(--secondary); }
+.k-menu > div > svg { margin-top: 2px; }
+.k-menu > div p { color: var(--ink-2); font-size: 13px; line-height: 18px; margin-top: 2px; }
+.k-menu > div.danger { color: var(--danger); }
+
+/* <WikiSearch> — 입력 48 · 모서리 12 · 테두리 #e5e5e5 */
+.k-input { height: 48px; border-radius: 12px; border: 1px solid var(--line); background: #fff; display: flex; align-items: center; gap: 10px; padding: 0 14px; font-size: 16px; }
+.k-input svg { width: 18px; height: 18px; color: var(--ink-2); }
+.k-input.filled { border-color: var(--primary); }
+.k-input .x { margin-left: auto; color: var(--ink-2); }
+.k-field label { display: block; margin-bottom: 6px; font-size: 13px; line-height: 20px; font-weight: 600; color: var(--ink-2); }
+
+/* 새로 필요: 단계 표시 */
+.k-steps { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: var(--ink-2); }
+.k-steps span { display: flex; align-items: center; gap: 8px; }
+.k-steps i { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-size: 13px; background: var(--seg); color: var(--ink-2); }
+.k-steps span.on { color: var(--primary); }
+.k-steps span.on i { background: var(--primary); color: #fff; }
+.k-steps hr { width: 28px; border: 0; border-top: 1px solid var(--line); }
+
+/* 휴대폰 */
+.k-phone { padding: 0 16px 24px; }
+.k-phone .k-head { height: 52px; padding-top: 4px; }
+.k-phone .k-seg { width: 100%; }
+.k-phone .k-seg b { font-size: 14px; }
+.k-phone .k-card { padding: 16px; }
+.k-phone .k-rows { padding: 2px 16px; }
+.k-sheet { position: absolute; left: 0; right: 0; bottom: 0; background: #fff; border-radius: 24px 24px 0 0; box-shadow: 0 -12px 40px -12px rgb(30 50 90 / .3); padding: 10px 16px 28px; z-index: 6; }
+.k-sheet .grab { width: 40px; height: 5px; border-radius: 3px; background: var(--seg); margin: 0 auto 14px; }
+.k-scrim { position: absolute; inset: 0; background: rgb(30 40 60 / .28); z-index: 5; }

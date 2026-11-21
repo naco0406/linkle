@@ -1,42 +1,29 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
-import { ArrowRight, ArrowUpToLine, ChevronUp, Eye, EyeOff, LogOut, PinOff, RefreshCw, RotateCcw, Route, Trash2 } from 'lucide-react'
-import { addDays, createRun, moveCount, type Page } from '@linkle/core'
-import { ApiError } from '../game/api'
-import { ADMIN_RUN_PREFIX, ADMIN_SLOT, adminApi, guessDifficulty, solutionOf, type AdminDay, type Difficulty, type Hop, type Overview } from '../game/admin'
-import { now, runIn, useGame } from '../game/store'
+import { LogOut } from 'lucide-react'
+import { ADMIN_SLOT, adminApi } from '../game/admin'
+import { runIn, useGame } from '../game/store'
 import { useLoad } from '../game/useLoad'
-import { Card, Cta, formatDateKo, TextButton } from '../ui/cards'
-import { DifficultyChip, Segmented } from '../ui/list'
+import { Card, Cta, TextButton } from '../ui/cards'
+import { Segmented } from '../ui/list'
 import { Spinner, Toast } from '../ui/parts'
-import { WikiSearch } from '../ui/WikiSearch'
+import { AddTab } from './admin/AddTab'
+import { CommunityTab } from './admin/CommunityTab'
+import { Failed, Loading, messageOf } from './admin/kit'
+import { PlanTab, type PlanFilter } from './admin/PlanTab'
+import { TodayTab } from './admin/TodayTab'
 import { Game } from './Game'
 
-// 관리자 화면(/admin). 탭이 없는 넓은 화면이다. 비밀번호로 들어오면 서버가 30일짜리 쿠키를 준다.
-//   개요      오늘·내일과 최근 며칠의 문제, 대기열이 얼마나 남았는지
-//   대기열    오늘의 문제로 낼 순서. 앞으로 당기거나 뺀다
-//   커뮤니티  링클이 낸 문제를 숨기거나 다시 보인다
-//   문제 넣기 출발·도착을 골라 직접 풀어 보고, 그 길을 정답으로 넣는다
+// 관리자 화면(/admin). 아래 탭이 없는 넓은 화면이다. 비밀번호로 들어오면 서버가 30일짜리 쿠키를 준다.
+// 시안: docs/design/admin-redesign. 탭마다 파일이 screens/admin/ 에 있다.
+//   오늘      할 일 줄, 오늘과 내일, 최근 14일 도착률, 남은 문제
+//   일정      남은 문제를 나갈 날짜에 펼치고, 하나씩 훑어본다(괜찮아요 / 빼기)
+//   커뮤니티  링클이 낸 문제를 비교하고 숨기거나 다시 보인다
+//   문제 넣기 출발과 도착을 골라 직접 풀어 보고, 그 길을 정답으로 넣는다
 
-type Tab = 'overview' | 'queue' | 'community' | 'add'
-const TABS: [Tab, string][] = [
-  ['overview', '개요'],
-  ['queue', '대기열'],
-  ['community', '커뮤니티'],
-  ['add', '문제 넣기'],
-]
-
-const ERRORS: Record<string, string> = {
-  network: '서버에 닿지 못했어요',
-  wrong_password: '비밀번호가 맞지 않아요',
-  no_password: '서버에 관리자 비밀번호가 아직 없어요',
-  already_open: '이미 열렸거나 누가 시작한 문제는 바꿀 수 없어요',
-  no_change: '이미 반영돼 있어요',
-  no_replacement: '대기열에 그날 낼 수 있는 문제가 없어서 그대로 뒀어요(최근 30일에 쓴 문서는 다시 못 써요)',
-  unauthorized: '다시 들어와 주세요(로그인이 끝났어요)',
-  no_token: 'Worker에 GITHUB_DISPATCH_TOKEN이 없어요',
-  recent: '방금 불렀어요. 채우기가 도는 중이라 한 시간 뒤에 다시 누를 수 있어요',
-}
-const messageOf = (e: unknown) => (e instanceof ApiError ? (ERRORS[e.code] ?? `처리하지 못했어요 (${e.code})`) : '처리하지 못했어요')
+type Tab = 'today' | 'plan' | 'community' | 'add'
+const TABS: Tab[] = ['today', 'plan', 'community', 'add']
+/** 예전 주소(#overview, #queue)도 열리게 */
+const tabOf = (hash: string): Tab => (hash === 'overview' ? 'today' : hash === 'queue' ? 'plan' : TABS.includes(hash as Tab) ? (hash as Tab) : 'today')
 
 export function Admin() {
   const [state, setState] = useState<'checking' | 'out' | 'in'>('checking')
@@ -114,10 +101,18 @@ function Login({ onIn }: { onIn: () => void }) {
 }
 
 function Console({ onOut }: { onOut: () => void }) {
-  const [tab, setTab] = useState<Tab>(() => (location.hash.slice(1) as Tab) || 'overview')
+  const [tab, setTab] = useState<Tab>(() => tabOf(location.hash.slice(1)))
+  const [filter, setFilter] = useState<PlanFilter>('all')
   const [toast, setToast] = useState<string | null>(null)
   const clearToast = useCallback(() => setToast(null), [])
   const practice = useGame(s => runIn(s, ADMIN_SLOT))
+  // 오늘과 일정이 같은 값을 쓰므로 여기서 한 번 받는다
+  const overview = useLoad('admin:overview', adminApi.overview)
+  const queue = useLoad('admin:queue', adminApi.queue)
+  const reloadAll = useCallback(() => {
+    overview.reload()
+    queue.reload()
+  }, [overview.reload, queue.reload])
   useEffect(() => {
     history.replaceState(null, '', `#${tab}`)
   }, [tab])
@@ -129,8 +124,20 @@ function Console({ onOut }: { onOut: () => void }) {
     await adminApi.logout().catch(() => {})
     onOut()
   }
+  const unreviewed = overview.data?.queue.reduce((n, q) => n + (q.unreviewed ?? 0), 0) ?? 0
+  const options: [Tab, ReactNode][] = [
+    ['today', '오늘'],
+    [
+      'plan',
+      <span key="plan" className="inline-flex items-center gap-1.5">
+        일정{unreviewed > 0 && <span className="text-[13px] tabular-nums opacity-80">{unreviewed}</span>}
+      </span>,
+    ],
+    ['community', '커뮤니티'],
+    ['add', '문제 넣기'],
+  ]
   return (
-    <main className="mx-auto w-full max-w-[960px] px-4 pb-16 min-[360px]:px-5 sm:px-6">
+    <main className="mx-auto w-full max-w-[1120px] px-4 pb-16 min-[360px]:px-5 sm:px-6">
       {/* 머리와 탭은 위에 붙어 있어 긴 목록을 내려도 다른 탭으로 바로 간다 */}
       <div className="sticky top-0 z-20 -mx-4 bg-secondary px-4 pt-[max(env(safe-area-inset-top),8px)] min-[360px]:-mx-5 min-[360px]:px-5 sm:-mx-6 sm:px-6">
         <header className="flex h-14 items-center gap-2.5">
@@ -138,641 +145,28 @@ function Console({ onOut }: { onOut: () => void }) {
           <h1 className="flex-1 text-[19px] font-bold text-ink">링클 관리</h1>
           <TextButton onClick={logout} className="-mr-2 h-10 text-[15px] text-ink-2!">
             <LogOut className="h-[18px] w-[18px]" aria-hidden />
-            나가기
+            <span className="max-sm:sr-only">나가기</span>
           </TextButton>
         </header>
         <div className="pt-1 sm:max-w-[520px]">
-          <Segmented label="관리 화면" value={tab} options={TABS} onChange={setTab} />
+          <Segmented label="관리 화면" value={tab} options={options} onChange={setTab} />
         </div>
       </div>
       <div className="pt-3">
-        {tab === 'overview' && <OverviewTab notify={setToast} />}
-        {tab === 'queue' && <QueueTab notify={setToast} />}
+        {tab === 'today' &&
+          (overview.data ? (
+            <TodayTab overview={overview.data} queue={queue.data} notify={setToast} reload={reloadAll} onReview={() => (setFilter('unreviewed'), setTab('plan'))} />
+          ) : overview.error ? (
+            <Failed onRetry={overview.reload} />
+          ) : (
+            <Loading />
+          ))}
+        {tab === 'plan' &&
+          (queue.data ? <PlanTab data={queue.data} filter={filter} onFilter={setFilter} notify={setToast} reload={reloadAll} /> : queue.error ? <Failed onRetry={queue.reload} /> : <Loading />)}
         {tab === 'community' && <CommunityTab notify={setToast} />}
-        {tab === 'add' && <AddTab notify={setToast} />}
+        {tab === 'add' && <AddTab queue={queue.data} notify={setToast} />}
       </div>
       {toast && <Toast message={toast} onDone={clearToast} />}
     </main>
-  )
-}
-
-type Notify = (message: string) => void
-
-/** 줄마다 붙는 작은 단추. 모두 높이 36으로 같다 */
-function RowButton({ children, tone = 'plain', className = '', ...rest }: { tone?: 'plain' | 'danger' } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
-  const color = tone === 'danger' ? 'bg-[#fdeeed] text-[#c0392b]' : 'bg-secondary text-primary'
-  return (
-    <button {...rest} className={`press inline-flex h-9 flex-none items-center justify-center gap-1 rounded-full px-3.5 text-[14px] font-semibold disabled:opacity-40 ${color} ${className}`}>
-      {children}
-    </button>
-  )
-}
-
-/** 되돌리기 어려운 일은 두 번 눌러야 한다. 처음 누르면 문구가 바뀌고 4초 안에 다시 눌러야 한다 */
-function ConfirmButton({ children, confirm, onConfirm, disabled, tone = 'danger', className }: { children: ReactNode; confirm: string; onConfirm: () => void; disabled?: boolean; tone?: 'plain' | 'danger'; className?: string }) {
-  const [armed, setArmed] = useState(false)
-  useEffect(() => {
-    if (!armed) return
-    const t = setTimeout(() => setArmed(false), 4000)
-    return () => clearTimeout(t)
-  }, [armed])
-  return (
-    <RowButton tone={tone} disabled={disabled} className={className} onClick={() => (armed ? (setArmed(false), onConfirm()) : setArmed(true))}>
-      {armed ? confirm : children}
-    </RowButton>
-  )
-}
-
-function Section({ title, count, aside, children }: { title: string; count?: number; aside?: ReactNode; children: ReactNode }) {
-  return (
-    <section className="mt-8 first:mt-0">
-      <div className="mb-3 flex min-h-9 items-center justify-between gap-3 px-1">
-        <h2 className="text-[17px] font-bold leading-[25px] text-ink">
-          {title}
-          {count !== undefined && <span className="ml-1.5 tabular-nums text-ink-2">{count}</span>}
-        </h2>
-        {aside}
-      </div>
-      {children}
-    </section>
-  )
-}
-
-function Pair({ start, end }: { start: string; end: string }) {
-  return (
-    <span className="flex min-w-0 items-center gap-1.5 text-[16px] font-semibold leading-[22px] text-ink">
-      <span className="truncate">{start}</span>
-      <ArrowRight className="h-4 w-4 flex-none text-[#b3bcc6]" aria-hidden />
-      <span className="truncate">{end}</span>
-    </span>
-  )
-}
-
-function PathLine({ start, solution }: { start: string; solution: string | null }) {
-  const hops = hopsOf(solution)
-  if (!hops.length) return <span className="text-ink-2">정답 경로 없음</span>
-  return <span className="truncate text-ink-2">{[start, ...hops.map(h => h.title)].join(' › ')}</span>
-}
-
-const hopsOf = (solution: string | null): Hop[] => {
-  try {
-    const v = solution ? (JSON.parse(solution) as unknown) : null
-    return Array.isArray(v) ? (v as Hop[]) : []
-  } catch {
-    return []
-  }
-}
-
-/** 정답 경로를 칩으로. 출발과 도착은 채운 칩, 사이 문서는 옅은 칩. 누른 링크 이름이 문서 이름과 다르면(넘겨주기) 작게 덧붙인다 */
-function SolutionPath({ start, hops }: { start: string; hops: Hop[] }) {
-  if (!hops.length) return <p className="rounded-xl bg-[#f5f7fa] px-3 py-2.5 text-[14px] text-ink-2">정답 경로가 저장돼 있지 않아요</p>
-  const steps = [{ title: start, via: start }, ...hops]
-  return (
-    <ol className="flex flex-wrap items-center gap-1.5 rounded-xl bg-[#f5f7fa] px-3 py-2.5 text-[14px]">
-      {steps.map((h, i) => (
-        <li key={i} className="flex items-center gap-1.5">
-          <span className={`rounded-lg px-2 py-0.5 font-semibold leading-6 ${i === 0 || i === steps.length - 1 ? 'bg-primary text-white' : 'bg-white text-primary'}`}>
-            {h.title}
-            {h.via !== h.title && <span className="ml-1 text-[12px] font-medium opacity-70">({h.via})</span>}
-          </span>
-          {i < steps.length - 1 && <ArrowRight className="h-3.5 w-3.5 text-[#b3bcc6]" aria-hidden />}
-        </li>
-      ))}
-      <li className="ml-1 text-[13px] text-ink-2">{hops.length}번</li>
-    </ol>
-  )
-}
-
-/** 펼친 정답의 id들. 줄마다 따로 펼친다 */
-function useReveal() {
-  const [open, setOpen] = useState<Set<number>>(new Set())
-  const toggle = (id: number) =>
-    setOpen(s => {
-      const n = new Set(s)
-      if (n.has(id)) n.delete(id)
-      else n.add(id)
-      return n
-    })
-  return { isOpen: (id: number) => open.has(id), toggle }
-}
-
-/** 줄의 첫 단추 폭. 바뀌는 단추(정답 보기/접기, 맨 앞으로/당김 풀기)가 같은 자리를 차지해 줄끼리 단추가 맞는다 */
-const ACTION_W = 'min-w-[112px]'
-
-function RevealButton({ open, onClick }: { open: boolean; onClick: () => void }) {
-  return (
-    <RowButton onClick={onClick} aria-expanded={open} className={ACTION_W}>
-      {open ? <ChevronUp className="h-4 w-4" aria-hidden /> : <Route className="h-4 w-4" aria-hidden />}
-      {open ? '정답 접기' : '정답 보기'}
-    </RowButton>
-  )
-}
-
-function Rows({ children, empty }: { children: ReactNode[]; empty: string }) {
-  return (
-    <Card className="!py-1 sm:!px-6">
-      {children.length === 0 ? <p className="py-5 text-center text-[15px] text-ink-2">{empty}</p> : <ul>{children}</ul>}
-    </Card>
-  )
-}
-
-function Row({ lead, title, sub, actions, below }: { lead?: ReactNode; title: ReactNode; sub?: ReactNode; actions?: ReactNode; below?: ReactNode }) {
-  // 넓은 화면: [꼬리표 | 제목·설명 | 단추] 한 줄. 좁은 화면: 단추가 제목 아래 오른쪽으로 내려간다
-  const cols = lead ? 'grid-cols-[auto_minmax(0,1fr)] sm:grid-cols-[auto_minmax(0,1fr)_auto]' : 'grid-cols-[minmax(0,1fr)] sm:grid-cols-[minmax(0,1fr)_auto]'
-  return (
-    <li className={`grid min-h-[72px] items-center gap-x-3.5 gap-y-2.5 border-t border-[#eef1f5] py-3.5 first:border-t-0 ${cols}`}>
-      {lead && <span className="self-start sm:self-center">{lead}</span>}
-      <span className="min-w-0">
-        <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">{title}</span>
-        {sub && <span className="mt-0.5 flex min-w-0 text-[14px] leading-5">{sub}</span>}
-      </span>
-      {actions && <span className={`flex items-center justify-end gap-1.5 ${lead ? 'col-start-2 sm:col-start-auto' : ''}`}>{actions}</span>}
-      {below && <div className="col-span-full">{below}</div>}
-    </li>
-  )
-}
-
-/**
- * 줄 맨 앞 꼬리표. 날짜("11.22", 굵은 15px로 44px)는 양옆에 10px씩 남도록 64px,
- * 순서와 번호(두 자리까지)는 정사각형 48px.
- */
-const LEAD = 'grid h-12 flex-none place-items-center content-center rounded-[14px]'
-const LEAD_DATE = `${LEAD} w-16`
-const LEAD_NUM = `${LEAD} w-12`
-
-function DateBadge({ date, today }: { date: string; today: string }) {
-  const label = date === today ? '오늘' : date > today ? '예정' : null
-  const [, m, d] = date.split('-')
-  return (
-    <span className={`${LEAD_DATE} gap-0.5 ${label === '오늘' ? 'bg-primary text-white' : 'bg-secondary text-primary'}`}>
-      <span className="text-[15px] font-bold leading-[18px] tabular-nums">
-        {Number(m)}.{Number(d)}
-      </span>
-      <span className={`text-[11px] font-medium leading-3 ${label === '오늘' ? 'text-white/80' : 'text-ink-2'}`}>{label ?? '지남'}</span>
-    </span>
-  )
-}
-
-const LOW_QUEUE = 7
-
-const kstTime = (at: number) =>
-  new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(at)
-
-/** GitHub가 거절한 까닭. 401은 토큰이 틀리거나 만료, 403·404는 이 저장소의 Actions 쓰기 권한이 없을 때 */
-const githubSays = (status: number) =>
-  status === 401 ? '토큰이 맞지 않거나 만료됐어요' : status === 403 || status === 404 ? '토큰에 이 저장소의 Actions 쓰기 권한이 없어요' : status === 0 ? 'GitHub에 닿지 못했어요' : 'GitHub가 받지 않았어요'
-
-/** 난이도 막대와 범례의 색. 유사도 칸의 초록·노랑·빨강과 같은 값이다 */
-const DIFF_BAR: [Difficulty, string, string][] = [
-  ['easy', '쉬움', 'bg-s4'],
-  ['normal', '보통', 'bg-s3'],
-  ['hard', '어려움', 'bg-s1'],
-]
-
-const monthDay = (date: string) => {
-  const [, m, d] = date.split('-')
-  return `${Number(m)}월 ${Number(d)}일`
-}
-
-/**
- * 개요 맨 위. 오늘의 문제 대기열이 얼마나 남았고 언제까지 버티는지, 난이도가 어떻게 나뉘는지,
- * 문제 채우기(Worker가 대기열을 보고 GitHub Actions를 부른다, worker/src/refill.ts)가 어떤 상태인지 한 카드에 둔다.
- */
-function QueueSummary({ data, notify, reload }: { data: Overview; notify: Notify; reload: () => void }) {
-  const { last, below, canDispatch } = data.refill
-  const [busy, setBusy] = useState(false)
-  const count = (d: Difficulty) => data.queue.find(q => q.difficulty === d)?.n ?? 0
-  const total = data.queue.reduce((n, q) => n + q.n, 0)
-  // 이미 날짜가 붙은 마지막 날(보통 내일) 다음부터 대기열이 하루에 하나씩 나간다
-  const lastSet = data.days.reduce((m, d) => (d.date > m ? d.date : m), data.today)
-  const call = async () => {
-    setBusy(true)
-    try {
-      const r = await adminApi.refill()
-      notify(r.ok ? '문제 채우기를 불렀어요. 한 시간쯤 뒤에 대기열이 늘어나요' : `${githubSays(r.status)} (${r.status})`)
-      reload()
-    } catch (e) {
-      notify(messageOf(e))
-    } finally {
-      setBusy(false)
-    }
-  }
-  const warning = !canDispatch
-    ? 'Worker에 GITHUB_DISPATCH_TOKEN이 없어 대기열이 줄어도 자동으로 채우지 못해요.'
-    : last && !last.ok
-      ? `${kstTime(last.at)}에 문제 채우기를 부르지 못했어요. ${githubSays(last.status)} (${last.status}). 자동으로는 다음 날 다시 불러요.`
-      : total < LOW_QUEUE && !(last && Date.now() - last.at < 24 * 3600_000)
-        ? `대기열이 ${total}개 남았는데 문제 채우기가 아직 불리지 않았어요.`
-        : null
-
-  return (
-    <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_220px]">
-      <Card className="sm:!p-6">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <h2 className="text-[14px] font-semibold leading-5 text-ink-2">오늘의 문제 대기열</h2>
-            <p className="mt-1 text-[32px] font-bold leading-10 tabular-nums text-primary">
-              {total}
-              <span className="ml-0.5 text-[18px] font-semibold">개</span>
-            </p>
-            <p className="text-[14px] leading-5 text-ink-2">{total > 0 ? `${monthDay(addDays(lastSet, total))}까지 낼 문제가 있어요` : `${monthDay(addDays(lastSet, 1))}부터 낼 문제가 없어요`}</p>
-          </div>
-          <ConfirmButton tone="plain" confirm="40개 더 넣을까요?" disabled={busy || !canDispatch} onConfirm={() => void call()} className="mt-0.5">
-            {busy ? <Spinner className="h-4 w-4" /> : <RefreshCw className="h-4 w-4" aria-hidden />}
-            지금 채우기
-          </ConfirmButton>
-        </div>
-
-        {total > 0 && (
-          <div className="mt-5">
-            <div className="flex h-2 gap-0.5 overflow-hidden rounded-full" aria-hidden>
-              {DIFF_BAR.map(([d, , color]) => count(d) > 0 && <span key={d} className={color} style={{ flexGrow: count(d) }} />)}
-            </div>
-            <ul className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-[14px] leading-5 text-ink-2">
-              {DIFF_BAR.map(([d, label, color]) => (
-                <li key={d} className="flex items-center gap-1.5">
-                  <span className={`h-2 w-2 rounded-full ${color}`} aria-hidden />
-                  {label}
-                  <b className="font-semibold tabular-nums text-ink">{count(d)}</b>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        <div className="mt-5 border-t border-[#eef1f5] pt-4">
-          {warning ? (
-            <p className="rounded-xl bg-[#fdf3d8] px-3.5 py-2.5 text-[14px] leading-[21px] text-[#7a5400]">{warning}</p>
-          ) : (
-            <p className="text-[13px] leading-5 text-ink-2">
-              {below}개 아래로 줄면 문제 채우기를 자동으로 불러요.
-              {last && ` 마지막으로 부른 때는 ${kstTime(last.at)}이에요.`}
-            </p>
-          )}
-        </div>
-      </Card>
-      <dl className="grid grid-cols-2 gap-3 md:grid-cols-1">
-        <SideStat label="커뮤니티 문제" value={data.community?.n ?? 0} unit="개" note={`${(data.community?.plays ?? 0).toLocaleString('ko-KR')}명 도전, ${(data.community?.clears ?? 0).toLocaleString('ko-KR')}명 도착`} />
-        <SideStat label="기기" value={data.players.toLocaleString('ko-KR')} unit="대" note="게임을 시작해 본 기기" />
-      </dl>
-    </div>
-  )
-}
-
-/** 대기열 카드 옆의 작은 숫자 카드. 넓은 화면에서는 대기열 카드 높이를 둘이 나눠 채운다 */
-function SideStat({ label, value, unit, note }: { label: string; value: string | number; unit: string; note: string }) {
-  return (
-    <div className="flex flex-col justify-center rounded-[20px] bg-white px-4 py-4 sm:px-5">
-      <dt className="text-[14px] font-semibold leading-5 text-ink-2">{label}</dt>
-      <dd className="mt-1 text-[24px] font-bold leading-8 tabular-nums text-primary">
-        {value}
-        <span className="ml-0.5 text-[15px] font-semibold">{unit}</span>
-      </dd>
-      <dd className="text-[13px] leading-5 text-ink-2">{note}</dd>
-    </div>
-  )
-}
-
-function OverviewTab({ notify }: { notify: Notify }) {
-  const { data, error, reload } = useLoad('admin:overview', adminApi.overview)
-  const [busy, setBusy] = useState<number | null>(null)
-  const reveal = useReveal()
-  if (error && !data) return <Failed onRetry={reload} />
-  if (!data) return <Loading />
-  const days = [...data.days].reverse()
-
-  const replace = async (day: AdminDay) => {
-    setBusy(day.id)
-    try {
-      await adminApi.puzzleAction(day.id, 'replace')
-      notify(`${formatDateKo(day.date)} 문제를 대기열의 다음 문제로 바꿨어요`)
-      reload()
-    } catch (e) {
-      notify(messageOf(e))
-    } finally {
-      setBusy(null)
-    }
-  }
-
-  return (
-    <>
-      <QueueSummary data={data} notify={notify} reload={reload} />
-      <Section title="날짜별 오늘의 문제" aside={<RowButton onClick={reload}><RefreshCw className="h-4 w-4" aria-hidden />새로고침</RowButton>}>
-        <Rows empty="정해진 문제가 없어요">
-          {days.map(d => (
-            <Row
-              key={d.id}
-              lead={<DateBadge date={d.date} today={data.today} />}
-              title={
-                <>
-                  <span className="flex-none text-[14px] font-semibold tabular-nums text-primary">#{d.number}</span>
-                  <Pair start={d.start_title} end={d.end_title} />
-                  <DifficultyChip value={d.difficulty} />
-                </>
-              }
-              sub={
-                d.date > data.today ? (
-                  <PathLine start={d.start_title} solution={d.solution} />
-                ) : (
-                  <span className="tabular-nums text-ink-2">
-                    {d.plays.toLocaleString('ko-KR')}명 도전, {d.clears.toLocaleString('ko-KR')}명 도착
-                    {d.plays > 0 && ` (${Math.round((d.clears / d.plays) * 100)}%)`}
-                  </span>
-                )
-              }
-              actions={
-                d.date > data.today ? (
-                  <ConfirmButton confirm="정말 바꿀까요?" disabled={busy !== null || d.plays > 0} onConfirm={() => void replace(d)} className={ACTION_W}>
-                    {busy === d.id ? <Spinner className="h-4 w-4" /> : <RefreshCw className="h-4 w-4" aria-hidden />}
-                    다른 문제로
-                  </ConfirmButton>
-                ) : (
-                  <RevealButton open={reveal.isOpen(d.id)} onClick={() => reveal.toggle(d.id)} />
-                )
-              }
-              below={reveal.isOpen(d.id) && <SolutionPath start={d.start_title} hops={hopsOf(d.solution)} />}
-            />
-          ))}
-        </Rows>
-        <p className="mt-3 px-1 text-[13px] leading-5 text-ink-2">예정된 문제를 바꾸면 그 문제는 대기열에서 빠지고, 대기열 맨 앞(당겨 둔 문제가 먼저) 문제가 그 날에 들어가요.</p>
-      </Section>
-    </>
-  )
-}
-
-function QueueTab({ notify }: { notify: Notify }) {
-  const { data, error, reload } = useLoad('admin:queue', adminApi.queue)
-  const [busy, setBusy] = useState<number | null>(null)
-  if (error && !data) return <Failed onRetry={reload} />
-  if (!data) return <Loading />
-  const act = async (id: number, action: 'reject' | 'restore' | 'first' | 'unpin', done: string) => {
-    setBusy(id)
-    try {
-      await adminApi.queueAction(id, action)
-      notify(done)
-      reload()
-    } catch (e) {
-      notify(messageOf(e))
-    } finally {
-      setBusy(null)
-    }
-  }
-  return (
-    <>
-      <Section title="낼 순서" count={data.approved.length}>
-        <Rows empty="대기열이 비었어요">
-          {data.approved.map((q, i) => (
-            <Row
-              key={q.id}
-              lead={
-                <span className={`${LEAD_NUM} text-[16px] font-bold tabular-nums ${q.priority > 0 ? 'bg-primary text-white' : 'bg-secondary text-primary'}`}>
-                  {i + 1}
-                </span>
-              }
-              title={
-                <>
-                  <Pair start={q.start_title} end={q.end_title} />
-                  <DifficultyChip value={q.difficulty} />
-                  <span className="flex-none text-[13px] tabular-nums text-ink-2">{q.par}번</span>
-                </>
-              }
-              sub={<PathLine start={q.start_title} solution={q.solution} />}
-              actions={
-                <>
-                  {q.priority > 0 ? (
-                    <RowButton disabled={busy !== null} onClick={() => void act(q.id, 'unpin', '당긴 것을 풀었어요')} className={ACTION_W}>
-                      <PinOff className="h-4 w-4" aria-hidden />
-                      당김 풀기
-                    </RowButton>
-                  ) : (
-                    <RowButton disabled={busy !== null} onClick={() => void act(q.id, 'first', '맨 앞으로 당겼어요')} className={ACTION_W}>
-                      <ArrowUpToLine className="h-4 w-4" aria-hidden />
-                      맨 앞으로
-                    </RowButton>
-                  )}
-                  <RowButton tone="danger" disabled={busy !== null} onClick={() => void act(q.id, 'reject', '대기열에서 뺐어요')}>
-                    <Trash2 className="h-4 w-4" aria-hidden />
-                    빼기
-                  </RowButton>
-                </>
-              }
-            />
-          ))}
-        </Rows>
-        <p className="mt-3 px-1 text-[13px] leading-5 text-ink-2">당긴 문제는 요일 난이도와 상관없이 먼저 나가요. 나머지는 요일에 맞는 난이도부터 골라요. 월요일과 화요일은 쉬움, 수요일부터 금요일은 보통, 주말은 어려움이에요.</p>
-      </Section>
-      {data.rejected.length > 0 && (
-        <Section title="뺀 문제">
-          <Rows empty="">
-            {data.rejected.map(q => (
-              <Row
-                key={q.id}
-                title={
-                  <>
-                    <Pair start={q.start_title} end={q.end_title} />
-                    <DifficultyChip value={q.difficulty} />
-                  </>
-                }
-                sub={<span className="truncate text-ink-2">{q.note ?? '이유 없음'}</span>}
-                actions={
-                  <RowButton disabled={busy !== null} onClick={() => void act(q.id, 'restore', '대기열 끝에 되돌렸어요')}>
-                    <RotateCcw className="h-4 w-4" aria-hidden />
-                    되돌리기
-                  </RowButton>
-                }
-              />
-            ))}
-          </Rows>
-        </Section>
-      )}
-    </>
-  )
-}
-
-function CommunityTab({ notify }: { notify: Notify }) {
-  const { data, error, reload } = useLoad('admin:community', adminApi.community)
-  const [busy, setBusy] = useState<number | null>(null)
-  const reveal = useReveal()
-  if (error && !data) return <Failed onRetry={reload} />
-  if (!data) return <Loading />
-  const act = async (id: number, action: 'hide' | 'show') => {
-    setBusy(id)
-    try {
-      await adminApi.puzzleAction(id, action)
-      notify(action === 'hide' ? '목록에서 숨겼어요' : '다시 보이게 했어요')
-      reload()
-    } catch (e) {
-      notify(messageOf(e))
-    } finally {
-      setBusy(null)
-    }
-  }
-  return (
-    <Section title="링클이 낸 문제" count={data.items.length}>
-      <Rows empty="아직 문제가 없어요">
-        {data.items.map(p => {
-          const hidden = p.status !== 'published'
-          return (
-            <Row
-              key={p.id}
-              lead={<span className={`${LEAD_NUM} text-[16px] font-bold tabular-nums ${hidden ? 'bg-[#eef1f5] text-ink-2' : 'bg-secondary text-primary'}`}>{p.number}</span>}
-              title={
-                <>
-                  <span className={hidden ? 'min-w-0 opacity-50' : 'min-w-0'}>
-                    <Pair start={p.start_title} end={p.end_title} />
-                  </span>
-                  <DifficultyChip value={p.difficulty} />
-                </>
-              }
-              sub={
-                <span className="tabular-nums text-ink-2">
-                  {hidden ? '숨김, ' : ''}
-                  {p.plays.toLocaleString('ko-KR')}명 도전, {p.clears.toLocaleString('ko-KR')}명 도착
-                </span>
-              }
-              actions={
-                <>
-                  <RevealButton open={reveal.isOpen(p.id)} onClick={() => reveal.toggle(p.id)} />
-                  {hidden ? (
-                    <RowButton disabled={busy !== null} onClick={() => void act(p.id, 'show')} className="min-w-[92px]">
-                      <Eye className="h-4 w-4" aria-hidden />
-                      보이기
-                    </RowButton>
-                  ) : (
-                    <RowButton tone="danger" disabled={busy !== null} onClick={() => void act(p.id, 'hide')} className="min-w-[92px]">
-                      <EyeOff className="h-4 w-4" aria-hidden />
-                      숨기기
-                    </RowButton>
-                  )}
-                </>
-              }
-              below={reveal.isOpen(p.id) && <SolutionPath start={p.start_title} hops={hopsOf(p.solution)} />}
-            />
-          )
-        })}
-      </Rows>
-      <p className="mt-3 px-1 text-[13px] leading-5 text-ink-2">숨겨도 순위표와 푼 기록은 남아요. 주소를 아는 사람은 계속 풀 수 있어요.</p>
-    </Section>
-  )
-}
-
-const POOLS: ['daily' | 'official', string][] = [
-  ['daily', '오늘의 문제 대기열'],
-  ['official', '커뮤니티에 바로'],
-]
-const DIFFS: [Difficulty, string][] = [
-  ['easy', '쉬움'],
-  ['normal', '보통'],
-  ['hard', '어려움'],
-]
-
-function AddTab({ notify }: { notify: Notify }) {
-  const practice = useGame(s => runIn(s, ADMIN_SLOT))
-  const [start, setStart] = useState<Page | null>(null)
-  const [end, setEnd] = useState<Page | null>(null)
-  if (practice?.phase === 'finished') return <AddResult notify={notify} />
-  const same = !!start && !!end && start.id === end.id
-  const play = () => {
-    if (!start || !end || same) return
-    const puzzle = { id: ADMIN_SLOT, kind: 'community' as const, number: 0, date: null, start, end }
-    const run = createRun({ mode: 'community', puzzle, runId: `${ADMIN_RUN_PREFIX}${crypto.randomUUID()}`, startedAt: now() })
-    useGame.getState().begin(ADMIN_SLOT, run, now())
-  }
-  return (
-    <Section title="출발과 도착 고르기">
-      <Card>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <WikiSearch label="출발 문서" value={start} onChange={setStart} placeholder="예: 불고기" />
-          <WikiSearch label="도착 문서" value={end} onChange={setEnd} placeholder="예: 뉴발란스" />
-        </div>
-        {same && <p className="mt-3 text-[14px] text-[#c0392b]">출발과 도착이 같아요</p>}
-        <Cta onClick={play} disabled={!start || !end || same} className="mt-5 sm:mx-auto sm:max-w-[320px]">
-          직접 풀어 보기
-        </Cta>
-        <p className="mt-2 text-center text-[13px] leading-5 text-ink-2">게임과 같은 화면에서 풀어요. 도착한 길이 정답 경로가 되고, 서버가 넣기 전에 그 길을 다시 확인해요.</p>
-      </Card>
-    </Section>
-  )
-}
-
-function AddResult({ notify }: { notify: Notify }) {
-  const run = useGame(s => runIn(s, ADMIN_SLOT))!
-  const start = run.puzzle.start
-  const hops = solutionOf(start, run.events)
-  const [pool, setPool] = useState<'daily' | 'official'>('daily')
-  const [difficulty, setDifficulty] = useState<Difficulty>(() => guessDifficulty(hops.length))
-  const [first, setFirst] = useState(true)
-  const [busy, setBusy] = useState(false)
-  const drop = () => useGame.getState().drop(ADMIN_SLOT)
-  const retry = () => useGame.getState().begin(ADMIN_SLOT, createRun({ mode: 'community', puzzle: run.puzzle, runId: `${ADMIN_RUN_PREFIX}${crypto.randomUUID()}`, startedAt: now() }), now())
-
-  const submit = async () => {
-    setBusy(true)
-    try {
-      const r = await adminApi.add(pool, { start, end: run.puzzle.end, par: hops.length, difficulty, solution: hops }, pool === 'daily' && first)
-      if (r.added === 0) notify('출발과 도착이 같은 문제가 이미 있어요')
-      else notify(pool === 'daily' ? `대기열에 넣었어요. 지금 ${r.queue}개 있어요` : '커뮤니티에 올렸어요')
-      drop()
-    } catch (e) {
-      notify(messageOf(e))
-      setBusy(false)
-    }
-  }
-
-  return (
-    <Section title="이 길로 넣을까요?">
-      <Card>
-        <SolutionPath start={start.title} hops={hops} />
-        <p className="mt-3 text-[14px] leading-5 text-ink-2">
-          정답은 {hops.length}번, 실제로는 {moveCount(run)}번 움직였어요.
-          {hops.length < 3 && <b className="ml-1 font-semibold text-[#c0392b]">3번보다 짧으면 너무 쉬워요.</b>}
-        </p>
-
-        <div className="mt-5 grid gap-x-4 sm:grid-cols-2">
-          <div>
-            <span className="mb-1.5 block text-[13px] font-semibold leading-5 text-ink-2">어디에 넣을까요</span>
-            <Segmented label="넣을 곳" value={pool} options={POOLS} onChange={setPool} />
-          </div>
-          <div>
-            <span className="mb-1.5 block text-[13px] font-semibold leading-5 text-ink-2">난이도</span>
-            <Segmented label="난이도" value={difficulty} options={DIFFS} onChange={setDifficulty} />
-          </div>
-        </div>
-        {pool === 'daily' && (
-          <label className="mt-1 flex h-11 cursor-pointer items-center gap-2.5 text-[15px] text-ink">
-            <input type="checkbox" checked={first} onChange={e => setFirst(e.target.checked)} className="h-5 w-5 accent-[#3366CC]" />
-            대기열 맨 앞에 두기
-          </label>
-        )}
-        <Cta onClick={submit} disabled={busy} className="mt-4 sm:mx-auto sm:max-w-[320px]">
-          {busy ? <Spinner className="h-6 w-6 text-white" /> : '넣기'}
-        </Cta>
-        <div className="mt-1 flex justify-center gap-2">
-          <TextButton onClick={retry}>다시 풀기</TextButton>
-          <TextButton onClick={drop} className="text-ink-2!">
-            버리기
-          </TextButton>
-        </div>
-      </Card>
-    </Section>
-  )
-}
-
-function Loading() {
-  return (
-    <div className="grid h-48 place-items-center">
-      <Spinner className="h-8 w-8" />
-    </div>
-  )
-}
-
-function Failed({ onRetry }: { onRetry: () => void }) {
-  return (
-    <Card className="mt-2 text-center">
-      <p className="text-[15px] text-ink">불러오지 못했어요</p>
-      <TextButton onClick={onRetry} className="mt-1">
-        다시 시도
-      </TextButton>
-    </Card>
   )
 }

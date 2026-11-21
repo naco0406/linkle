@@ -45,7 +45,7 @@ export function Badge({ top, bottom }: { top: ReactNode; bottom?: ReactNode }) {
 }
 
 /** 정렬 고르기. 고른 칸에 흰 알약이 놓인다(아래 탭과 같은 모양) */
-export function Segmented<T extends string>({ value, options, onChange, label }: { value: T; options: [T, string][]; onChange: (v: T) => void; label: string }) {
+export function Segmented<T extends string>({ value, options, onChange, label }: { value: T; options: [T, ReactNode][]; onChange: (v: T) => void; label: string }) {
   return (
     <div role="tablist" aria-label={label} className="mb-3 grid rounded-full bg-[#e6ecf6] p-1" style={{ gridTemplateColumns: `repeat(${options.length}, 1fr)` }}>
       {options.map(([v, text]) => (
