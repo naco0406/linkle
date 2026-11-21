@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ChevronRight, RefreshCw } from 'lucide-react'
+import { ChevronRight, ChevronUp, RefreshCw, Route } from 'lucide-react'
 import { addDays } from '@linkle/core'
 import { adminApi, type AdminDay, type Difficulty, type Overview, type QueueData } from '../../game/admin'
 import { Card } from '../../ui/cards'
@@ -28,9 +28,10 @@ function averages(days: AdminDay[], today: string): Partial<Record<Difficulty, n
   return out
 }
 
-type Props = { overview: Overview; queue: QueueData | null; notify: Notify; reload: () => void; onReview: () => void }
+/** onOpenDay: 지난 날(오늘 포함)을 일정 탭의 지난 문제에서 연다. 날짜가 없으면 목록만 */
+type Props = { overview: Overview; queue: QueueData | null; notify: Notify; reload: () => void; onReview: () => void; onOpenDay: (puzzleId: number | null) => void }
 
-export function TodayTab({ overview, queue, notify, reload, onReview }: Props) {
+export function TodayTab({ overview, queue, notify, reload, onReview, onOpenDay }: Props) {
   const { today, days } = overview
   const tomorrow = addDays(today, 1)
   const avg = averages(days, today)
@@ -46,7 +47,7 @@ export function TodayTab({ overview, queue, notify, reload, onReview }: Props) {
         <TomorrowCard day={days.find(d => d.date === tomorrow) ?? null} date={tomorrow} notify={notify} reload={reload} />
       </div>
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
-        <RatesCard days={days} today={today} avg={avg} />
+        <RatesCard days={days} today={today} avg={avg} onOpenDay={onOpenDay} />
         <div className="grid content-start gap-4">
           <QueueCard overview={overview} lastDate={plan?.at(-1)?.date ?? null} notify={notify} reload={reload} />
           <div className="grid grid-cols-2 gap-4">
@@ -115,6 +116,7 @@ function Num({ label, value, unit }: { label: string; value: string | number; un
 
 /** 오늘 카드. 도착률 옆에 같은 난이도 날의 평균을 붙여 예상보다 어려웠는지 읽히게 한다 */
 function TodayCard({ day, today, avg }: { day: AdminDay | null; today: string; avg: Partial<Record<Difficulty, number>> }) {
+  const [reveal, setReveal] = useState(false)
   if (!day)
     return (
       <Card>
@@ -144,7 +146,19 @@ function TodayCard({ day, today, avg }: { day: AdminDay | null; today: string; a
         <Num label="도착" value={day.clears.toLocaleString('ko-KR')} unit="명" />
         <Num label="도착률" value={rate === null ? '–' : pct(rate)} unit={rate === null ? undefined : '%'} />
       </div>
-      <p className="mt-2.5 text-[14px] leading-5 text-ink-2">{compare}</p>
+      <div className="mt-3 flex items-center justify-between gap-3">
+        <p className="min-w-0 text-[14px] leading-5 text-ink-2">{compare}</p>
+        {/* 열린 문제의 정답은 화면을 열어 둔 채 보이지 않게 접어 둔다 */}
+        <RowButton onClick={() => setReveal(r => !r)} aria-expanded={reveal}>
+          {reveal ? <ChevronUp className="h-4 w-4" aria-hidden /> : <Route className="h-4 w-4" aria-hidden />}
+          {reveal ? '정답 접기' : '정답 보기'}
+        </RowButton>
+      </div>
+      {reveal && (
+        <div className="mt-3">
+          <SolutionPath start={day.start_title} hops={hopsOf(day.solution)} />
+        </div>
+      )}
     </Card>
   )
 }
@@ -200,14 +214,19 @@ const BAR_MAX = 150
 const BAR_COLOR: Record<string, string> = { easy: 'bg-s4', normal: 'bg-s3', hard: 'bg-s1' }
 
 /** 최근 14일 도착률. 막대 색이 그날의 난이도라, 초록이 높고 빨강이 낮으면 난이도 예상이 맞은 것이다 */
-function RatesCard({ days, today, avg }: { days: AdminDay[]; today: string; avg: Partial<Record<Difficulty, number>> }) {
+function RatesCard({ days, today, avg, onOpenDay }: { days: AdminDay[]; today: string; avg: Partial<Record<Difficulty, number>>; onOpenDay: (id: number | null) => void }) {
   const slots = Array.from({ length: 14 }, (_, i) => addDays(today, i - 13))
   return (
     <Card>
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
         <div>
           <h2 className="text-[17px] font-bold leading-[25px] text-ink">최근 14일 도착률</h2>
-          <p className="mt-0.5 text-[14px] leading-5 text-ink-2">막대 색이 그날의 난이도예요</p>
+          <p className="mt-0.5 text-[14px] leading-5 text-ink-2">
+            막대 색이 그날의 난이도예요.
+            <button onClick={() => onOpenDay(null)} className="press ml-1.5 font-semibold text-primary">
+              지난 문제 보기
+            </button>
+          </p>
         </div>
         <ul className="flex flex-wrap gap-x-3.5 gap-y-1 text-[14px] leading-5 text-ink-2">
           {DIFF.map(([d, label, color]) => (
@@ -225,7 +244,7 @@ function RatesCard({ days, today, avg }: { days: AdminDay[]; today: string; avg:
           const r = d ? rateOf(d) : null
           const tip = d ? `#${d.number} ${d.start_title} → ${d.end_title}, ${d.plays}명 도전, ${d.clears}명 도착${r === null ? '' : ` (${pct(r)}%)`}` : `${monthDay(date)} 문제 없음`
           return (
-            <div key={date} className="flex h-full items-end justify-center" title={tip}>
+            <button key={date} className="flex h-full items-end justify-center disabled:cursor-default" title={tip} aria-label={tip} disabled={!d} onClick={() => d && onOpenDay(d.id)}>
               {d && r !== null ? (
                 <span
                   className={`block w-full max-w-7 rounded-t-md rounded-b-[3px] ${BAR_COLOR[d.difficulty ?? ''] ?? 'bg-[#c5ccd6]'} ${date === today ? 'outline outline-2 outline-offset-2 outline-primary' : ''}`}
@@ -234,7 +253,7 @@ function RatesCard({ days, today, avg }: { days: AdminDay[]; today: string; avg:
               ) : (
                 <span className="block h-1 w-full max-w-7 rounded-full bg-[#e6ecf6]" />
               )}
-            </div>
+            </button>
           )
         })}
       </div>

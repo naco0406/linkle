@@ -5,9 +5,10 @@ import { useEffect, useState } from 'react'
 
 const cache = new Map<string, Promise<string | null>>()
 
-/** 첫 문장만. "…이다." 같은 끝을 찾고, 없으면 140자에서 자른다 */
+/** 첫 문장만. 괄호를 빼고 "…이다." 같은 끝을 찾고, 없으면 140자에서 자른다 */
 export function firstSentence(text: string): string {
-  const t = text.replace(/\s+/g, ' ').trim()
+  // 괄호 속 외국어 표기("(프랑스어: …, 1769년 ~ 1821년)")는 빼야 첫 문장이 읽힌다
+  const t = text.replace(/\s*\([^()]*\)/g, '').replace(/\s+/g, ' ').trim()
   const m = /^(.{12,}?[다요]\.)(\s|$)/.exec(t) ?? /^(.{12,}?\.)(\s|$)/.exec(t)
   const s = m?.[1] ?? t
   return s.length > 140 ? `${s.slice(0, 139)}…` : s

@@ -1,4 +1,4 @@
-import { addDays, kstDate, RECENT_DAYS } from '@linkle/core'
+import { addDays, kstDate } from '@linkle/core'
 import { HttpError, json, readJson } from './http.ts'
 import { canCallNow, dispatchRefill, queueLeft, readRefill, REFILL_BELOW, type RefillState } from './refill.ts'
 import { fillUpcoming } from './schedule.ts'
@@ -183,7 +183,8 @@ async function refillNow(env: AdminEnv): Promise<Response> {
 
 /**
  * 대기열. 낼 순서대로(당긴 것 먼저, 그다음 들어온 순서), 뺀 문제도 최근 것 몇 개.
- * placed는 최근 30일과 앞으로 날짜가 붙은 오늘의 문제다. 화면이 이것으로 앞으로의 일정을 계산한다(@linkle/core projectSchedule)
+ * placed는 날짜가 붙은 오늘의 문제 전부다(하루 하나라 1년에 365줄). 화면이 이것으로 앞으로의 일정을 계산하고(@linkle/core projectSchedule)
+ * 지난 문제와 그날의 결과, 정답을 보인다
  */
 async function queueList(env: AdminEnv): Promise<Response> {
   const today = kstDate(Date.now())
@@ -194,8 +195,8 @@ async function queueList(env: AdminEnv): Promise<Response> {
     ),
     env.DB.prepare(`SELECT id, start_title, end_title, par, difficulty, note FROM puzzle_queue WHERE status = 'rejected' ORDER BY id DESC LIMIT 20`),
     env.DB.prepare(
-      `SELECT id, date, number, start_id, start_title, end_id, end_title, difficulty, par, plays, solution FROM puzzles WHERE kind = 'daily' AND date >= ?1 ORDER BY date`,
-    ).bind(addDays(today, -RECENT_DAYS)),
+      `SELECT id, date, number, start_id, start_title, end_id, end_title, difficulty, par, plays, clears, solution FROM puzzles WHERE kind = 'daily' ORDER BY date`,
+    ),
   ])
   return json({ today, approved: approved?.results ?? [], rejected: rejected?.results ?? [], placed: placed?.results ?? [] })
 }

@@ -101,8 +101,14 @@ function Login({ onIn }: { onIn: () => void }) {
 }
 
 function Console({ onOut }: { onOut: () => void }) {
-  const [tab, setTab] = useState<Tab>(() => tabOf(location.hash.slice(1)))
+  const [tab, setTabState] = useState<Tab>(() => tabOf(location.hash.slice(1)))
+  const setTab = (t: Tab) => {
+    if (t !== 'plan') setPick(null)
+    setTabState(t)
+  }
   const [filter, setFilter] = useState<PlanFilter>('all')
+  // 오늘 탭에서 날짜를 눌러 일정 탭으로 넘어올 때 열어 둘 줄
+  const [pick, setPick] = useState<string | null>(null)
   const [toast, setToast] = useState<string | null>(null)
   const clearToast = useCallback(() => setToast(null), [])
   const practice = useGame(s => runIn(s, ADMIN_SLOT))
@@ -155,14 +161,16 @@ function Console({ onOut }: { onOut: () => void }) {
       <div className="pt-3">
         {tab === 'today' &&
           (overview.data ? (
-            <TodayTab overview={overview.data} queue={queue.data} notify={setToast} reload={reloadAll} onReview={() => (setFilter('unreviewed'), setTab('plan'))} />
+            <TodayTab overview={overview.data} queue={queue.data} notify={setToast} reload={reloadAll} onReview={() => (setFilter('unreviewed'), setPick(null), setTab('plan'))}
+              onOpenDay={id => (setFilter('past'), setPick(id === null ? null : `p${id}`), setTab('plan'))}
+            />
           ) : overview.error ? (
             <Failed onRetry={overview.reload} />
           ) : (
             <Loading />
           ))}
         {tab === 'plan' &&
-          (queue.data ? <PlanTab data={queue.data} filter={filter} onFilter={setFilter} notify={setToast} reload={reloadAll} /> : queue.error ? <Failed onRetry={queue.reload} /> : <Loading />)}
+          (queue.data ? <PlanTab data={queue.data} filter={filter} onFilter={setFilter} pick={pick} notify={setToast} reload={reloadAll} /> : queue.error ? <Failed onRetry={queue.reload} /> : <Loading />)}
         {tab === 'community' && <CommunityTab notify={setToast} />}
         {tab === 'add' && <AddTab queue={queue.data} notify={setToast} />}
       </div>

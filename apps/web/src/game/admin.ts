@@ -43,7 +43,7 @@ export type QueueItem = {
   /** 관리자가 봤다고 남긴 때. 비어 있으면 안 본 문제 */
   reviewed_at: number | null
 }
-/** 날짜가 붙은 오늘의 문제(최근 30일과 앞으로) */
+/** 날짜가 붙은 오늘의 문제(지난 것과 앞으로 정해진 것 모두) */
 export type PlacedDay = {
   id: number
   date: string
@@ -55,6 +55,7 @@ export type PlacedDay = {
   difficulty: Difficulty | null
   par: number | null
   plays: number
+  clears: number
   solution: string | null
 }
 export type QueueData = { today: string; approved: QueueItem[]; rejected: RejectedItem[]; placed: PlacedDay[] }

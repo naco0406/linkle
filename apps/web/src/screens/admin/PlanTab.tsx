@@ -1,26 +1,32 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ArrowUpToLine, Check, PinOff, RefreshCw, RotateCcw, Trash2, X, Pin } from 'lucide-react'
+import { ArrowUpToLine, Check, ChevronUp, Pin, PinOff, RefreshCw, RotateCcw, Route, Trash2, X } from 'lucide-react'
 import { adminApi, type QueueAction, type QueueData, type QueueItem, type RejectedItem } from '../../game/admin'
 import { DifficultyChip } from '../../ui/list'
 import { Spinner } from '../../ui/parts'
 import { ConfirmButton, DateBadge, hopsOf, kstDay, longDate, messageOf, monthDay, Pair, Pills, RowButton, SolutionPath, subject, useWide, weekdayOf, type Notify } from './kit'
-import { buildPlan, replacementFor, weekLabel, type PlanEntry } from './plan'
+import { buildPlan, pastDays, replacementFor, weekLabel, type PlanEntry } from './plan'
 import { WikiSummary } from './WikiSummary'
 
 // 일정 탭. 남은 문제를 "몇 번째"가 아니라 "어느 날"로 보인다.
 // 하나를 고르면 넓은 화면은 옆 패널, 좁은 화면은 아래 시트에서 두 문서 설명과 정답 경로를 보며 훑어본다.
+// 지난 문제(오늘 포함)도 여기서 고르면 그날의 결과와, 누르면 펼쳐지는 정답을 본다.
 // 단축키: J/K 다음·이전, Y 괜찮아요, X 빼기, Esc 닫기
 
-export type PlanFilter = 'all' | 'unreviewed' | 'rejected'
+export type PlanFilter = 'all' | 'unreviewed' | 'past' | 'rejected'
 
-type Props = { data: QueueData; filter: PlanFilter; onFilter: (f: PlanFilter) => void; notify: Notify; reload: () => void }
+type Props = { data: QueueData; filter: PlanFilter; onFilter: (f: PlanFilter) => void; pick?: string | null; notify: Notify; reload: () => void }
 
-export function PlanTab({ data, filter, onFilter, notify, reload }: Props) {
+export function PlanTab({ data, filter, onFilter, pick = null, notify, reload }: Props) {
   const wide = useWide()
   const plan = useMemo(() => buildPlan(data), [data])
+  const past = useMemo(() => pastDays(data), [data])
   const unreviewed = plan.filter(e => e.kind === 'expected' && e.item.reviewed_at === null)
-  const list = filter === 'unreviewed' ? unreviewed : plan
-  const [selected, setSelected] = useState<string | null>(null)
+  const list = filter === 'unreviewed' ? unreviewed : filter === 'past' ? past : plan
+  // 오늘 탭에서 날짜를 눌러 들어오면 그날을 열어 둔다
+  const [selected, setSelected] = useState<string | null>(pick)
+  useEffect(() => {
+    if (pick) setSelected(pick)
+  }, [pick])
   const [busy, setBusy] = useState(false)
   const current = list.find(e => e.key === selected) ?? null
 
@@ -69,6 +75,7 @@ export function PlanTab({ data, filter, onFilter, notify, reload }: Props) {
   const filters: [PlanFilter, string, number][] = [
     ['all', '전체', plan.length],
     ['unreviewed', '안 본 문제', unreviewed.length],
+    ['past', '지난 문제', past.length],
     ['rejected', '뺀 문제', data.rejected.length],
   ]
   const panel = current && <ReviewPanel entry={current} data={data} busy={busy} act={act} notify={notify} reload={reload} onClose={() => setSelected(null)} />
@@ -106,7 +113,9 @@ export function PlanTab({ data, filter, onFilter, notify, reload }: Props) {
 function PlanList({ list, today, selected, onSelect, filter }: { list: PlanEntry[]; today: string; selected: string | null; onSelect: (k: string) => void; filter: PlanFilter }) {
   if (!list.length)
     return (
-      <div className="rounded-[20px] bg-white px-5 py-8 text-center text-[15px] text-ink-2">{filter === 'unreviewed' ? '안 본 문제가 없어요. 다 훑어봤어요.' : '낼 문제가 없어요'}</div>
+      <div className="rounded-[20px] bg-white px-5 py-8 text-center text-[15px] text-ink-2">
+        {filter === 'unreviewed' ? '안 본 문제가 없어요. 다 훑어봤어요.' : filter === 'past' ? '지난 문제가 없어요' : '낼 문제가 없어요'}
+      </div>
     )
   let lastWeek = ''
   return (
@@ -115,7 +124,7 @@ function PlanList({ list, today, selected, onSelect, filter }: { list: PlanEntry
         const week = weekLabel(e.date, today)
         const head = week !== lastWeek
         lastWeek = week
-        const s = e.kind === 'fixed' ? { start: e.day.start_title, end: e.day.end_title, difficulty: e.day.difficulty } : { start: e.item.start_title, end: e.item.end_title, difficulty: e.item.difficulty }
+        const s = e.kind === 'expected' ? { start: e.item.start_title, end: e.item.end_title, difficulty: e.item.difficulty } : { start: e.day.start_title, end: e.day.end_title, difficulty: e.day.difficulty }
         const fresh = e.kind === 'expected' && e.item.reviewed_at === null
         return (
           <div key={e.key}>
@@ -125,14 +134,14 @@ function PlanList({ list, today, selected, onSelect, filter }: { list: PlanEntry
               aria-pressed={e.key === selected}
               className={`press grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-[14px] px-2 py-2 text-left sm:gap-3.5 ${e.key === selected ? 'bg-secondary' : ''}`}
             >
-              <DateBadge date={e.date} sub={weekdayOf(e.date)} small />
+              <DateBadge date={e.date} sub={e.date === today ? '오늘' : weekdayOf(e.date)} on={e.date === today} small />
               <span className="min-w-0">
                 <span className="flex min-w-0 items-center gap-2">
                   <Pair start={s.start} end={s.end} />
                   <DifficultyChip value={s.difficulty} />
                 </span>
                 <span className="mt-0.5 flex items-center gap-2.5 text-[14px] leading-5 text-ink-2 max-sm:hidden">
-                  {e.kind === 'fixed' ? `정해짐 #${e.day.number}` : '예상'}
+                  {e.kind === 'past' ? resultLine(e.day) : e.kind === 'fixed' ? `정해짐 #${e.day.number}` : '예상'}
                   {e.kind === 'expected' && e.item.priority > 0 && (
                     <span className="inline-flex items-center gap-0.5">
                       <Pin className="h-3.5 w-3.5" aria-hidden />
@@ -169,10 +178,12 @@ function ReviewPanel({
   onClose: () => void
 }) {
   const [replacing, setReplacing] = useState(false)
+  const [reveal, setReveal] = useState(false)
+  useEffect(() => setReveal(false), [entry.key])
   const p =
-    entry.kind === 'fixed'
-      ? { start: entry.day.start_title, end: entry.day.end_title, difficulty: entry.day.difficulty, solution: entry.day.solution }
-      : { start: entry.item.start_title, end: entry.item.end_title, difficulty: entry.item.difficulty, solution: entry.item.solution }
+    entry.kind === 'expected'
+      ? { start: entry.item.start_title, end: entry.item.end_title, difficulty: entry.item.difficulty, solution: entry.item.solution }
+      : { start: entry.day.start_title, end: entry.day.end_title, difficulty: entry.day.difficulty, solution: entry.day.solution }
   const hops = hopsOf(p.solution)
   const instead = entry.kind === 'expected' ? replacementFor(data, entry.item, entry.date) : null
 
@@ -195,7 +206,7 @@ function ReviewPanel({
     <section className="rounded-[20px] bg-white sm:p-5 lg:p-5" aria-label="고른 문제">
       <div className="flex items-center justify-between gap-3">
         <span className="text-[14px] font-semibold leading-5 text-ink-2">
-          {longDate(entry.date)} {entry.kind === 'fixed' ? `정해짐 #${entry.day.number}` : '예상'}
+          {longDate(entry.date)} {entry.kind === 'past' ? `${entry.date === data.today ? '오늘 ' : ''}#${entry.day.number}` : entry.kind === 'fixed' ? `정해짐 #${entry.day.number}` : '예상'}
         </span>
         <button onClick={onClose} aria-label="닫기" className="press -mr-1.5 grid h-9 w-9 place-items-center rounded-full text-ink-2">
           <X className="h-[18px] w-[18px]" />
@@ -214,11 +225,27 @@ function ReviewPanel({
         <WikiSummary role="출발" title={p.start} />
         <WikiSummary role="도착" title={p.end} />
       </div>
-      <div className="mt-3">
-        <SolutionPath start={p.start} hops={hops} count={false} />
-      </div>
+      {entry.kind === 'past' ? (
+        <>
+          <div className="mt-4 grid grid-cols-3 gap-2 rounded-[14px] bg-[#f5f7fa] px-3.5 py-3">
+            <Stat label="도전" value={`${entry.day.plays.toLocaleString('ko-KR')}명`} />
+            <Stat label="도착" value={`${entry.day.clears.toLocaleString('ko-KR')}명`} />
+            <Stat label="도착률" value={entry.day.plays > 0 ? `${Math.round((entry.day.clears / entry.day.plays) * 100)}%` : '–'} />
+          </div>
+          {/* 이미 열린 문제의 정답은 화면을 열어 둔 채 보이지 않게 접어 둔다 */}
+          <div className="mt-3">{reveal && <SolutionPath start={p.start} hops={hops} />}</div>
+          <RowButton className={`w-full ${reveal ? 'mt-2' : ''}`} onClick={() => setReveal(r => !r)} aria-expanded={reveal}>
+            {reveal ? <ChevronUp className="h-4 w-4" aria-hidden /> : <Route className="h-4 w-4" aria-hidden />}
+            {reveal ? '정답 접기' : '정답 보기'}
+          </RowButton>
+        </>
+      ) : (
+        <div className="mt-3">
+          <SolutionPath start={p.start} hops={hops} count={false} />
+        </div>
+      )}
 
-      {entry.kind === 'fixed' ? (
+      {entry.kind === 'past' ? null : entry.kind === 'fixed' ? (
         <div className="mt-4 flex items-center justify-between gap-3">
           <span className="text-[14px] text-ink-2">{entry.day.plays > 0 ? '누가 이미 시작했어요' : '날짜가 붙은 문제예요'}</span>
           <ConfirmButton confirm="정말 바꿀까요?" disabled={replacing || entry.day.plays > 0} onConfirm={() => void replace()}>
@@ -278,6 +305,18 @@ function ReviewPanel({
     </section>
   )
 }
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <div className="text-[13px] leading-5 text-ink-2">{label}</div>
+      <div className="text-[17px] font-bold leading-6 tabular-nums text-ink">{value}</div>
+    </div>
+  )
+}
+
+const resultLine = (d: { number: number; plays: number; clears: number }) =>
+  `#${d.number}, ${d.plays.toLocaleString('ko-KR')}명 도전, ${d.clears.toLocaleString('ko-KR')}명 도착${d.plays > 0 ? ` (${Math.round((d.clears / d.plays) * 100)}%)` : ''}`
 
 function Kbd({ children }: { children: string }) {
   return <kbd className="inline-grid h-5 min-w-5 place-items-center rounded-md border border-line bg-white px-1 font-sans text-[12px] font-semibold leading-none text-ink-2">{children}</kbd>

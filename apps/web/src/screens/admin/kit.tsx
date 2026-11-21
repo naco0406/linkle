@@ -157,7 +157,8 @@ export function SectionHead({ title, count, aside }: { title: ReactNode; count?:
 /** 작은 알약 탭(필터). 큰 탭과 같은 모양을 작게 */
 export function Pills<T extends string>({ value, options, onChange, label }: { value: T; options: [T, string, number?][]; onChange: (v: T) => void; label: string }) {
   return (
-    <div role="tablist" aria-label={label} className="inline-flex max-w-full rounded-full bg-[#e6ecf6] p-1">
+    // 좁은 화면에서 넘치면 옆으로 민다
+    <div role="tablist" aria-label={label} className="inline-flex max-w-full overflow-x-auto rounded-full bg-[#e6ecf6] p-1 [scrollbar-width:none]">
       {options.map(([v, text, n]) => (
         <button
           key={v}
