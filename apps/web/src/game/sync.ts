@@ -11,6 +11,8 @@ import { allRuns, now, useGame } from './store'
 const EMOJI_WAIT_MS = 3_000
 /** 탭을 오갈 때마다 묻지 않도록 두는 간격. Worker 요청 수는 하루 한도가 있다 */
 const TODAY_INTERVAL_MS = 60_000
+/** 화면을 켜 둔 채 자정을 넘겼는지 보는 간격. 날짜가 그대로면 서버에 묻지 않는다 */
+const ROLLOVER_CHECK_MS = 30_000
 
 let sending: string | null = null
 let emojiTimer: ReturnType<typeof setTimeout> | undefined
@@ -50,7 +52,7 @@ export async function flushOutbox(waitForEmoji: boolean): Promise<void> {
 let checking = false
 let checkedAt = 0
 
-/** 서버의 오늘을 다시 받는다. 날짜가 바뀌었으면 store가 끝난 지난 판을 치운다 */
+/** 서버의 오늘을 다시 받는다. 날짜가 바뀌었으면 store가 지난 판을 끝낸다 */
 export async function refreshToday(): Promise<void> {
   const { today } = useGame.getState()
   // 방금 확인했고 기기 시계로도 같은 날이면 건너뛴다
@@ -61,7 +63,7 @@ export async function refreshToday(): Promise<void> {
     checkedAt = Date.now()
   } catch (e) {
     // 서버에 닿지 못해도 진행 중인 판은 영향이 없다. 다음 기회에 다시 묻는다
-    if (e instanceof ApiError && e.code === 'no_puzzle') useGame.setState({ noPuzzle: true })
+    if (e instanceof ApiError && e.code === 'no_puzzle') useGame.getState().setNoPuzzle()
   } finally {
     checking = false
   }
@@ -79,6 +81,12 @@ export function startSync(): void {
   window.addEventListener('focus', wake)
   window.addEventListener('pageshow', wake)
   window.addEventListener('online', wake)
+  // 화면을 켜 둔 채 자정을 넘기면 위 이벤트가 오지 않는다
+  setInterval(() => {
+    const { today, run } = useGame.getState()
+    const known = today?.date ?? run?.puzzle.date
+    if (known && known !== kstDate(now()) && document.visibilityState === 'visible') void refreshToday()
+  }, ROLLOVER_CHECK_MS)
 
   // 판이 끝나는 순간(또는 이모지가 계산된 순간) 바로 제출한다
   useGame.subscribe(state => {

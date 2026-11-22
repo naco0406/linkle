@@ -29,11 +29,15 @@ type GameState = {
   today: Today | null
   /** 오늘의 문제가 아직 없다고 서버가 답했다(출제 대기열이 비었을 때) */
   noPuzzle: boolean
+  /** 날짜가 넘어가 자동으로 끝낸 판의 문제. 홈에서 한 번 알린다. 저장하지 않는다 */
+  ended: Run['puzzle'] | null
   /** 도착 화면을 닫은 판. 닫은 뒤에는 홈(또는 문제 화면)이 보인다 */
   seen: string[]
   begin(slot: Slot, run: Run, serverNow: number): void
-  /** 서버의 오늘을 반영한다. 날짜가 넘어갔으면 끝난 지난 판을 치운다 */
+  /** 서버의 오늘을 반영한다. 날짜가 넘어갔으면 지난 판을 끝낸다(푸는 중이어도) */
   setToday(today: Today): void
+  /** 서버가 오늘 문제가 없다고 답했다. 그래도 어제 판은 끝낸다 */
+  setNoPuzzle(): void
   /** 완료 제출을 마무리한다. result가 null이면 서버가 받지 않은 판이다(더 보내지 않는다) */
   settle(runId: string, result: Run['result']): void
   link(slot: Slot, move: Move): void
@@ -49,6 +53,15 @@ export const runIn = (s: Pick<GameState, 'run' | 'others'>, slot: Slot): Run | n
 
 /** 모든 자리의 판 */
 export const allRuns = (s: Pick<GameState, 'run' | 'others'>): Run[] => [...(s.run ? [s.run] : []), ...Object.values(s.others)]
+
+/** 그 날짜에는 이미 지나간 오늘의 문제 판인지. 자정 전에 보낸 요청의 답이 늦게 와도 새 날의 판이 걸리지 않게 앞선 날짜만 본다 */
+const isPast = (run: Run, date: string) => run.mode === 'daily' && !!run.puzzle.date && run.puzzle.date < date
+
+/** 날짜가 date로 넘어갔을 때 바꿀 값. 하루 한 문제라 푸는 중이어도 끝낸다. 남겨 두면 홈이 게임 화면뿐이라 갇힌다 */
+function rollOver(run: Run | null, date: string): Partial<GameState> {
+  if (!run || !isPast(run, date)) return {}
+  return { run: null, ...(run.phase === 'playing' ? { ended: run.puzzle } : null) }
+}
 
 /** 저장된 Run을 그대로 쓸 수 있는지 본다. 지난 날짜의 끝난 오늘의 문제는 버린다 */
 function keep(run: unknown): Run | null {
@@ -92,6 +105,7 @@ export const useGame = create<GameState>()(
         clockOffset: 0,
         today: null,
         noPuzzle: false,
+        ended: null,
         seen: [],
         showArrival: (runId, show) => {
           const seen = get().seen.filter(id => id !== runId)
@@ -99,15 +113,13 @@ export const useGame = create<GameState>()(
         },
         begin: (slot, run, serverNow) => {
           const clockOffset = serverNow - Date.now()
-          if (slot === 'daily') set({ run, clockOffset })
+          if (slot === 'daily') set({ run, clockOffset, ended: null })
           else set({ others: prune({ ...get().others, [String(slot)]: run }), clockOffset })
         },
         setToday: today => {
-          const { run } = get()
-          // 진행 중인 판은 자정을 넘겨도 끝까지 풀 수 있게 둔다. 치우는 것은 끝난 판뿐이다
-          const stale = run?.mode === 'daily' && run.phase === 'finished' && run.puzzle.date !== today.date
-          set({ today, noPuzzle: false, clockOffset: today.serverNow - Date.now(), ...(stale ? { run: null } : null) })
+          set({ today, noPuzzle: false, clockOffset: today.serverNow - Date.now(), ...rollOver(get().run, today.date) })
         },
+        setNoPuzzle: () => set({ noPuzzle: true, ...rollOver(get().run, kstDate(now())) }),
         settle: (runId, result) => updateById(runId, r => (r.phase === 'finished' ? { ...r, result, outbox: 'none' } : r)),
         link: (slot, move) => {
           const before = runIn(get(), slot)
@@ -141,7 +153,10 @@ export const useGame = create<GameState>()(
         }
         // 예전에는 닫은 도착 화면을 하나만 기억했다(arrivalSeen)
         const seen = Array.isArray(s.seen) ? s.seen.filter((x): x is string => typeof x === 'string') : typeof s.arrivalSeen === 'string' ? [s.arrivalSeen] : []
-        return { ...current, run: keep(s.run), others, seen, clockOffset: typeof s.clockOffset === 'number' ? s.clockOffset : 0 }
+        // 다른 탭이 어제 판을 다시 저장했을 수 있다. 오늘을 이미 안다면 들이지 않는다
+        const run = keep(s.run)
+        const past = run && current.today && isPast(run, current.today.date)
+        return { ...current, run: past ? null : run, others, seen, clockOffset: typeof s.clockOffset === 'number' ? s.clockOffset : 0 }
       },
     },
   ),
@@ -150,6 +165,15 @@ export const useGame = create<GameState>()(
 /** 서버 시각으로 보정한 현재 시각 */
 export function now(): number {
   return Date.now() + useGame.getState().clockOffset
+}
+
+/**
+ * 화면이 오늘의 문제로 보여 줄 판. 서버의 오늘을 아직 모르거나 닿지 못해도 어제 게임 화면에 가두지 않는다.
+ * 그때는 기기 시각으로 가리기만 하고 지우는 일은 setToday가 한다(기기 시계가 틀렸으면 서버 답을 받고 다시 보인다).
+ */
+export function dailyRun(s: Pick<GameState, 'run' | 'today'>): Run | null {
+  const { run, today } = s
+  return run?.phase === 'playing' && isPast(run, today?.date ?? kstDate(now())) ? null : run
 }
 
 // 다른 탭이 저장소를 바꾸면 다시 읽는다. 두 탭에서 진행해도 로그는 하나다

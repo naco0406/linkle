@@ -26,6 +26,7 @@ export function Home({ run }: { run: Run | null }) {
   const date = today?.date ?? kstDate(now())
   const finished = run?.phase === 'finished' ? run : null
   const noPuzzle = useGame(s => s.noPuzzle)
+  const ended = useGame(s => s.ended)
   const navigate = useNavigate()
 
   return (
@@ -41,6 +42,15 @@ export function Home({ run }: { run: Run | null }) {
         <h1 className="font-brand text-[52px] font-normal leading-[56px] text-primary">Linkle</h1>
         <p className="mt-1 text-[16px] leading-6 text-ink">매일 위키피디아 탐험하기</p>
       </div>
+
+      {ended && !finished && (
+        <p role="status" className="mb-3 rounded-2xl bg-flame-soft px-4 py-3 text-center text-[14px] leading-[21px] text-ink">
+          풀던 {ended.number}번째 링클은 날짜가 바뀌어 끝났어요.
+          <Link to={`/archive/${ended.id}`} className="block font-semibold text-primary">
+            지난 문제에서 다시 풀기
+          </Link>
+        </p>
+      )}
 
       {finished ? (
         <DoneCard run={finished} onToast={setToast} />

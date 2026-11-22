@@ -49,7 +49,10 @@ export function useNavigator(run: Run, slot: Slot = 'daily') {
       setError(null)
       try {
         const next = await loadPage(via)
-        if (next.id !== currentPage(runIn(useGame.getState(), slot) ?? run).id) {
+        const live = runIn(useGame.getState(), slot)
+        // 받는 사이 날짜가 넘어가 판이 끝났거나 새 판이 시작됐으면, 지난 판의 이동을 새 판에 적지 않는다
+        if (live?.runId !== run.runId) return
+        if (next.id !== currentPage(live).id) {
           setPage(next)
           useGame.getState().link(slot, { to: { id: next.id, title: next.title }, via, lead: makeLead(next.title, next.leadText) })
         }

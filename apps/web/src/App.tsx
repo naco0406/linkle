@@ -1,6 +1,6 @@
 import { lazy, Suspense } from 'react'
 import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation } from 'react-router'
-import { useGame, useImmersive } from './game/store'
+import { dailyRun, useGame, useImmersive } from './game/store'
 import { Arrival } from './screens/Arrival'
 import { Game } from './screens/Game'
 import { Me } from './screens/Me'
@@ -17,7 +17,7 @@ const Admin = lazy(() => import('./screens/Admin').then(m => ({ default: m.Admin
 
 /** 오늘의 게임. 어느 화면을 보일지는 주소가 아니라 Run의 상태가 정한다 */
 function Daily() {
-  const run = useGame(s => s.run)
+  const run = useGame(dailyRun)
   const seen = useGame(s => s.seen)
   if (run?.phase === 'playing') return <Game run={run} />
   // 도착한 직후에는 도착 화면이 먼저 나온다. 닫으면 홈이다
@@ -31,7 +31,10 @@ function Daily() {
  */
 function Shell() {
   // 게임 중과 도착 화면에서는 탭을 치운다
-  const daily = useGame(s => s.run?.phase === 'playing' || (s.run?.phase === 'finished' && !s.seen.includes(s.run.runId)))
+  const daily = useGame(s => {
+    const run = dailyRun(s)
+    return run?.phase === 'playing' || (run?.phase === 'finished' && !s.seen.includes(run.runId))
+  })
   // 지난 문제·커뮤니티 화면은 게임 중이거나 막 도착했을 때 스스로 알린다
   const other = useImmersive(s => s.on)
   const { pathname } = useLocation()
