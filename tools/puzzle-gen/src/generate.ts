@@ -79,11 +79,11 @@ export async function generate(o: { graphDir: string; outDir: string; count: num
   const tally = { tried: 0, close: 0, unreasonable: 0, full: 0, errors: 0 }
   // 추론 검사는 요청이 많다. Actions의 제한 시간에 걸려 만든 것을 통째로 잃지 않게, 정한 시간이 되면 그때까지 찾은 것만 낸다
   const deadline = o.minutes ? Date.now() + o.minutes * 60_000 : Infinity
-  // 오늘의 문제는 난이도별 개수를 맞춘다(요일 비율). 커뮤니티 문제는 비율을 따지지 않는다
-  const want = o.pool === 'official' ? null : quotas(o.count)
-  const need = (d: Difficulty) => !want || found.filter(c => c.difficulty === d).length < want[d]
+  // 오늘의 문제도 커뮤니티 문제도 난이도별 개수를 맞춘다. 비율 없이 "어려움이 모자라면 4번 거리부터"만 남으면 전부 어려움이 된다
+  const want = quotas(o.count)
+  const need = (d: Difficulty) => found.filter(c => c.difficulty === d).length < want[d]
   // 첫 바퀴는 비율을 지키고, 그래도 모자라면 두 번째 바퀴에서 아무 난이도나 채운다
-  for (const relaxed of want ? [false, true] : [true]) {
+  for (const relaxed of [false, true]) {
     for (const s of starts) {
       if (found.length >= o.count || Date.now() > deadline) break
       if (used.has(s)) continue
@@ -93,7 +93,7 @@ export async function generate(o: { graphDir: string; outDir: string; count: num
       const at = (k: number) => [...ends].filter(e => !used.has(e) && e !== s && reach.dist[e] === k)
       const far = at(RULES.maxDist)
       const near = Array.from({ length: RULES.maxDist - RULES.minDist }, (_, i) => at(RULES.minDist + i)).flat()
-      const pickFar = far.length > 0 && (need('hard') || near.length === 0) && !(relaxed && !need('hard') && near.length > 0)
+      const pickFar = far.length > 0 && (need('hard') || near.length === 0)
       const options = shuffle(pickFar ? far : near, rand)
       const e = options[0]
       if (e === undefined) continue
@@ -158,7 +158,7 @@ export async function generate(o: { graphDir: string; outDir: string; count: num
       )
     }
   }
-  const mix = (['easy', 'normal', 'hard'] as const).map(d => `${d} ${found.filter(c => c.difficulty === d).length}${want ? `/${want[d]}` : ''}`).join(' · ')
+  const mix = (['easy', 'normal', 'hard'] as const).map(d => `${d} ${found.filter(c => c.difficulty === d).length}/${want[d]}`).join(' · ')
   log(`시도 ${tally.tried} · 주제가 가까워 뺌 ${tally.close} · 추론 검사에서 뺌 ${tally.unreasonable} · 난이도가 차서 넘김 ${tally.full} · 요청 실패 ${tally.errors} · ${mix} · 위키백과 요청 ${wiki.requests}`)
 
   mkdirSync(o.outDir, { recursive: true })
