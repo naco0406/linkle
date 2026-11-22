@@ -39,8 +39,9 @@ export class Wiki {
         const limited = e instanceof WikiError ? e.kind === 'rate_limited' : e instanceof RateLimited
         // 응답이 오지 않아 끊은 요청도 다시 한다
         const timedOut = (e instanceof DOMException && (e.name === 'TimeoutError' || e.name === 'AbortError')) || e instanceof TypeError
-        if ((!limited && !timedOut) || attempt >= 3) throw e
-        const sec = limited ? ((e as { retryAfter?: number }).retryAfter ?? 30) : 10
+        // 네트워크가 잠깐 끊긴 것(주소를 못 찾음 등)은 더 오래 기다려 본다. 요청 제한은 세 번까지
+        if ((!limited && !timedOut) || attempt >= (limited ? 3 : 8)) throw e
+        const sec = limited ? ((e as { retryAfter?: number }).retryAfter ?? 30) : 15
         console.warn(`  ${limited ? '요청 제한' : '응답 없음'}: ${sec}초 쉼 (${(e as Error).message})`)
         await new Promise(r => setTimeout(r, sec * 1000))
       }
@@ -56,8 +57,10 @@ export class Wiki {
       if (e instanceof WikiError && e.kind === 'missing') return null
       throw e
     })
-    this.pages.set(title, page)
-    return page
+    // 링크만 쓴다. 본문(문서 하나에 수백 KB)까지 쥐고 있으면 추론 검사가 수천 장을 받는 동안 메모리가 모자란다
+    const kept = page && { ...page, html: '' }
+    this.pages.set(title, kept)
+    return kept
   }
 
   /** Wikimedia REST API(조회수 등). 위키백과 API와 같은 줄에 선다 */

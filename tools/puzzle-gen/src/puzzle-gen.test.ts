@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { bfs, samplePath } from './graph.ts'
 import { queueSql, type Candidate } from './generate.ts'
-import { difficultyOf, quotas, seeded, shuffle, titleOk } from './pick.ts'
+import { difficultyOf, quotas, seeded, shuffle, titleOk, unthinkable } from './pick.ts'
+import { distanceToDoors, guidedPath } from './reason.ts'
 import { columnsOf, parseValues, type Value } from './sql.ts'
 
 describe('덤프 읽기', () => {
@@ -92,5 +93,48 @@ describe('대기열 SQL', () => {
     const sql = queueSql([c], 5)
     expect(sql).toContain("'Rock ''n'' roll'")
     expect(sql.startsWith('INSERT OR IGNORE INTO puzzle_queue')).toBe(true)
+  })
+})
+
+describe('추론 검사', () => {
+  it('언어·연도·표기는 정답 길로 지나가지 않는다', () => {
+    expect(['영어', '스페인어', '고대 그리스어', '2010년', '기원전 3세기', '6월', '화요일', '년', '협정 세계시', '작품 목록'].every(unthinkable)).toBe(true)
+    expect(['연어', '상어', '인어', '언어', '요일', '프랑스', '인상주의', '그리스 신화', '소년'].some(unthinkable)).toBe(false)
+  })
+  it('민감한 제목은 후보에서 뺀다', () => {
+    expect(['콘돔', '코카인', '사이비 종교', '성폭력'].some(titleOk)).toBe(false)
+    expect(['에로스', '정자', '고환율', '대마도', '킬리만자로산'].every(titleOk)).toBe(true)
+  })
+
+  // 지도: 0 → 1 → 3(문) → 6(도착), 0 → 2 → 4(문) → 6, 0 → 5 → 3
+  const edges = [[0, 1], [0, 2], [0, 5], [1, 3], [2, 4], [5, 3], [3, 6], [4, 6]] as const
+  const inAt = new Int32Array(8)
+  for (const [, b] of edges) inAt[b + 1]!++
+  for (let i = 0; i < 7; i++) inAt[i + 1]! += inAt[i]!
+  const ins = Int32Array.from([...edges].sort((a, b) => a[1] - b[1]).map(([a]) => a))
+  const find = (game: Record<number, number[]>, o: { maxMoves?: number; skip?: (n: number) => boolean } = {}) => {
+    const skip = o.skip ?? (() => false)
+    return guidedPath({
+      start: 0,
+      end: 6,
+      maxMoves: o.maxMoves ?? 3,
+      doors: new Set([3, 4]),
+      toDoor: distanceToDoors({ inAt, in: ins }, [3, 4], 3, skip),
+      linksOf: async u => (game[u] ?? []).map(node => ({ node, via: String(node) })),
+      skip,
+      rank: n => -n,
+    }).then(p => p?.map(x => x.node) ?? null)
+  }
+  it('지도에만 있는 링크(탐색 상자)에서 막히면 다른 문으로 돌아간다', async () => {
+    expect(await find({ 0: [1, 2], 1: [], 2: [4], 4: [6] })).toEqual([2, 4, 6])
+  })
+  it('문에서 도착으로 가는 링크도 게임에 있어야 한다', async () => {
+    expect(await find({ 0: [1], 1: [3], 3: [] })).toBeNull()
+  })
+  it('지나가지 않을 문서는 피한다', async () => {
+    expect(await find({ 0: [1, 5], 1: [3], 5: [3], 3: [6] }, { skip: n => n === 1 })).toEqual([5, 3, 6])
+  })
+  it('정해진 횟수를 넘는 길은 쓰지 않는다', async () => {
+    expect(await find({ 0: [1], 1: [3], 3: [6] }, { maxMoves: 2 })).toBeNull()
   })
 })

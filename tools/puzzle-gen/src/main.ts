@@ -7,7 +7,8 @@ import { buildGraph } from './graph.ts'
 //   used      운영에서 이미 쓴 제목 받기 (LINKLE_URL, LINKLE_ADMIN_TOKEN)
 //   upload    만든 후보를 운영에 넣기 (--pool daily|official)
 //   solve     정해진 출발·도착 쌍의 정답 경로 찾기 (--in pairs.json → out/solved.json)
-//   generate  후보 고르기 → 게임 규칙으로 경로 확인 → out/queue.sql(오늘의 문제 대기열) 또는 --pool official이면 out/official.sql(커뮤니티)
+//   reason    이미 있는 문제들을 추론 검사 (--in pairs.json → out/reason.json)
+//   generate  후보 고르기 → 추론 검사(뜻이 가까운 문, 게임 규칙으로 경로 확인) → out/queue.sql(오늘의 문제 대기열) 또는 --pool official이면 out/official.sql(커뮤니티)
 
 const here = new URL('..', import.meta.url).pathname
 const DATA = join(here, 'data')
@@ -37,11 +38,17 @@ if (cmd === 'build') {
     seed: Number(opt('seed', String(Date.now() % 1e9))),
     pool: opt('pool', 'daily') === 'official' ? 'official' : 'daily',
     exclude,
+    // --minutes <분>: 이 시간이 지나면 그때까지 찾은 것만 낸다
+    minutes: Number(opt('minutes', '0')),
   })
 } else if (cmd === 'solve') {
   // --in <파일>: [{start:{id,title}, end:{id,title}}] → out/solved.json
   const { solve } = await import('./solve.ts')
   await solve(GRAPH, opt('in', join(OUT, 'pairs.json')), opt('out', join(OUT, 'solved.json')))
+} else if (cmd === 'reason') {
+  // --in <파일>: [{key, start:{id,title}, end:{id,title}}] → out/reason.json. 이미 있는 문제를 추론 검사한다
+  const { reasonAll } = await import('./reason.ts')
+  await reasonAll(GRAPH, opt('in', join(OUT, 'reason-in.json')), opt('out', join(OUT, 'reason.json')))
 } else if (cmd === 'used') {
   const { fetchUsed } = await import('./remote.ts')
   await fetchUsed(opt('out', join(OUT, 'used.txt')))
