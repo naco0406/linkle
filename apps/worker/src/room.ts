@@ -42,16 +42,18 @@ export class Room extends DurableObject<RoomEnv> {
           const row = await db.prepare(`SELECT ${COLS} FROM puzzles WHERE id = ?1`).bind(rules.puzzleId).first<PuzzleRow>()
           return row && allowed(row, rules, host, kstDate(Date.now())) ? { puzzle: toPuzzle(row), card: toCard(row), authorId: row.author_id } : null
         }
-        // 랜덤 풀에서 이 방이 아직 안 낸 것, 달리는 사람 아무도 안 풀어 본 것을 먼저. 그 난이도가 없으면 다른 난이도에서
-        const pickFrom = (difficulty: string | null) =>
+        // 랜덤 풀에서 이 방이 아직 안 낸 것, 달리는 사람 아무도 안 풀어 본 것을 먼저. 그 난이도가 없으면 다른 난이도에서.
+        // 랜덤 풀이 비었으면(처음 배포했을 때, 채우기가 도는 중) 링클이 낸 커뮤니티 문제에서 뽑는다. 같은 검사를 거친 문제다
+        const pickFrom = (kind: 'random' | 'official', difficulty: string | null) =>
           db
             .prepare(
-              `SELECT ${COLS} FROM puzzles WHERE kind = 'random' AND status = 'published' AND (?1 IS NULL OR difficulty = ?1)
+              `SELECT ${COLS} FROM puzzles WHERE kind = ?3 AND status = 'published' AND (?1 IS NULL OR difficulty = ?1)
                AND id NOT IN (SELECT value FROM json_each(?2)) ORDER BY RANDOM() LIMIT 1`,
             )
-            .bind(difficulty, JSON.stringify(exclude))
+            .bind(difficulty, JSON.stringify(exclude), kind)
             .first<PuzzleRow>()
-        const row = (await pickFrom(rules.difficulty)) ?? (await pickFrom(null))
+        const row =
+          (await pickFrom('random', rules.difficulty)) ?? (await pickFrom('random', null)) ?? (await pickFrom('official', rules.difficulty)) ?? (await pickFrom('official', null))
         return row ? { puzzle: toPuzzle(row), card: toCard(row), authorId: null } : null
       },
       createRuns: async (puzzle: Puzzle, racers: { seat: number; playerId: string; salt: number }[], startsAt: number, tag: string) => {
