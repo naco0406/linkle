@@ -1,0 +1,10 @@
+challenge
+ghost
+Durable
+seat
+token
+host
+spectator
+unlisted
+run
+worker

@@ -1,0 +1,476 @@
+<!-- bd:icons --><!-- /bd:icons -->
+
+<nav class="bd-nav"><div class="bd-nav-inner"><b>링클 친구와 겨루기 시안</b>
+  <a href="#start">출발점</a><a href="#dirs">방향</a><a href="#flow">흐름</a><a href="#s-entry">진입점</a><a href="#s-challenge">도전장</a><a href="#s-lobby">대기실</a><a href="#s-reveal">공개</a><a href="#s-race">달리기</a><a href="#s-result">결과</a><a href="#s-make">문제 내기</a><a href="#s-states">상태</a><a href="#scope">1차 범위</a><a href="#spec">규격</a><a href="#rules">규칙</a><a href="#refs">레퍼런스</a><a href="#next">순서 · 질문</a>
+</div></nav>
+
+<main class="bd-wrap">
+
+<section class="bd-hero">
+  <div class="bd-kicker">링클 · 친구와 겨루기 화면 시안 v1 · 2026-11-23 · 기준: main 3483ed5 · 설계 문서 16장</div>
+  <h1>모르는 사람과의 순위보다, 단톡방 친구를 이기는 게 더 재미있어요</h1>
+  <p class="bd-lead">링클은 처음부터 "랭킹 대신 지인끼리 공유로 겨룬다"를 원칙으로 삼았어요. 지금 커뮤니티는 모르는 사람과 겨루는 순위표뿐이에요. 이 시안은 <b>도전장</b>(따로, 아무 때나)과 <b>같이 달리기</b>(동시에 출발)를 커뮤니티 탭 안에 넣고, 사용자 출제를 "친구에게 내기"로 먼저 여는 화면을 그려요. 화면은 지금 앱의 실측 값으로 만든 키트로 그렸어요. <b>아직 구현 전</b>이고, 화면 속 이름과 숫자는 예시예요.</p>
+  <div class="bd-legend">
+    <span style="display:inline-flex;align-items:center;gap:6px"><i style="width:14px;height:14px;border-radius:4px;background:#e5534b;display:inline-block"></i><i style="width:14px;height:14px;border-radius:4px;background:#f0883e;display:inline-block"></i><i style="width:14px;height:14px;border-radius:4px;background:#eab308;display:inline-block"></i><i style="width:14px;height:14px;border-radius:4px;background:#57ab5a;display:inline-block"></i><i style="width:14px;height:14px;border-radius:4px;background:#3366cc;display:inline-block"></i> 목표와 멀어요 → 가까워요 (지금 쓰는 유사도 칸)</span>
+    <span class="bd-muted">사람은 색으로 나누지 않아요. 동물 첫 글자와 이름으로 나눠요</span>
+  </div>
+  <div class="bd-grid3" style="margin-top:48px">
+    <div class="bd-card"><span class="bd-proposed">제안</span><h3 style="margin-top:10px">도착하면 "도전장 보내기"</h3><p class="bd-small bd-muted">커뮤니티와 지난 문제의 "결과 공유"가 도전장이 돼요. 받은 친구는 내 진행을 고스트로 보며 풀고, 같은 링크로 푼 사람끼리 작은 순위표가 생겨요.</p></div>
+    <div class="bd-card"><span class="bd-proposed">제안</span><h3 style="margin-top:10px">방 하나에 2~8명, 같은 순간 출발</h3><p class="bd-small bd-muted">코드·QR·링크로 모이고, 룰렛으로 문제를 뽑고, 레이스 바로 서로의 이동 수와 색을 보며 달려요.</p></div>
+    <div class="bd-card"><span class="bd-decided">결정됨</span><h3 style="margin-top:10px">16.7에서 정한 네 가지</h3><p class="bd-small bd-muted">승부 방식은 방장이 골라요(기본: 먼저 도착). 친구의 색은 보이고 내 색은 숨겨요. 먼저 도착 방식은 첫 도착에서 판이 끝나요. 오늘의 문제 도전장은 1차에서 빼요.</p></div>
+  </div>
+</section>
+
+<!-- ───── 01 · 출발점 ───── -->
+<section class="bd-chapter" id="start">
+  <div class="bd-kicker">01 · 출발점</div>
+  <h2>지금은 공유 문구를 단톡방에 붙여 넣고, 각자 풀고, 숫자만 견줘요</h2>
+  <p class="bd-lead">지금 앱(main 3483ed5)을 가짜 API로 띄워 찍었어요. 새 기능은 아래 네 화면 위에 얹혀요. 친구와 겨룰 장치가 따로 없어서, 사람들은 이모지 공유 문구를 단톡방에 붙여 넣고 같은 문제를 각자 풀어 숫자만 비교해요.</p>
+  <div class="bd-shots" style="grid-template-columns:repeat(4,1fr)">
+    <figure><div class="bd-shotbox"><img class="bd-shot" src="shots/community.png" data-pins="shots/pins.json#community" alt="커뮤니티 목록"></div><figcaption class="bd-cap">커뮤니티 목록 (1 · 2)</figcaption></figure>
+    <figure><div class="bd-shotbox"><img class="bd-shot" src="shots/intro.png" data-pins="shots/pins.json#intro" alt="문제 카드"></div><figcaption class="bd-cap">문제 카드 (3 · 4)</figcaption></figure>
+    <figure><div class="bd-shotbox"><img class="bd-shot" src="shots/game.png" data-pins="shots/pins.json#game" alt="게임"></div><figcaption class="bd-cap">게임 (5 · 6)</figcaption></figure>
+    <figure><div class="bd-shotbox"><img class="bd-shot" src="shots/arrival.png" data-pins="shots/pins.json#arrival" alt="도착"></div><figcaption class="bd-cap">도착 (7 · 8)</figcaption></figure>
+  </div>
+  <ol class="bd-diag">
+    <li><b>여기에 "친구와 달리기" 카드가 들어와요.</b> 목록 맨 위, 제목 바로 아래예요. 지금 커뮤니티에는 친구를 부를 길이 없어요. <span class="bd-src">screens/Community.tsx — ListPage</span></li>
+    <li><b>설명 문구가 바뀌어요.</b> 지금은 "링클이 낸 문제를 풀고 순위를 겨뤄요"뿐이라 커뮤니티가 모르는 사람과의 순위표로만 읽혀요. <span class="bd-src">Community.tsx — desc</span></li>
+    <li><b>도전장 카드는 이 문제 카드의 모양을 그대로 써요.</b> 잠긴 두 칸, 숫자 타일, 시작 단추, 아래 한 줄 안내가 같아요. <span class="bd-src">screens/Puzzle.tsx — Intro · ui/cards.tsx — Route</span></li>
+    <li><b>도전장 순위는 이 순위표 카드를 다시 써요.</b> 기준만 "시간 먼저"로 바뀌어요. <span class="bd-src">ui/Board.tsx — BoardCard</span></li>
+    <li><b>고스트 줄과 레이스 바는 머리 바로 아래에 들어가요.</b> 머리와 바닥은 어떤 상황에서도 함께 보여야 해서, 둘 사이의 한 줄만 늘려요. <span class="bd-src">screens/Game.tsx — header · TRAIL</span></li>
+    <li><b>바닥은 그대로 둬요.</b> 되돌아가기와 시간, 이동 수가 이미 엄지 자리에 있어요. 반응 단추는 바닥이 아니라 레이스 바 끝에 둬요. <span class="bd-src">Game.tsx — footer</span></li>
+    <li><b>"결과 공유"가 "도전장 보내기"가 돼요.</b> 공유 문구에 이 문제로 겨루는 링크가 붙어요. 오늘의 문제는 그대로예요(16.7). <span class="bd-src">screens/Arrival.tsx — Cta · ui/share.ts</span></li>
+    <li><b>순위표 아래에 도전장 순위와 두 길 견주기가 붙어요.</b> 도착 화면이 children으로 카드를 받는 구조라 자리가 이미 있어요. <span class="bd-src">Arrival.tsx — children</span></li>
+  </ol>
+  <div class="bd-grid2" style="margin-top:40px">
+    <div class="bd-card"><h3>지금의 우회 경로</h3>
+      <div class="bd-rule"><span class="no">1</span><div><b>도착 화면에서 "결과 공유"를 눌러 단톡방에 붙여요.</b> 문구에는 문제 번호와 점수, 이모지만 있어서 받은 친구가 같은 문제를 찾으려면 커뮤니티 목록을 뒤져야 해요.</div></div>
+      <div class="bd-rule"><span class="no">2</span><div><b>친구가 각자 풀고 숫자를 다시 붙여요.</b> 누가 이겼는지는 사람이 눈으로 견줘요. 길이 어디서 갈렸는지는 알 수 없어요.</div></div>
+      <div class="bd-rule"><span class="no">3</span><div><b>같은 순간에 출발할 방법이 없어요.</b> "하나 둘 셋 하면 눌러"로 맞춰도 시간은 각자 시작을 누른 때부터 흘러요.</div></div>
+    </div>
+    <div class="bd-card"><h3>이미 있는 것 / 새로 필요한 것</h3>
+      <table class="bd-table"><tr><th>이미 있음</th><th>위치</th></tr>
+        <tr><td>문제 카드, 잠긴 두 칸, 숫자 타일</td><td><code>Puzzle.tsx</code>, <code>ui/cards.tsx</code></td></tr>
+        <tr><td>순위표 카드, 자동 닉네임</td><td><code>ui/Board.tsx</code>, <code>core/nickname.ts</code></td></tr>
+        <tr><td>이동 로그, 유사도 칸, 도착 화면 틀</td><td><code>core/run.ts</code>, <code>Arrival.tsx</code></td></tr>
+        <tr><td>위키 문서 검색 입력</td><td><code>ui/WikiSearch.tsx</code> (13장)</td></tr>
+        <tr><th>새로 필요</th><th></th></tr>
+        <tr><td>도전장 코드와 순위</td><td>D1 <code>challenges</code>, <code>runs.challenge</code></td></tr>
+        <tr><td>방(실시간)</td><td>Worker에 Durable Object <code>Room</code></td></tr>
+        <tr><td>랜덤 풀, 룰렛 미끼 제목</td><td><code>puzzles.kind='random'</code>, 정적 JSON</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ───── 02 · 방향 ───── -->
+<section class="bd-chapter" id="dirs">
+  <div class="bd-kicker">02 · 방향</div>
+  <h2>친구와 겨루기를 어디에 둘지가 갈림길이에요</h2>
+  <p class="bd-lead">둘 다 만든다는 것은 정해졌어요(16장). 남은 것은 자리예요. 셋을 그려 봤고, <b>A를 추천해요</b>. 1차는 A의 도전장부터, 다음에 A의 같이 달리기를 열어요.</p>
+  <div class="bd-grid3">
+    <div class="bd-card bd-dir pick">
+      <div class="bd-dir-head"><span class="bd-tag pick">A · 커뮤니티 안</span><span class="bd-proposed">추천</span></div>
+      <h3>커뮤니티 맨 위 카드 + 도착 화면의 도전장</h3>
+      <div class="bd-wire ph"><div class="m">
+        <div class="blk" style="min-height:24px"><span>커뮤니티 제목</span></div>
+        <div class="blk key" style="height:72px"><span>친구와 달리기 · 방 만들기</span><div class="g-input" style="height:18px"></div></div>
+        <div class="blk"><span>받은 도전장</span><div class="g-list" style="min-height:10px"></div></div>
+        <div class="blk" style="height:70px"><span>문제 목록</span><div class="g-list"></div></div>
+        <div class="blk" style="margin-top:auto"><span>아래 탭 4개</span><div class="tab"><i></i><i></i><i></i><i class="on"></i></div></div>
+      </div></div>
+      <p class="bd-wire-cap"><b>핵심 한 수</b> · 커뮤니티 탭 → 방 만들기 / 도착 화면 → 도전장 → 단톡방</p>
+      <div class="bd-pc"><div><h4>좋은 점</h4><ul><li>아래 탭이 그대로 네 개예요</li><li>도전장은 이미 쓰는 "결과 공유" 자리에 들어가 새로 배울 것이 없어요</li><li>받은 도전장이 커뮤니티에 모여 다시 찾기 쉬워요</li></ul></div><div><h4>대가</h4><ul><li>커뮤니티 탭이 "공개 순위"와 "친구" 두 가지 일을 해요</li><li>오늘의 문제만 하는 사람은 같이 달리기를 늦게 발견해요</li></ul></div></div>
+      <p class="bd-prec">선례 · <a href="#refs">Lichess 친구에게 도전</a> · <a href="#refs">Wordle 공유</a> · <a href="#refs">The Wiki Game 그룹</a></p>
+    </div>
+    <div class="bd-card bd-dir">
+      <div class="bd-dir-head"><span class="bd-tag">B · 새 탭 "친구"</span></div>
+      <h3>아래 탭을 다섯 개로, 친구 일을 한곳에</h3>
+      <div class="bd-wire ph"><div class="m">
+        <div class="blk" style="min-height:24px"><span>친구 제목</span></div>
+        <div class="blk" style="height:56px"><span>같이 달리기</span><div class="g-input" style="height:18px"></div></div>
+        <div class="blk" style="height:56px"><span>받은 · 보낸 도전장</span><div class="g-list"></div></div>
+        <div class="blk" style="height:42px"><span>내 문제함</span><div class="g-list"></div></div>
+        <div class="blk key" style="margin-top:auto"><span>아래 탭 5개</span><div class="tab" style="grid-template-columns:repeat(5,1fr)"><i></i><i></i><i></i><i></i><i class="on"></i></div></div>
+      </div></div>
+      <p class="bd-wire-cap"><b>핵심 한 수</b> · "친구" 탭 하나에 방, 도전장, 내 문제가 다 있어요</p>
+      <div class="bd-pc"><div><h4>좋은 점</h4><ul><li>친구 기능이 가장 잘 보여요</li><li>커뮤니티 탭은 공개 순위만 남아 뜻이 또렷해요</li></ul></div><div><h4>대가</h4><ul><li>아래 탭 다섯 칸은 320px 폭에서 글자가 잘려요(지금 탭 CSS가 네 칸 기준)</li><li>"지인끼리"가 하루 한 번 게임보다 커 보여 정체성이 흐려져요</li></ul></div></div>
+      <p class="bd-prec">선례 · <a href="#refs">Duolingo Friends Quests</a>(친구 일을 한 모듈에). 데일리 단어 게임에서 친구 탭을 둔 곳은 찾지 못했어요</p>
+    </div>
+    <div class="bd-card bd-dir">
+      <div class="bd-dir-head"><span class="bd-tag">C · 끝낸 뒤에만</span></div>
+      <h3>도착 화면에서만 도전장과 방이 생겨요</h3>
+      <div class="bd-wire ph"><div class="m">
+        <div class="blk" style="min-height:24px"><span>○○에 도착!</span></div>
+        <div class="blk" style="height:40px"><span>숫자 세 칸</span><div class="g-metrics"><i></i><i></i><i></i></div></div>
+        <div class="blk" style="height:64px"><span>지나온 길</span><div class="g-list"></div></div>
+        <div class="blk key" style="margin-top:auto;height:58px"><span>도전장 · 이 문제로 방 열기</span><div class="g-input" style="height:18px"></div></div>
+      </div></div>
+      <p class="bd-wire-cap"><b>핵심 한 수</b> · 풀어 본 문제만 친구에게 건네요. 따로 찾아갈 곳이 없어요</p>
+      <div class="bd-pc"><div><h4>좋은 점</h4><ul><li>화면을 거의 늘리지 않아요</li><li>"내가 해 본 문제"라 고르는 고민이 없어요</li></ul></div><div><h4>대가</h4><ul><li>방장이 이미 답을 알아서 같이 달리기가 성립하지 않아요</li><li>랜덤 룰렛이 들어갈 자리가 없어요</li></ul></div></div>
+      <p class="bd-prec">선례 · <a href="#refs">Wordle 공유</a> · <a href="#refs">Zwift HoloReplay</a>(끝낸 기록이 다음 사람의 고스트)</p>
+    </div>
+  </div>
+</section>
+
+<!-- ───── 03 · 흐름 ───── -->
+<section class="bd-chapter" id="flow">
+  <div class="bd-kicker">03 · 흐름</div>
+  <h2>도전장은 도착 화면에서, 같이 달리기는 커뮤니티에서 시작해 서로 이어져요</h2>
+  <p class="bd-lead">세 갈래 모두 같은 게임 화면과 도착 화면을 지나요. 내가 낸 문제는 도전장이나 방으로 흘러 들어가고, 방에서 푼 문제는 다시 도전장이 돼요. 뒤의 화면 장은 이 마디들을 하나씩 키운 거예요.</p>
+  <div class="fl">
+    <div class="fl-lane"><div class="fl-name">도전장<span>따로, 아무 때나</span></div><div class="fl-row">
+      <div class="fl-n"><i>①</i><b>도착 화면</b><span>도전장 보내기</span></div><div class="fl-a">→</div>
+      <div class="fl-n"><i>②</i><b>단톡방</b><span>링크 /c/코드</span></div><div class="fl-a">→</div>
+      <div class="fl-n key"><i>③</i><b>도전장 카드</b><span>기록은 보이고 문서는 잠김</span></div><div class="fl-a">→</div>
+      <div class="fl-n key"><i>④</i><b>고스트와 풀기</b><span>같은 시각의 친구 진행</span></div><div class="fl-a">→</div>
+      <div class="fl-n"><i>⑤</i><b>나란히 견주기</b><span>두 길, 도전장 순위</span></div><div class="fl-loop">↺ 되받아치기 → ①</div>
+    </div></div>
+    <div class="fl-lane"><div class="fl-name">같이 달리기<span>같은 순간 출발</span></div><div class="fl-row">
+      <div class="fl-n"><i>⑥</i><b>방 만들기</b><span>누르면 바로 방</span></div><div class="fl-a">→</div>
+      <div class="fl-n"><i>⑦</i><b>초대와 참가 확인</b><span>코드 · QR · 링크</span></div><div class="fl-a">→</div>
+      <div class="fl-n key"><i>⑧</i><b>대기실</b><span>문제 · 승부 · 시간</span></div><div class="fl-a">→</div>
+      <div class="fl-n key"><i>⑨</i><b>공개 연출</b><span>룰렛 → 3, 2, 1</span></div><div class="fl-a">→</div>
+      <div class="fl-n key"><i>⑩</i><b>달리기</b><span>레이스 바</span></div><div class="fl-a">→</div>
+      <div class="fl-n"><i>⑪</i><b>결과</b><span>가장 가까웠던 순</span></div><div class="fl-loop">↺ 한 판 더 → ⑧</div>
+    </div></div>
+    <div class="fl-lane"><div class="fl-name">친구에게 내기<span>사용자 출제 2a</span></div><div class="fl-row">
+      <div class="fl-n"><i>⑫</i><b>고르기</b><span>출발 · 도착 검색</span></div><div class="fl-a">→</div>
+      <div class="fl-n"><i>⑬</i><b>직접 풀기</b><span>내 길 = 정답 예시</span></div><div class="fl-a">→</div>
+      <div class="fl-n"><i>⑭</i><b>내 문제함</b><span>도전, 도착률</span></div><div class="fl-a">→</div>
+      <div class="fl-n"><b>도전장 ③ 또는 방 ⑧</b><span>방에서는 나는 지켜봐요</span></div><div class="fl-a">→</div>
+      <div class="fl-n"><b>커뮤니티에 올리기</b><span>친구 5명 넘게 풀면 (2b)</span></div>
+    </div></div>
+  </div>
+</section>
+
+<!-- ───── 04 · 진입점 ───── -->
+<section class="bd-chapter" id="s-entry">
+  <div class="bd-kicker">04 · 흐름 ①⑥ 진입점</div>
+  <h2>커뮤니티 맨 위에 방 만들기, 도착 화면에는 도전장 보내기</h2>
+  <p class="bd-lead">지금 커뮤니티는 정렬과 목록뿐이고, 도착 화면의 주 단추는 "결과 공유"예요. 커뮤니티 맨 위에 친구와 달리기 카드와 받은 도전장을 두고, 커뮤니티와 지난 문제의 도착 화면에서는 "결과 공유"를 "도전장 보내기"로 바꿔요. 화면마다 주 단추는 여전히 하나예요.</p>
+  <div class="bd-row">
+    <div class="bd-cell"><h3 class="bd-sub" style="margin-top:0">지금 · 커뮤니티</h3><!--IMG:community--></div>
+    <div class="bd-cell"><h3 class="bd-sub" style="margin-top:0">시안 · 커뮤니티</h3><!--P:comm-new-->
+      <ol class="bd-notes">
+        <li><b>친구와 달리기 카드가 목록보다 먼저 와요.</b> 흰 카드 하나에 이름, 한 줄 설명, 주 단추를 넣었어요. 새 컴포넌트 없이 Card · Badge · Cta · TextButton으로 그려요.</li>
+        <li><b>누르면 바로 방이 생겨요.</b> 만들기와 들어가기를 고르게 하지 않아요(usagi 같이 하기와 같아요). 들어가기는 아래 글자 단추 "코드로 들어가기"예요.</li>
+        <li><b>받은 도전장은 아직 안 푼 것만 보여요.</b> 링크를 단톡방에서 놓쳐도 여기서 다시 찾아요. 이 기기에 남은 기록으로 알아요. 그 아래 정렬과 링클이 낸 문제 목록은 그대로예요.</li>
+      </ol></div>
+  </div>
+  <div class="bd-row">
+    <div class="bd-cell"><h3 class="bd-sub" style="margin-top:0">지금 · 도착</h3><!--IMG:arrival--></div>
+    <div class="bd-cell"><h3 class="bd-sub" style="margin-top:0">시안 · 도착 (커뮤니티, 지난 문제)</h3><!--P:arr-new-->
+      <ol class="bd-notes">
+        <li><b>"결과 공유"가 "도전장 보내기"가 돼요.</b> 공유 문구(제목, 점수, 이모지)는 그대로고 첫 줄이 "도전장"으로, 주소가 <code>/c/코드</code>로 바뀌어요. 두 단추를 나란히 두지 않아요.</li>
+        <li><b>무엇이 가는지 한 줄로 말해요.</b> 스포일러가 없다는 것을 보내는 사람이 알고 누르게 해요.</li>
+      </ol></div>
+  </div>
+</section>
+
+<!-- ───── 05 · 도전장 ───── -->
+<section class="bd-chapter" id="s-challenge">
+  <div class="bd-kicker">05 · 흐름 ③④⑤ 도전장</div>
+  <h2>받은 사람은 친구의 기록을 보고 시작해서, 친구의 그림자와 함께 달려요</h2>
+  <p class="bd-lead">도전장 카드는 문제 카드와 같은 모양이에요. 문서는 잠겨 있고, 보낸 사람의 시간과 색 칸이 보여요. 게임 중에는 머리 아래 한 줄이 "같은 시각에 친구는 몇 번째였나"를 알려 주고, 도착하면 두 길이 어디서 갈렸는지 나란히 보여요.</p>
+  <div class="bd-row">
+    <div class="bd-cell"><h3 class="bd-sub" style="margin-top:0">③ 도전장 카드</h3><!--P:ch-card-->
+      <ol class="bd-notes">
+        <li><b>제목이 사람이에요.</b> "커뮤니티 #16"보다 "펭귄님이 보냈어요"가 누르게 만들어요. 번호는 오른쪽 위로 내렸어요.</li>
+        <li><b>문서는 시작을 누르기 전까지 잠겨요.</b> 미리 보이면 길을 찾아 두고 시작할 수 있어요(12.2).</li>
+        <li><b>이길 목표를 먼저 보여 줘요.</b> 보낸 사람의 시간, 이동 수, 색 칸. 문서 이름이 없어 스포일러가 아니에요.</li>
+        <li><b>고스트가 있다는 것을 미리 알려요.</b> 처음 보는 사람이 위의 줄을 오류로 오해하지 않게요.</li>
+        <li><b>같은 링크로 푼 사람끼리의 순위예요.</b> 시간 먼저, 이동 수는 옆에. 보낸 사람에게 "보낸 사람" 꼬리표.</li>
+      </ol></div>
+    <div class="bd-cell"><h3 class="bd-sub" style="margin-top:0">④ 고스트와 풀기</h3><!--P:ch-game-->
+      <ol class="bd-notes">
+        <li><b>고스트 줄은 머리 바로 아래 한 줄(40)이에요.</b> 같은 경과 시간에 보낸 사람이 몇 번째 이동이었는지와 그 문서의 색. 내 색은 여전히 안 보여요. 누르면 접혀요.</li>
+        <li><b>바닥은 지금과 같아요.</b> 시간과 이동 수를 고스트와 견주는 것은 보는 사람의 몫이에요. 보낸 사람이 도착한 시각이 지나면 고스트 줄이 "펭귄님은 01:12에 도착했어요"로 바뀌어요.</li>
+      </ol></div>
+    <div class="bd-cell"><h3 class="bd-sub" style="margin-top:0">⑤ 나란히 견주기</h3><!--P:ch-arrival-->
+      <ol class="bd-notes">
+        <li><b>숫자 세 칸 대신 나와 친구 두 칸.</b> 이긴 쪽에 파란 테두리와 "이겼어요". 도전장의 기준은 시간이에요.</li>
+        <li><b>두 길을 갈린 곳에서 끊어 보여요.</b> 함께 지난 문서는 옅은 파랑, 갈린 뒤는 각자. 둘 다 끝냈으니 문서 이름을 보여 줘요.</li>
+        <li><b>같은 링크의 순위에서 내 줄이 보여요.</b> 내가 1위가 되면 맨 위에 있어요.</li>
+        <li><b>주 단추는 "나도 도전장 보내기".</b> 내 판으로 새 도전장을 만들어 되받아쳐요.</li>
+      </ol></div>
+  </div>
+</section>
+
+<!-- ───── 06 · 대기실 ───── -->
+<section class="bd-chapter" id="s-lobby">
+  <div class="bd-kicker">06 · 흐름 ⑦⑧ 대기실</div>
+  <h2>대기실 한 화면에서 부르고, 고르고, 출발해요</h2>
+  <p class="bd-lead">usagi 배구의 같이 하기처럼 방 카드에 코드, QR, 보내기, 찍기를 모았어요. 자리는 두 줄로 놓아 8명까지 한 화면에 들어오고, 문제, 승부, 시간은 설정 세 줄로 방장만 바꿔요. 혼자 기다리는 첫 상태와, 링크로 들어온 사람이 보는 참가 확인도 그렸어요.</p>
+  <div class="bd-row">
+    <div class="bd-cell"><h3 class="bd-sub" style="margin-top:0">⑧ 대기실 (4명)</h3><!--P:lobby-->
+      <ol class="bd-notes">
+        <li><b>코드 네 자리가 가장 커요.</b> 헷갈리는 0·O·1·I·L을 뺀 31글자(usagi와 같음). 누르면 초대 링크가 복사돼요.</li>
+        <li><b>찍기는 옆에 있는 친구용이에요.</b> 둘 다 방을 만들어 버렸을 때 한 명이 상대 QR을 찍어 그 방으로 옮겨요.</li>
+        <li><b>자리는 두 줄 칸이에요.</b> 방장은 왕관, 준비는 파란 글자, 기다리는 사람은 회색. 8명이면 네 줄이에요.</li>
+        <li><b>반응은 자리 위에 잠깐 떠요.</b> 정해진 여섯 개뿐이고 글은 쓸 수 없어요.</li>
+        <li><b>설정은 세 줄.</b> 문제(랜덤, 커뮤니티, 지난 문제, 내가 낸 문제), 승부(먼저 도착 / 적은 이동), 시간. 방장이 아니면 화살표 없이 읽기만 해요.</li>
+        <li><b>출발은 방장만, 준비한 사람이 2명 넘으면.</b> 단추에 준비 인원이 보여 기다릴지 말지 정할 수 있어요.</li>
+      </ol></div>
+    <div class="bd-cell"><h3 class="bd-sub" style="margin-top:0">처음 · 혼자 기다리는 중</h3><!--P:lobby-solo-->
+      <ol class="bd-notes">
+        <li><b>혼자일 때는 QR이 주인공이에요.</b> 같은 자리에 있는 친구가 바로 찍을 수 있게 크게 둬요.</li>
+        <li><b>보내기와 찍기를 글자로 풀어 썼어요.</b> 처음 보는 사람도 무엇을 하는 단추인지 알아요.</li>
+        <li><b>빈 자리는 점선 칸이에요.</b> 출발 단추는 2명이 될 때까지 흐려요.</li>
+      </ol></div>
+    <div class="bd-cell"><h3 class="bd-sub" style="margin-top:0">⑦ 링크로 들어온 사람</h3><!--P:join-->
+      <ol class="bd-notes">
+        <li><b>들어가기 전에 누구의 방인지 보여 줘요.</b> 링크를 잘못 눌렀는지 알 수 있어요(Among Us의 참가 확인).</li>
+        <li><b>규칙을 미리 한 줄로.</b> 들어간 뒤 놀라지 않게요.</li>
+        <li><b>이름은 자동이고, 다시 뽑을 수 있어요.</b> 직접 쓰지는 않아요(Kahoot 이름 굴리기와 같은 생각).</li>
+      </ol></div>
+  </div>
+  <div class="bd-row">
+    <div class="bd-cell"><h3 class="bd-sub" style="margin-top:0">문제 고르기 (방장)</h3><!--P:pick-->
+      <ol class="bd-notes">
+        <li><b>기본은 랜덤, 고를 것은 난이도뿐이에요.</b> 길이 확인된 문제 풀에서 서버가 뽑고, 화면은 룰렛으로 보여 줘요. 쉬움, 보통, 어려움은 오늘의 문제와 같은 기준이에요(7.4).</li>
+        <li><b>커뮤니티 문제는 순위표에도 올라요.</b> 처음 도전인 사람만요. 먼저 도착 방식에서 멈춘 판도 첫 도전을 쓴 것으로 쳐서, 고르면 대기실에 그 안내가 떠요.</li>
+        <li><b>내가 낸 문제를 고르면 나는 지켜봐요.</b> 답을 아는 사람이 달리지 않게 하는 자리예요.</li>
+      </ol></div>
+  </div>
+</section>
+
+<!-- ───── 07 · 공개 ───── -->
+<section class="bd-chapter" id="s-reveal">
+  <div class="bd-kicker">07 · 흐름 ⑨ 공개 연출</div>
+  <h2>룰렛은 연출이고, 모두가 같은 순간에 같은 문서에서 멈춰요</h2>
+  <p class="bd-lead">출발과 도착은 서버가 이미 정했어요. 모든 기기가 같은 seed로 같은 릴을 돌리고, 같은 서버 시각에 실제 문서에서 멈춰요. 멈춘 뒤 두 문서의 첫 문장을 보여 주고 3, 2, 1. 그동안 출발 문서를 미리 받아 두어 느린 휴대폰도 손해를 보지 않아요.</p>
+  <div class="bd-row">
+    <div class="bd-cell"><h3 class="bd-sub" style="margin-top:0">출발이 멈추고 도착이 도는 중</h3><!--P:reveal-spin-->
+      <ol class="bd-notes">
+        <li><b>멈춘 칸은 흰 바탕에 파란 글자.</b> 지나가는 제목은 후보 문서 약 1,400개에서 뽑은 미끼예요.</li>
+        <li><b>도는 릴은 흐리게.</b> 0.8초 뒤 멈춰요.</li>
+        <li><b>모두 같은 장면을 본다는 것을 말해 줘요.</b> 아래 동물 표시는 방에 있는 사람들이에요.</li>
+      </ol></div>
+    <div class="bd-cell"><h3 class="bd-sub" style="margin-top:0">둘 다 멈춤</h3><!--P:reveal-stop-->
+      <ol class="bd-notes">
+        <li><b>첫 문장 카드로 처음 듣는 문서도 알게 해요.</b> 위키백과 요약을 브라우저가 직접 받아요. 서버를 부르지 않아요.</li>
+        <li><b>방장은 한 판에 한 번 다시 돌릴 수 있어요.</b> 카운트다운 중에만 보여요.</li>
+      </ol></div>
+    <div class="bd-cell"><h3 class="bd-sub" style="margin-top:0">3, 2, 1</h3><!--P:countdown-->
+      <ol class="bd-notes">
+        <li><b>숫자 하나만 크게.</b> 움직임 줄이기 설정이면 릴 대신 카드 두 장을 뒤집어요.</li>
+        <li><b>출발과 목표를 한 번 더.</b> 지금 앱의 열린 Route 칸을 흰 바탕으로 썼어요.</li>
+        <li><b>준비가 끝났다는 것을 말해 줘요.</b> 0이 되는 순간 모두의 시계가 같은 서버 시각에서 흘러요.</li>
+      </ol></div>
+  </div>
+</section>
+
+<!-- ───── 08 · 달리기 ───── -->
+<section class="bd-chapter" id="s-race">
+  <div class="bd-kicker">08 · 흐름 ⑩ 달리는 중</div>
+  <h2>레이스 바 한 줄이 "누가 가까워지고 있나"를 말해요</h2>
+  <p class="bd-lead">게임 화면은 그대로 두고 머리 아래에 48 높이 한 줄을 더해요. 자리마다 동물 표시, 이동 수, 마지막 문서의 색이에요. 문서 이름은 보이지 않아요. 색은 내가 모르는 문서의 색이라 내 길의 힌트가 되지 않고, 내 색은 지금처럼 숨겨요(16.7).</p>
+  <div class="bd-row">
+    <div class="bd-cell"><h3 class="bd-sub" style="margin-top:0">⑩ 달리는 중 (먼저 도착)</h3><!--P:race-->
+      <ol class="bd-notes">
+        <li><b>레이스 바는 자리 순서로 고정해요.</b> 순위대로 다시 줄 세우면 칸이 계속 흔들려 읽을 수 없어요. 내 칸은 옅은 파랑 바탕에 이동 수만 보여요. 친구 칸의 색이 초록이면 가까워졌다는 뜻이고, 되돌아가면 ⏪ 칸, 다른 탭에 오래 있으면 👀로 흐려져요(실격은 아니에요, 5.2).</li>
+        <li><b>반응은 끝의 웃는 얼굴 단추로 보내요.</b> 받은 반응은 그 사람 칸 모서리에 잠깐 떠요(펭귄의 😱).</li>
+        <li><b>X는 포기예요.</b> 누르면 확인을 한 번 거쳐요. 포기해도 결과는 같이 봐요.</li>
+      </ol></div>
+    <div class="bd-cell"><h3 class="bd-sub" style="margin-top:0">친구 도착 (적은 이동 방식)</h3><!--P:race-arrived-->
+      <ol class="bd-notes">
+        <li><b>적은 이동 방식에서는 도착 알림만 뜨고 계속 달려요.</b> 먼저 도착 방식이면 이 순간 모두 결과 화면으로 넘어가요.</li>
+        <li><b>반응 고르기는 여섯 칸 팝오버.</b> 👏 😱 🤔 🔥 😭 🐢. 1초에 하나까지예요.</li>
+      </ol></div>
+    <div class="bd-cell"><h3 class="bd-sub" style="margin-top:0">출제자 관전 (내가 낸 문제)</h3><!--P:watch-->
+      <ol class="bd-notes">
+        <li><b>머리가 "지켜보는 중"으로 바뀌어요.</b> 깃발 대신 눈, 파랑 대신 잉크색이라 달리는 화면과 헷갈리지 않아요.</li>
+        <li><b>출제자에게만 문서 이름이 보여요.</b> 답을 알고 겨루지 않으니 스포일러가 아니에요. 서버는 이 자리에만 이름을 보내요.</li>
+        <li><b>내 길 위에 친구가 서 있어요.</b> 누가 내 길을 따라오는지 한눈에 봐요.</li>
+        <li><b>출제자의 바닥은 반응 여섯 칸.</b> 응원하거나 놀릴 수 있어요.</li>
+      </ol></div>
+  </div>
+</section>
+
+<!-- ───── 09 · 결과 ───── -->
+<section class="bd-chapter" id="s-result">
+  <div class="bd-kicker">09 · 흐름 ⑪ 결과</div>
+  <h2>1등은 한 명이지만, 나머지도 "얼마나 가까웠나"로 순서가 생겨요</h2>
+  <p class="bd-lead">먼저 도착 방식은 한 명이 도착하는 순간 끝나서(16.7) 2등부터는 도착 순서가 없어요. 그래서 그 순간 각자 있던 문서의 색으로 "가장 가까웠던 순"을 매겨요. 이제 모두 끝났으니 문서 이름도 보여 줘요. 다시 보기는 시간 막대를 끌어 그때 누가 어디 있었는지 봐요(Strava Flyby).</p>
+  <div class="bd-row">
+    <div class="bd-cell"><h3 class="bd-sub" style="margin-top:0">⑪ 결과 (먼저 도착)</h3><!--P:result-->
+      <ol class="bd-notes">
+        <li><b>이긴 사람 한 줄이 맨 위.</b> 도착 화면과 같은 머리 모양에 깃발 대신 트로피예요.</li>
+        <li><b>나머지는 마지막 문서의 색 순서.</b> 같은 색이면 이동 수가 적은 쪽이 앞이에요. 그때 있던 문서 이름이 함께 보여요.</li>
+        <li><b>이 방 전적은 방이 살아 있는 동안만.</b> 전체 순위가 아니에요. 방이 닫히면 사라져요.</li>
+        <li><b>주 단추는 "한 판 더".</b> 같은 방 대기실로 돌아가요. 길 다시 보기와 결과 공유는 글자 단추.</li>
+      </ol></div>
+    <div class="bd-cell"><h3 class="bd-sub" style="margin-top:0">길 다시 보기</h3><!--P:paths-->
+      <ol class="bd-notes">
+        <li><b>시간 막대 하나로 모두를 같이 움직여요.</b> 기준은 방의 출발 시각이에요.</li>
+        <li><b>그 순간 각자 있던 문서와 지나온 색 줄.</b> 네 명의 길을 네 칸으로 나누면 좁은 화면에서 읽을 수 없어서, 사람마다 한 줄로 썼어요.</li>
+        <li><b>함께 지난 문서를 모아요.</b> "넷 다 도자기를 지났어요"가 결과 화면의 이야깃거리가 돼요.</li>
+      </ol></div>
+  </div>
+</section>
+
+<!-- ───── 10 · 문제 내기 ───── -->
+<section class="bd-chapter" id="s-make">
+  <div class="bd-kicker">10 · 흐름 ⑫⑬⑭ 친구에게 내기</div>
+  <h2>내가 낸 문제는 먼저 친구들이 풀고, 그다음에 커뮤니티로 가요</h2>
+  <p class="bd-lead">사용자 출제(2단계)를 둘로 나눴어요(16.4). 처음에는 링크가 있는 사람만 풀 수 있어서 신고와 검수가 필요 없어요. 출제자가 직접 풀어 도착해야 보낼 수 있고, 친구 5명 이상이 도전하고 도착률이 20% 이상인 문제만 커뮤니티에 올릴 수 있어요.</p>
+  <div class="bd-row">
+    <div class="bd-cell"><h3 class="bd-sub" style="margin-top:0">⑫ 고르기</h3><!--P:make-->
+      <ol class="bd-notes">
+        <li><b>제목 아래에 세 단계를 보여 줘요.</b> 고르기, 직접 풀기, 보내기. 관리자 화면의 "문제 넣기"와 같은 순서예요(7.7).</li>
+        <li><b>검색 입력은 13장의 것을 그대로 써요.</b> 목록마다 첫 문장이 붙어 같은 이름의 다른 문서를 고르지 않게 해요.</li>
+        <li><b>직접 풀어야 한다는 것을 미리 말해요.</b> 내 길이 도달할 수 있다는 증명이자 이 문제의 정답 예시가 돼요.</li>
+      </ol></div>
+    <div class="bd-cell"><h3 class="bd-sub" style="margin-top:0">⑭ 내 문제함</h3><!--P:mine-->
+      <ol class="bd-notes">
+        <li><b>출제자는 자기 문제의 문서 이름을 봐요.</b> 한 줄 설명은 "몇 명 중 몇 명 도착, 나보다 짧게 몇 명".</li>
+        <li><b>고르면 숫자와 두 갈래 단추가 열려요.</b> 도전장으로 보내거나 이 문제로 방을 열어요.</li>
+        <li><b>올릴 수 있게 되면 그때만 알려요.</b> 친구들이 먼저 풀어 본 문제만 목록에 올라 풀 수 없는 문제가 목록을 채우지 않아요.</li>
+        <li><b>주 단추는 "새 문제 내기".</b> 이 기기에만 남는다는 것은 위 설명에 한 번만 적었어요.</li>
+      </ol></div>
+  </div>
+</section>
+
+<!-- ───── 11 · 상태 ───── -->
+<section class="bd-chapter" id="s-states">
+  <div class="bd-kicker">11 · 상태</div>
+  <h2>막혔을 때도 다음에 할 일을 하나 줘요</h2>
+  <p class="bd-lead">방이 찼을 때, 앱 안 브라우저로 열었을 때, 무료 한도에 닿았을 때를 그렸어요. 셋 다 같은 빈 상태 모양(가운데 아이콘, 제목, 두 줄, 아래 주 단추)이에요.</p>
+  <div class="bd-row">
+    <div class="bd-cell"><h3 class="bd-sub" style="margin-top:0">방이 꽉 참</h3><!--P:full-->
+      <ol class="bd-notes"><li><b>거절 대신 지켜보기로 받아요.</b> 정원을 넘은 사람을 관전자로 받는 Jackbox 방식이에요. 지켜보는 사람은 달리는 사람과 같은 것(이동 수, 색)만 봐요.</li></ol></div>
+    <div class="bd-cell"><h3 class="bd-sub" style="margin-top:0">카카오톡 안에서 열림</h3><!--P:inapp-->
+      <ol class="bd-notes"><li><b>왜 바깥 브라우저가 필요한지 한 줄로.</b> 저장소가 따로라 다른 이름이 생겨요. 단추가 안 될 때의 길도 적어요(usagi <code>inApp.ts</code>의 안내).</li></ol></div>
+    <div class="bd-cell"><h3 class="bd-sub" style="margin-top:0">오늘 한도에 닿음</h3><!--P:busy-->
+      <ol class="bd-notes"><li><b>되는 것을 권해요.</b> 같이 달리기만 하루 상한을 따로 둬서 오늘의 문제는 영향이 없어요(16.3.8). 도전장은 D1만 써서 계속돼요.</li></ol></div>
+  </div>
+</section>
+
+<!-- ───── 12 · 1차 범위 ───── -->
+<section class="bd-chapter" id="scope">
+  <div class="bd-kicker">12 · 1차 범위와 데이터</div>
+  <h2>도전장부터 만들어요. 새 서버 구조 없이 친구와 겨루는 재미를 확인할 수 있어요</h2>
+  <div class="bd-scope">
+    <div class="bd-card"><h4>1차에 넣을 것</h4><ul>
+      <li>도착 화면의 도전장 보내기 (커뮤니티, 지난 문제)<span>"결과 공유" 자리를 바꾸는 것이라 새 화면이 거의 없어요</span></li>
+      <li>도전장 카드, 고스트 줄, 나란히 견주기, 도전장 순위<span>D1 표 하나와 칸 하나로 끝나요</span></li>
+      <li>커뮤니티 맨 위의 받은 도전장<span>기기에 남은 기록만 읽어요</span></li>
+    </ul></div>
+    <div class="bd-card"><h4>미룰 것</h4><ul>
+      <li>같이 달리기 방 전체<span>Durable Object와 랜덤 풀이 먼저 있어야 해요. 2차(16.6의 2, 3번)</span></li>
+      <li>친구에게 내기와 내 문제함<span>방의 "내가 낸 문제"와 함께 4번째에</span></li>
+      <li>오늘의 문제 도전장<span>16.7에서 1차 제외로 정했어요. 도전장을 써 본 뒤 다시 봐요</span></li>
+      <li>다시 보기 막대<span>결과 화면 뒤에 붙일 수 있어요. 방이 열린 다음에</span></li>
+    </ul></div>
+  </div>
+  <div class="bd-card" style="margin-top:20px"><h3>데이터와 API 초안</h3>
+    <table class="bd-table">
+      <tr><th>화면에 필요한 값</th><th>지금 있나</th><th>어디서</th></tr>
+      <tr><td>도전장 카드: 보낸 사람 이름, 시간, 이동 수, 색 칸</td><td>있음</td><td><code>runs.duration_ms</code>, <code>moves</code>, <code>emoji</code>, <code>players.name</code></td></tr>
+      <tr><td>도전장 코드, 도전한 사람 수</td><td>새로</td><td><code>challenges (code, puzzle_id, run_id, player_id, takers)</code></td></tr>
+      <tr><td>고스트: 이동마다 경과 시간과 색</td><td>있음</td><td><code>runs.events[].at</code> + <code>runs.emoji</code>. 문서 이름은 빼고 보내요</td></tr>
+      <tr><td>도전장 순위</td><td>새로</td><td><code>runs.challenge</code> + 인덱스 <code>runs_challenge</code></td></tr>
+      <tr><td>두 길 견주기</td><td>있음</td><td><code>GET /api/challenges/:code</code>가 내 끝난 판이 있을 때만 상대 경로를 줘요</td></tr>
+      <tr><td>방: 자리, 준비, 설정, 전적</td><td>새로</td><td>Durable Object 저장소. 판 진행은 소켓 attachment(16.3.7)</td></tr>
+      <tr><td>룰렛 미끼 제목</td><td>새로</td><td>정적 JSON(후보 문서 약 1,400개의 제목). 요청 한도에 들지 않아요</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- ───── 13 · 규격 ───── -->
+<section class="bd-chapter" id="spec">
+  <div class="bd-kicker">13 · 시각 규격</div>
+  <h2>새 토큰 없이 지금 앱의 값으로만 그렸어요</h2>
+  <div class="bd-grid2">
+    <div class="bd-card"><h3>지금 그대로 쓰는 것</h3><table class="bd-table"><tr><th>조각</th><th>값 · 출처</th></tr>
+      <tr><td>카드</td><td>흰 바탕 · 모서리 20 · 안쪽 20 · <code>Card</code></td></tr>
+      <tr><td>주 단추</td><td>높이 56 · 17/600 · <code>--color-primary</code> · <code>Cta</code></td></tr>
+      <tr><td>글자 단추</td><td>높이 48 · 16/500 · <code>TextButton</code></td></tr>
+      <tr><td>줄</td><td>최소 68 · 제목 16/22 600 · 설명 14/20 · <code>ListRow</code></td></tr>
+      <tr><td>꼬리표</td><td>44 · 모서리 14 · <code>Badge</code></td></tr>
+      <tr><td>유사도 칸</td><td>18 · 모서리 5 · <code>--color-s1</code>~<code>s5</code> · <code>Sq</code></td></tr>
+      <tr><td>게임 머리 · 바닥</td><td>56 · 64 · <code>--color-secondary</code> · <code>Game.tsx</code></td></tr>
+    </table></div>
+    <div class="bd-card"><h3>새로 필요한 조각</h3><table class="bd-table"><tr><th>조각</th><th>값 · 이유</th></tr>
+      <tr><td>동물 표시</td><td>32 원 · 옅은 파랑 바탕 · 나는 채운 파랑. 사람을 색으로 나누면 유사도 색과 섞여요</td></tr>
+      <tr><td>레이스 바</td><td>높이 48 · 칸 36 · 모서리 12. 머리와 지나온 길 사이</td></tr>
+      <tr><td>고스트 줄</td><td>높이 40 · 지나온 길 줄(44)보다 낮게, 문서를 덜 가리게</td></tr>
+      <tr><td>자리 칸</td><td>56 · 모서리 14 · 두 줄 격자. <code>StatTile</code>의 옅은 파랑 바탕을 따름</td></tr>
+      <tr><td>방 코드</td><td>34/40 · 800 · 자간 .16em. 멀리서 읽어 불러 줄 수 있게</td></tr>
+      <tr><td>공개 화면</td><td>주 색 바탕 전면. 게임 밖의 "장면"이라 도착 축하 화면(<code>Streak</code>)과 같은 무게</td></tr>
+      <tr><td>아래 시트</td><td>모서리 24 · 손잡이 36×5. 지금 앱에는 시트가 없어 새로 필요</td></tr>
+    </table></div>
+  </div>
+</section>
+
+<!-- ───── 14 · 규칙 ───── -->
+<section class="bd-chapter" id="rules">
+  <div class="bd-kicker">14 · 설계 규칙</div>
+  <h2>구현할 때 지킬 것</h2>
+  <div class="bd-grid2">
+    <div class="bd-card"><h3>화면 말 대응표</h3><p class="bd-small bd-muted">내부 이름은 화면에 쓰지 않아요.</p><table class="bd-table"><tr><th>내부 말</th><th>화면</th></tr>
+      <tr><td>challenge</td><td>도전장</td></tr><tr><td>room, Durable Object</td><td>방, 같이 달리기</td></tr><tr><td>seat, token</td><td>자리 (토큰은 화면에 없음)</td></tr><tr><td>host</td><td>방장</td></tr><tr><td>ready</td><td>준비</td></tr><tr><td>ghost</td><td>(이름 없음) "이 시간엔 n번째"</td></tr><tr><td>win: first / fewest</td><td>먼저 도착하면 이겨요 / 적게 이동하면 이겨요</td></tr><tr><td>spectator</td><td>지켜보기</td></tr><tr><td>unlisted</td><td>친구에게 내기 (링크가 있는 사람만)</td></tr><tr><td>run</td><td>판, 기록</td></tr>
+    </table></div>
+    <div class="bd-card"><h3>규칙</h3>
+      <div class="bd-rule"><span class="no">1</span><div><b>달리는 중에는 문서 이름을 남에게 보이지 않아요.</b> 예외는 출제자 관전 하나. 서버가 그 자리에만 보내요(16.3.5).</div></div>
+      <div class="bd-rule"><span class="no">2</span><div><b>내 색은 끝날 때까지 숨겨요.</b> 친구의 색만 보여요(16.7, 6.3의 유일한 예외).</div></div>
+      <div class="bd-rule"><span class="no">3</span><div><b>사람은 색으로 나누지 않아요.</b> 색은 유사도에만 써요. 동물 첫 글자와 이름으로 나눠요.</div></div>
+      <div class="bd-rule"><span class="no">4</span><div><b>사용자가 쓰는 글은 없어요.</b> 반응 여섯 개, 자동 이름(다시 뽑기만)(12.2).</div></div>
+      <div class="bd-rule"><span class="no">5</span><div><b>화면마다 주 단추는 하나.</b> 도착 화면에서 결과 공유와 도전장을 나란히 두지 않아요.</div></div>
+      <div class="bd-rule"><span class="no">6</span><div><b>머리와 바닥은 늘 보여요.</b> 새 줄은 둘 사이에만 넣고, 레이스 바와 고스트 줄은 동시에 나오지 않아요.</div></div>
+      <div class="bd-rule"><span class="no">7</span><div><b>순위는 그 링크, 그 방 안에서만.</b> 여러 판을 합친 순위를 만들지 않아요(5.5).</div></div>
+      <div class="bd-rule"><span class="no">8</span><div><b>시간은 서버 시각 두 개로.</b> 방의 출발 시각과 서버가 도착을 받은 시각(3.4, 16.3.7).</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ───── 15 · 레퍼런스 ───── -->
+<section class="bd-chapter" id="refs">
+  <div class="bd-kicker">15 · 레퍼런스</div>
+  <h2>참고한 제품과 문서</h2>
+  <div class="bd-grid2 bd-refs">
+    <div class="bd-card"><h3>모이기와 방</h3><ul>
+      <li><a href="https://www.thewikigame.com/">The Wiki Game · 홈과 진행 중인 판 (2026-11 직접 봄)</a> — <span class="bd-muted">판 사이 카운트다운, "이름(이동 수)" 진행 목록, 색+동물+숫자 자동 이름. 로그인 유도 배너는 가져오지 않아요</span></li>
+      <li><a href="https://support.kahoot.com/hc/en-us/articles/360039890713">Kahoot! join (2026-11)</a> · <a href="https://kahoot.com/blog/2017/11/09/generate-funny-nicknames-players-live-kahoots/">닉네임 생성기 (2017-11)</a> — <span class="bd-muted">코드·링크·QR 세 길, 이름 다시 굴리기, 호스트가 고르는 승리 규칙(Accuracy mode). 문제마다 순위 화면은 빼요</span></li>
+      <li><a href="https://www.jackboxgames.com/how-to-play">Jackbox · How to Play</a> — <span class="bd-muted">첫 입장자가 방장, 정원을 넘으면 관전자로 받기</span></li>
+      <li><a href="https://www.innersloth.com/a-match-made-in-update-16-0-0-emergency-meeting-40/">Among Us Update 16.0.0 (2025-03)</a> · <a href="https://www.innersloth.com/new-quick-chat-is-here-v2023-7-11/">Quick Chat (2023-07)</a> — <span class="bd-muted">코드 입력 뒤 방장·인원·규칙 확인 화면, 정해진 문구만 보내는 패널. 공개 방 찾기는 빼요</span></li>
+      <li>usagi-volleyball 같이 하기 (사내, <code>docs/protocol.md</code>) — <span class="bd-muted">누르면 바로 방, 4자리 코드 알파벳, QR 찍어 옮기기, 좌석 토큰 재접속, 앱 안 브라우저 안내</span></li>
+    </ul></div>
+    <div class="bd-card"><h3>고스트와 견주기</h3><ul>
+      <li><a href="https://lichess.org/">Lichess · 친구에게 도전 (2026-11 직접 봄)</a> — <span class="bd-muted">링크와 QR을 함께 주는 대기 화면, 끝난 뒤 다시 하기. "처음 온 1명만"은 가져오지 않아요</span></li>
+      <li><a href="https://www.strava.com/flyby">Strava Flyby</a> — <span class="bd-muted">같은 시각의 위치를 나란히, 시간 막대로 아무 지점이나 보기 → 길 다시 보기</span></li>
+      <li><a href="https://forums.zwift.com/t/introducing-the-holoreplay-2022/590658">Zwift HoloReplay (2022-10)</a> — <span class="bd-muted">반투명 고스트에 꼬리표를 붙여 나와 구분 → 고스트 줄. 3D 아바타는 빼요</span></li>
+      <li><a href="https://blog.duolingo.com/product-lessons-friend-streak/">Duolingo Friend Streak (2024-09)</a> · <a href="https://blog.duolingo.com/friends-quests/">Friends Quests (2022-09)</a> — <span class="bd-muted">앱이 써 둔 문구만 보내기, 화면 배치로 정원 정하기, 첫 초대가 가장 큰 벽</span></li>
+      <li>Wordle 공유 (2차, GDC 2022 강연 보도) — <span class="bd-muted">글자 없이 색만 남겨 남의 판을 망치지 않기. 링클이 이미 지키는 원칙</span></li>
+    </ul></div>
+  </div>
+</section>
+
+<!-- ───── 16 · 순서 · 질문 ───── -->
+<section class="bd-chapter" id="next">
+  <div class="bd-kicker">16 · 나눠 올릴 순서와 열린 질문</div>
+  <h2>도전장 → 랜덤 풀 → 방 → 친구에게 내기 순서로 올려요</h2>
+  <div class="bd-grid2">
+    <div class="bd-card"><h3>나눠 올릴 순서</h3>
+      <div class="bd-rule"><span class="no">1</span><div><b>도전장 API와 표</b> — <code>challenges</code>, <code>runs.challenge</code>, 고스트 응답. 화면은 바뀌지 않아요.</div></div>
+      <div class="bd-rule"><span class="no">2</span><div><b>도전장 화면</b> — 도착 화면 단추, <code>/c/:code</code> 카드, 고스트 줄, 견주기, 커뮤니티의 받은 도전장. 오늘의 문제 화면은 그대로예요.</div></div>
+      <div class="bd-rule"><span class="no">3</span><div><b>랜덤 풀</b> — 문제 생성 도구 <code>--pool random</code>, 채우기 기준, 미끼 제목 JSON.</div></div>
+      <div class="bd-rule"><span class="no">4</span><div><b>방 서버</b> — Worker에 <code>Room</code>, 메시지 검사를 <code>packages/core/room.ts</code>에. 화면 없이 스모크 테스트로.</div></div>
+      <div class="bd-rule"><span class="no">5</span><div><b>방 화면</b> — 대기실, 참가 확인, 문제 고르기, 공개 연출, 레이스 바, 결과.</div></div>
+      <div class="bd-rule"><span class="no">6</span><div><b>친구에게 내기</b> — 출제, 내 문제함, 출제자 관전. 그다음 커뮤니티에 올리기.</div></div>
+    </div>
+    <div class="bd-card"><h3>정한 것과 남은 질문</h3>
+      <div class="bd-rule"><span class="bd-decided">결정됨</span><div style="margin-left:8px"><b>자리</b> — 방향 A, 커뮤니티 탭 안. 아래 탭은 네 개 그대로 (2026-11-23)</div></div>
+      <div class="bd-rule"><span class="bd-decided">결정됨</span><div style="margin-left:8px"><b>고스트</b> — 켠 채로 시작하고, 누르면 접혀요 (2026-11-23)</div></div>
+      <div class="bd-rule"><span class="bd-decided">결정됨</span><div style="margin-left:8px"><b>꽉 찬 방</b> — 지켜보기로 받고, 다음 판에 자리가 나면 함께 달려요 (2026-11-23)</div></div>
+      <div class="bd-rule"><span class="bd-decided">결정됨</span><div style="margin-left:8px"><b>승부 · 색 · 판 끝 · 오늘의 문제</b> — 방장이 고름(기본 먼저 도착) · 친구 색만 보임 · 첫 도착에서 판 끝 · 오늘의 문제 도전장은 1차 제외 (2026-11-23)</div></div>
+      <div class="bd-rule q"><div><b>Q1 · 커뮤니티에 올리는 기준</b> — 선호 없음. 권하는 값 "친구 5명 이상 도전, 도착률 20% 이상"으로 만들고 써 보며 고쳐요.</div></div>
+      <div class="bd-rule q"><div><b>Q2 · 받은 도전장을 어디까지 남길지</b> — 묻지 않았어요. 시안대로 안 푼 것만 보여요.</div></div>
+    </div>
+  </div>
+</section>
+
+<footer class="bd-foot">main 3483ed5 · 설계 문서 16장 · 2026-11-23. 화면 속 이름과 숫자는 예시예요.</footer>
+</main>
+</body></html>

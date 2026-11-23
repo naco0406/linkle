@@ -1,0 +1,25 @@
+[
+  {
+    "name": "community",
+    "errors": [],
+    "unmocked": [],
+    "missingPins": [
+      "핀 1 이 글자 · 아이콘에 닿아요(right) — loc 을 가까운 제목 · 라벨로 바꿔요(사각형은 최후의 수단)",
+      "핀 2 이 글자 · 아이콘에 닿아요(top) — loc 을 가까운 제목 · 라벨로 바꿔요(사각형은 최후의 수단)"
+    ],
+    "blockedHosts": [
+      "www.googletagmanager.com"
+    ]
+  },
+  {
+    "name": "intro",
+    "errors": [],
+    "unmocked": [],
+    "missingPins": [
+      "핀 4 이 글자 · 아이콘에 닿아요(top) — loc 을 가까운 제목 · 라벨로 바꿔요(사각형은 최후의 수단)"
+    ],
+    "blockedHosts": [
+      "www.googletagmanager.com"
+    ]
+  }
+]

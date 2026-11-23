@@ -1,0 +1,24 @@
+{
+  "icons": [],
+  "tiny": [],
+  "overflow": [],
+  "pins": [
+    "f-comm-new: 핀 3 이 글자 · 아이콘에 닿아요(720px²) — data-pin-at 을 비우고 place_pins 를 다시",
+    "f-lobby: 핀 4 이 글자 · 아이콘에 닿아요(1160px²) — data-pin-at 을 비우고 place_pins 를 다시",
+    "f-lobby-solo: 핀 3 이 글자 · 아이콘에 닿아요(880px²) — data-pin-at 을 비우고 place_pins 를 다시",
+    "f-join: 핀 2 이 글자 · 아이콘에 닿아요(1360px²) — data-pin-at 을 비우고 place_pins 를 다시",
+    "f-join: 핀 3 이 글자 · 아이콘에 닿아요(880px²) — data-pin-at 을 비우고 place_pins 를 다시",
+    "f-pick: 핀 1 이 글자 · 아이콘에 닿아요(1924px²) — data-pin-at 을 비우고 place_pins 를 다시",
+    "f-pick: 핀 2 이 글자 · 아이콘에 닿아요(2517px²) — data-pin-at 을 비우고 place_pins 를 다시",
+    "f-pick: 핀 3 이 글자 · 아이콘에 닿아요(1600px²) — data-pin-at 을 비우고 place_pins 를 다시",
+    "f-result: 핀 1 이 글자 · 아이콘에 닿아요(800px²) — data-pin-at 을 비우고 place_pins 를 다시",
+    "f-result: 핀 3 이 글자 · 아이콘에 닿아요(720px²) — data-pin-at 을 비우고 place_pins 를 다시",
+    "f-make: 핀 3 이 글자 · 아이콘에 닿아요(520px²) — data-pin-at 을 비우고 place_pins 를 다시"
+  ],
+  "images": [],
+  "terms": [],
+  "glyph": [],
+  "notes": {
+    "tinyInScreen": []
+  }
+}
