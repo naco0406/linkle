@@ -6,7 +6,8 @@ export type MoveEvent =
   | { type: 'link'; to: Page; via: string; at: number }
   | { type: 'back'; to: Page; at: number }
 
-export type PuzzleKind = 'daily' | 'official' | 'community'
+/** random: 같이 달리기의 랜덤 풀(목록에 나오지 않는다, 설계 문서 16.3.3) */
+export type PuzzleKind = 'daily' | 'official' | 'community' | 'random'
 
 export type Puzzle = {
   id: number
@@ -45,4 +46,14 @@ export type Run = {
   result: { order: number | null; rank?: number | null } | null
   /** 완료 제출을 다시 보내야 하는지 */
   outbox: 'none' | 'pending'
+  /** 도전장으로 시작한 판이면 그 코드와 보낸 사람의 고스트(설계 문서 16.2) */
+  challenge?: string
+  ghost?: Ghost
+  /** 같이 달리기 방에서 달린 판(16.3) */
+  room?: { code: string; round: number }
+  /** 같이 달리기에서 도착하기 전에 판이 끝났다(다른 사람이 먼저 도착, 시간 끝, 포기) */
+  stopped?: boolean
 }
+
+/** 도전장을 보낸 사람의 진행. 문서 이름은 없다: 같은 경과 시간에 몇 번째였는지와 그 문서의 색만 */
+export type Ghost = { name: string; moves: number; ms: number; steps: { at: number; emoji: string }[] }

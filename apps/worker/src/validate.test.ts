@@ -22,12 +22,12 @@ describe('기기 id', () => {
 
 describe('시작 요청', () => {
   it('puzzleId가 없으면 오늘의 문제다', () => {
-    expect(parseStartBody({ playerId: ID })).toEqual({ ok: true, value: { playerId: ID, puzzleId: null } })
-    expect(parseStartBody({ playerId: ID, puzzleId: null })).toEqual({ ok: true, value: { playerId: ID, puzzleId: null } })
+    expect(parseStartBody({ playerId: ID })).toEqual({ ok: true, value: { playerId: ID, puzzleId: null, challenge: null, salt: 0 } })
+    expect(parseStartBody({ playerId: ID, puzzleId: null })).toEqual({ ok: true, value: { playerId: ID, puzzleId: null, challenge: null, salt: 0 } })
   })
 
   it('기기 id는 소문자로 맞춘다', () => {
-    expect(parseStartBody({ playerId: ID.toUpperCase(), puzzleId: 7 })).toEqual({ ok: true, value: { playerId: ID, puzzleId: 7 } })
+    expect(parseStartBody({ playerId: ID.toUpperCase(), puzzleId: 7 })).toEqual({ ok: true, value: { playerId: ID, puzzleId: 7, challenge: null, salt: 0 } })
   })
 
   it('모양이 틀리면 받지 않는다', () => {

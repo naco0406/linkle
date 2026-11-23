@@ -10,10 +10,12 @@
     "@linkle/core": "workspace:*",
     "@linkle/embed": "workspace:*",
     "@linkle/wiki": "workspace:*",
+    "jsqr": "1.4.0",
     "lucide-react": "^1.66.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "react-router": "^8.5.1",
+    "uqr": "0.1.3",
     "zustand": "^5.0.16"
   },
   "devDependencies": {

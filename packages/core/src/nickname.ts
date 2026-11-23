@@ -22,11 +22,28 @@ function hash(s: string, seed: number): number {
   return h
 }
 
-/** "파란 수달 4821" */
-export function nicknameOf(playerId: string): string {
-  const id = playerId.toLowerCase()
+/**
+ * "파란 수달 4821". salt를 바꾸면 다른 이름이 나온다(이름 다시 뽑기, 설계 문서 16.3.1).
+ * 직접 쓴 이름은 받지 않으므로 서버는 salt 숫자만 받아 같은 함수로 이름을 만든다.
+ */
+export function nicknameOf(playerId: string, salt = 0): string {
+  const id = salt ? `${playerId.toLowerCase()}#${salt}` : playerId.toLowerCase()
   const a = ADJECTIVES[hash(id, 1) % ADJECTIVES.length]!
   const b = ANIMALS[hash(id, 2) % ANIMALS.length]!
   const n = (hash(id, 3) % 9000) + 1000
   return `${a} ${b} ${n}`
+}
+
+/** 이름의 동물 첫 글자. 같이 달리기에서 사람을 색 대신 이것으로 나눈다 */
+export function animalOf(name: string): string {
+  // "호기심 많은 수달 4821"처럼 형용사에 띄어쓰기가 있어도 동물은 늘 끝에서 두 번째다
+  const parts = name.split(' ')
+  return (parts.at(-2) ?? name).charAt(0)
+}
+
+/** 받침이 있으면 a, 없으면 b("토끼는", "수달은"). 한글이 아닌 끝 글자는 b */
+export function josa(word: string, a: string, b: string): string {
+  const c = word.charCodeAt(word.length - 1)
+  if (c < 0xac00 || c > 0xd7a3) return word + b
+  return word + ((c - 0xac00) % 28 ? a : b)
 }

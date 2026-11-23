@@ -119,7 +119,8 @@ async function usedTitles(env: AdminEnv): Promise<Response> {
  */
 async function addPuzzles(request: Request, env: AdminEnv): Promise<Response> {
   const body = (await readJson(request, 256 * 1024)) as { pool?: unknown; items?: unknown; first?: unknown; reviewed?: unknown }
-  const pool = body.pool === 'official' ? 'official' : body.pool === 'daily' ? 'daily' : null
+  // random: 같이 달리기의 랜덤 풀(설계 문서 16.3.3). 목록에 나오지 않고 방에서만 나온다
+  const pool = body.pool === 'official' ? 'official' : body.pool === 'daily' ? 'daily' : body.pool === 'random' ? 'random' : null
   if (!pool || !Array.isArray(body.items) || body.items.length > 100) throw new HttpError(400, 'invalid_body')
   const items = body.items.map(parseItem)
   if (items.some(i => i === null)) throw new HttpError(400, 'invalid_item')
@@ -135,8 +136,8 @@ async function addPuzzles(request: Request, env: AdminEnv): Promise<Response> {
         ).bind(c.start.id, c.start.title, c.end.id, c.end.title, c.par, c.difficulty, JSON.stringify(c.solution), now, priority, reviewed)
       : env.DB.prepare(
           `INSERT OR IGNORE INTO puzzles (kind, number, start_id, start_title, end_id, end_title, par, difficulty, solution, status, created_at)
-           SELECT 'official', COALESCE(MAX(number), 0) + 1, ?1, ?2, ?3, ?4, ?5, ?6, ?7, 'published', ?8 FROM puzzles WHERE kind = 'official'`,
-        ).bind(c.start.id, c.start.title, c.end.id, c.end.title, c.par, c.difficulty, JSON.stringify(c.solution), now),
+           SELECT ?9, COALESCE(MAX(number), 0) + 1, ?1, ?2, ?3, ?4, ?5, ?6, ?7, 'published', ?8 FROM puzzles WHERE kind = ?9`,
+        ).bind(c.start.id, c.start.title, c.end.id, c.end.title, c.par, c.difficulty, JSON.stringify(c.solution), now, pool),
   )
   const results = statements.length ? await env.DB.batch(statements) : []
   const added = results.reduce((n, r) => n + (r.meta.changes ?? 0), 0)
@@ -155,7 +156,10 @@ async function overview(env: AdminEnv): Promise<Response> {
     env.DB.prepare(
       `SELECT difficulty, COUNT(*) AS n, SUM(reviewed_at IS NULL) AS unreviewed FROM puzzle_queue WHERE status = 'approved' AND pool = 'daily' GROUP BY difficulty`,
     ),
-    env.DB.prepare(`SELECT COUNT(*) AS n, SUM(plays) AS plays, SUM(clears) AS clears FROM puzzles WHERE kind = 'official' AND status = 'published'`),
+    env.DB.prepare(
+      `SELECT COUNT(*) AS n, SUM(plays) AS plays, SUM(clears) AS clears, (SELECT COUNT(*) FROM puzzles WHERE kind = 'random' AND status = 'published') AS random
+       FROM puzzles WHERE kind = 'official' AND status = 'published'`,
+    ),
     env.DB.prepare(`SELECT COUNT(*) AS n FROM players`),
     env.DB.prepare(`SELECT value FROM job_state WHERE key = 'refill'`),
   ])
@@ -223,7 +227,9 @@ async function queueAction(request: Request, env: AdminEnv, id: number): Promise
 /** 커뮤니티의 링클이 낸 문제. 숨긴 것도 함께 */
 async function communityList(env: AdminEnv): Promise<Response> {
   const { results } = await env.DB.prepare(
-    `SELECT id, number, start_title, end_title, par, difficulty, status, plays, clears, solution FROM puzzles WHERE kind IN ('official', 'community') ORDER BY id DESC`,
+    `SELECT p.id, p.kind, p.number, p.start_title, p.end_title, p.par, p.difficulty, p.status, p.plays, p.clears, p.solution,
+            (SELECT COUNT(*) FROM reports r WHERE r.puzzle_id = p.id) AS reports
+     FROM puzzles p WHERE p.kind IN ('official', 'community') AND p.status != 'draft' ORDER BY p.id DESC`,
   ).all()
   return json({ items: results })
 }

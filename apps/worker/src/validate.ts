@@ -28,14 +28,39 @@ const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'obj
 const isId = (v: unknown): v is number => typeof v === 'number' && Number.isSafeInteger(v) && v > 0
 const isTitle = (v: unknown): v is string => typeof v === 'string' && v.length > 0 && v.length <= LIMITS.title
 
-export type StartBody = { playerId: string; puzzleId: number | null }
+export type StartBody = { playerId: string; puzzleId: number | null; challenge: string | null; salt: number }
+
+const CODE = /^[A-Z2-9]{6}$/
 
 export function parseStartBody(body: unknown): Parsed<StartBody> {
   if (!isRecord(body)) return fail('invalid_body')
   if (!isUuid(body.playerId)) return fail('invalid_player')
   const puzzleId = body.puzzleId ?? null
   if (puzzleId !== null && !isId(puzzleId)) return fail('invalid_puzzle')
-  return { ok: true, value: { playerId: body.playerId.toLowerCase(), puzzleId } }
+  // 도전장으로 시작하는 판(설계 문서 16.2)
+  const challenge = body.challenge ?? null
+  if (challenge !== null && (typeof challenge !== 'string' || !CODE.test(challenge))) return fail('invalid_challenge')
+  const salt = parseSalt(body.salt)
+  if (salt === null) return fail('invalid_salt')
+  return { ok: true, value: { playerId: body.playerId.toLowerCase(), puzzleId, challenge, salt } }
+}
+
+/** 이름 다시 뽑기의 숫자. 없으면 0 */
+export function parseSalt(v: unknown): number | null {
+  if (v === undefined || v === null) return 0
+  return typeof v === 'number' && Number.isInteger(v) && v >= 0 && v <= 1_000_000 ? v : null
+}
+
+/** 출제: 고른 두 문서 */
+export function parseMakeBody(body: unknown): Parsed<{ playerId: string; start: Page; end: Page; salt: number }> {
+  if (!isRecord(body)) return fail('invalid_body')
+  if (!isUuid(body.playerId)) return fail('invalid_player')
+  const start = parsePage(body.start)
+  const end = parsePage(body.end)
+  if (!start || !end || start.id === end.id) return fail('invalid_pages')
+  const salt = parseSalt(body.salt)
+  if (salt === null) return fail('invalid_salt')
+  return { ok: true, value: { playerId: body.playerId.toLowerCase(), start, end, salt } }
 }
 
 export type FinishBody = { playerId: string; events: MoveEvent[]; emoji: string[] | null; flags: string[] }

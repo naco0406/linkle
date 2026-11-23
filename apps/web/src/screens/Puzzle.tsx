@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { ChevronLeft } from 'lucide-react'
 import { Link, useParams } from 'react-router'
 import { createRun, elapsedMs, formatDurationShort, moveCount } from '@linkle/core'
-import { getDay, getPuzzle, startPuzzle, type PuzzleInfo } from '../game/api'
+import { getDay, getPuzzle, reportPuzzle, startPuzzle, type PuzzleInfo } from '../game/api'
 import { runIn, useGame, useImmersive } from '../game/store'
 import { useLoad } from '../game/useLoad'
 import { BoardCard } from '../ui/Board'
@@ -97,7 +97,7 @@ function Intro({ kind, info }: { kind: Kind; info: PuzzleInfo }) {
 
   const archive = kind === 'archive'
   const played = !!done || !!mine
-  const title = archive && info.date ? formatDateKo(info.date) : `링클 커뮤니티 #${info.number}`
+  const title = archive && info.date ? formatDateKo(info.date) : info.kind === 'random' ? `링클 랜덤 #${info.number}` : `링클 커뮤니티 #${info.number}`
   const rank = !archive && done?.result?.rank ? done.result.rank : null
   const rate = info.plays === 0 ? null : `${Math.round((info.clears / info.plays) * 100)}`
 
@@ -105,7 +105,7 @@ function Intro({ kind, info }: { kind: Kind; info: PuzzleInfo }) {
     <Frame kind={kind}>
       <Card lift aria-label="문제">
         <div className="flex items-center gap-1.5">
-          <span className="text-[15px] font-semibold leading-[22px] text-primary">{archive ? '지난 문제' : info.kind === 'official' ? '링클이 낸 문제' : `${info.author}님의 문제`}</span>
+          <span className="text-[15px] font-semibold leading-[22px] text-primary">{archive ? '지난 문제' : info.kind === 'official' ? '링클이 낸 문제' : info.kind === 'random' ? '같이 달리기에서 나온 문제' : `${info.author}님의 문제`}</span>
           <DifficultyChip value={info.difficulty} />
           {archive && <span className="ml-auto font-brand text-xl leading-6 text-primary">#{info.number}</span>}
         </div>
@@ -153,7 +153,24 @@ function Intro({ kind, info }: { kind: Kind; info: PuzzleInfo }) {
       </Card>
 
       <div className="mt-3 flex flex-col gap-3">
-        {!archive && <BoardCard puzzleId={id} refresh={String(done?.result?.rank ?? '')} />}
+        {!archive && info.kind !== 'random' && <BoardCard puzzleId={id} refresh={String(done?.result?.rank ?? '')} />}
+        {/* 사람이 낸 문제에는 신고를 둔다(12.2). 쌓이면 목록에서 숨겨지고 관리자 화면에서 확인한다 */}
+        {info.kind === 'community' && (
+          <TextButton
+            className="mx-auto !flex w-fit text-[14px] !text-ink-2"
+            onClick={async () => {
+              if (!window.confirm('이 문제를 신고할까요? 불쾌하거나 풀 수 없는 문제면 알려 주세요.')) return
+              try {
+                await reportPuzzle(id)
+                setToast('신고했어요. 확인해 볼게요.')
+              } catch {
+                setToast('신고하지 못했어요.')
+              }
+            }}
+          >
+            이 문제 신고하기
+          </TextButton>
+        )}
         {/* 그날의 기록에는 출발·도착과 가장 짧은 길이 있다. 풀어 본 사람에게만 보인다 */}
         {archive && played && info.date && <DayCompare date={info.date} />}
       </div>

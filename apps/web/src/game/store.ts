@@ -11,7 +11,7 @@ export const RUN_KEY = 'linkle:run:v1'
  * 판이 놓이는 자리. 오늘의 문제는 'daily' 하나, 지난 문제와 커뮤니티 문제는 문제 id마다 하나다.
  * 오늘의 문제를 풀다가 지난 문제를 열어도 서로의 진행이 섞이지 않는다.
  */
-export type Slot = 'daily' | number
+export type Slot = 'daily' | number | `room:${string}`
 
 /** 지난 문제·커뮤니티 판을 몇 개까지 기기에 둘지. 넘으면 오래된 끝난 판부터 지운다 */
 const KEEP_OTHERS = 80
@@ -47,9 +47,17 @@ type GameState = {
   showArrival(runId: string, show: boolean): void
   /** 자리의 판을 치운다(관리자 연습 판) */
   drop(slot: Slot): void
+  /** 같이 달리기에서 도착하기 전에 판이 끝났다(다른 사람이 먼저 도착, 시간 끝, 포기). 제출할 것이 없다 */
+  stop(slot: Slot, at: number): void
 }
 
 export const runIn = (s: Pick<GameState, 'run' | 'others'>, slot: Slot): Run | null => (slot === 'daily' ? s.run : (s.others[String(slot)] ?? null))
+
+/** 저장 키 → 자리. 방의 판은 'room:K7PX', 나머지는 문제 id */
+export const slotOf = (key: string): Slot => (key.startsWith('room:') ? (key as `room:${string}`) : Number(key))
+
+/** 이 기기가 끝낸 문제들. 같이 달리기의 랜덤이 피해서 뽑고, 방에 "풀어 봤어요"를 붙인다 */
+export const solvedIds = (s: Pick<GameState, 'run' | 'others'>): number[] => [...new Set(Object.values(s.others).filter(r => r.phase === 'finished' && !r.stopped).map(r => r.puzzle.id))]
 
 /** 모든 자리의 판 */
 export const allRuns = (s: Pick<GameState, 'run' | 'others'>): Run[] => [...(s.run ? [s.run] : []), ...Object.values(s.others)]
@@ -97,7 +105,7 @@ export const useGame = create<GameState>()(
         const { run, others } = get()
         if (run?.runId === runId) return update('daily', f)
         const key = Object.keys(others).find(k => others[k]!.runId === runId)
-        if (key) update(Number(key), f)
+        if (key) update(slotOf(key), f)
       }
       return {
         run: null,
@@ -131,6 +139,7 @@ export const useGame = create<GameState>()(
         back: slot => update(slot, r => applyBack(r, now() - r.startedAt)),
         flag: (slot, name) => update(slot, r => (r.phase === 'playing' ? addFlag(r, name) : r)),
         setEmoji: (runId, emoji) => updateById(runId, r => ({ ...r, emoji })),
+        stop: (slot, at) => update(slot, r => (r.phase === 'playing' ? { ...r, phase: 'finished', finishedAt: Math.max(r.startedAt, at), stopped: true, outbox: 'none' } : r)),
         drop: slot => {
           if (slot === 'daily') return set({ run: null })
           const others = { ...get().others }

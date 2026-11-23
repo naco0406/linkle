@@ -61,12 +61,17 @@ export function runKindFor(
   today: string,
   playerId: string,
 ): RunKind | null {
-  if (puzzle.status !== 'published') return null
+  // 출제자가 아직 풀지 않은 문제(draft)는 출제자만 시작할 수 있다. 링크가 있는 사람만 푸는 문제(unlisted)는 누구나(설계 문서 16.4)
+  const open = puzzle.status === 'published' || puzzle.status === 'unlisted' || (puzzle.status === 'draft' && puzzle.authorId === playerId)
+  if (!open) return null
   if (puzzle.kind === 'daily') {
+    if (puzzle.status !== 'published') return null
     // 아직 오지 않은 날의 문제는 없는 것으로 다룬다. 출발·도착이 미리 새면 안 된다
     if (puzzle.date === null || puzzle.date > today) return null
     return puzzle.date === today ? { mode: 'daily', ranked: true } : { mode: 'archive', ranked: false }
   }
+  // 랜덤 풀은 같이 달리기의 문제라 순위표가 없다
+  if (puzzle.kind === 'random') return { mode: 'community', ranked: false }
   // 출제자는 답을 알고 있으므로 순위에 들지 않는다
   return { mode: 'community', ranked: puzzle.authorId !== playerId }
 }

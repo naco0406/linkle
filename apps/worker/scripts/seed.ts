@@ -41,6 +41,12 @@ const sql =
     p => `UPDATE puzzles SET par = ${p.par}, difficulty = ${quote(p.difficulty)}, solution = ${quote(JSON.stringify(p.solution))} WHERE start_id = ${p.start.id} AND end_id = ${p.end.id} AND solution IS NULL;\n`,
   ).join('')
 
+// 같이 달리기의 랜덤 풀(설계 문서 16.3.3). 같은 쌍을 랜덤 문제로도 넣어 로컬에서 방을 시험할 수 있게 한다
+const random = PAIRS.map(
+  (p, i) =>
+    `INSERT OR IGNORE INTO puzzles (kind, number, start_id, start_title, end_id, end_title, par, difficulty, solution, status, created_at) VALUES ('random', ${i + 1}, ${p.start.id}, ${quote(p.start.title)}, ${p.end.id}, ${quote(p.end.title)}, ${p.par}, ${quote(p.difficulty)}, ${quote(JSON.stringify(p.solution))}, 'published', ${now});\n`,
+).join('')
+
 mkdirSync('.wrangler', { recursive: true })
-writeFileSync(OUT, sql)
+writeFileSync(OUT, sql + random)
 console.log(`${OUT}: 오늘(${kstDate(now)})부터 ${rows.length}일치`)

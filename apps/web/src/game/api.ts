@@ -1,10 +1,10 @@
-import type { Puzzle, Run, RunMode, Yesterday } from '@linkle/core'
-import { playerId } from './player'
+import type { Ghost, Puzzle, Rules, Run, RunMode, Yesterday } from '@linkle/core'
+import { playerId, playerSalt } from './player'
 
 // 서버(apps/worker)의 API를 부르는 곳. 응답의 모양은 설계 문서 3.8과 같다.
 
 export type Today = { date: string; number: number; resetsAt: number; serverNow: number; finishedCount: number }
-export type Started = { runId: string; startedAt: number; serverNow: number; mode: RunMode; puzzle: Puzzle }
+export type Started = { runId: string; startedAt: number; serverNow: number; mode: RunMode; puzzle: Puzzle; ghost?: Ghost | null }
 /** order는 그 문제를 몇 번째로 끝냈는지. 기록에 들지 않는 판은 null */
 export type Finished = { order: number | null; durationMs: number; rank?: number | null }
 
@@ -54,7 +54,7 @@ export function getToday(): Promise<Today> {
 
 /** 오늘의 문제를 시작한다. 출발·도착 문서는 여기서 처음 받는다. 다시 불러도 같은 판과 같은 시작 시각이 온다 */
 export function startDaily(): Promise<Started> {
-  return call<Started>('/api/runs', { playerId: playerId() })
+  return call<Started>('/api/runs', { playerId: playerId(), salt: playerSalt() })
 }
 
 /** 끝난 판을 서버에 알린다. 여러 번 보내도 처음 저장된 결과가 온다 */
@@ -84,6 +84,48 @@ export const getBoard = (id: number) => call<Board>(`/api/puzzles/${id}/board?pl
 export const getDay = (date: string) => call<Yesterday>(`/api/days/${date}`)
 
 /** 지난 문제나 커뮤니티 문제를 시작한다. 커뮤니티 문제는 처음 도전만 순위에 든다 */
-export function startPuzzle(puzzleId: number): Promise<Started> {
-  return call<Started>('/api/runs', { playerId: playerId(), puzzleId })
+export function startPuzzle(puzzleId: number, challenge?: string): Promise<Started> {
+  return call<Started>('/api/runs', { playerId: playerId(), puzzleId, salt: playerSalt(), ...(challenge ? { challenge } : {}) })
 }
+
+// ── 친구와 겨루기(설계 문서 16장) ──
+
+export type Step = { id: number; title: string; emoji: string | null; back: boolean }
+export type ChallengeRow = { name: string; ms: number; moves: number; me: boolean; sender: boolean }
+export type Challenge = {
+  code: string
+  byAuthor: boolean
+  puzzle: { id: number; kind: Puzzle['kind']; number: number; difficulty: 'easy' | 'normal' | 'hard' | null }
+  sender: { name: string; ms: number; moves: number; emoji: string[] | null }
+  takers: number
+  board: ChallengeRow[]
+  compare: { mine: { ms: number; moves: number; path: Step[] }; theirs: { path: Step[] } } | null
+}
+
+/** 끝낸 판으로 도전장을 만든다. 같은 판이면 같은 코드가 온다 */
+export const makeChallenge = (runId: string) => call<{ code: string }>('/api/challenges', { playerId: playerId(), runId })
+export const getChallenge = (code: string) => call<Challenge>(`/api/challenges/${code}?playerId=${playerId()}`)
+export const renamePlayer = (salt: number) => call<{ name: string }>('/api/players/name', { playerId: playerId(), salt })
+
+export type MineRow = {
+  id: number
+  number: number
+  status: 'draft' | 'unlisted' | 'published'
+  start_title: string
+  end_title: string
+  author_moves: number | null
+  plays: number
+  clears: number
+  shorter: number
+  created_at: number
+  canPublish: boolean
+  solution: { id: number; title: string }[]
+}
+export const getMine = () => call<{ items: MineRow[] }>(`/api/mine?playerId=${playerId()}`)
+export const makePuzzle = (start: { id: number; title: string }, end: { id: number; title: string }) =>
+  call<{ puzzleId: number }>('/api/community/new', { playerId: playerId(), salt: playerSalt(), start, end })
+export const publishPuzzle = (id: number) => call<{ ok: true }>(`/api/puzzles/${id}/publish`, { playerId: playerId() })
+export const reportPuzzle = (id: number) => call<{ hidden: boolean }>(`/api/puzzles/${id}/report`, { playerId: playerId() })
+export const createRoom = () => call<{ code: string }>('/api/rooms', {})
+export type RoomInfo = { code: string; status: string; players: number; joinable: boolean; full: boolean; host: string | null; names: string[]; rules: Rules }
+export const getRoom = (code: string) => call<RoomInfo>(`/api/rooms/${code}`)

@@ -35,3 +35,20 @@ export async function computeEmoji(run: Run): Promise<string[]> {
     return levels.get(id) ?? null
   })
 }
+
+/**
+ * 같이 달리기에서 이동할 때마다 그 문서의 단계(0~4)를 구한다(설계 문서 16.3.4).
+ * 목표 문서의 첫 문단은 판을 시작할 때 미리 받아 둔다(targetLead). 모델이나 문단이 아직 없으면 null.
+ * 친구에게 보내는 색이다. 내 화면에는 내 색을 보여 주지 않는다.
+ */
+export async function levelFor(run: Run, pageId: number, targetLead: string | null): Promise<Level | null> {
+  const lead = run.leads[pageId]
+  const target = targetLead ?? run.leads[run.puzzle.end.id]
+  if (!lead || !target) return null
+  try {
+    const model = await getModel()
+    return levelOf(score01(model, embed(model, target), embed(model, lead)))
+  } catch {
+    return null
+  }
+}

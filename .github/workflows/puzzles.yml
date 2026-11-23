@@ -1,5 +1,5 @@
 # 문제 채우기: 위키백과 덤프로 링크 지도를 만들어
-#   오늘의 문제 대기열에 40개, 커뮤니티의 "링클이 낸 문제"에 8개를 넣는다.
+#   오늘의 문제 대기열에 40개, 커뮤니티의 "링클이 낸 문제"에 8개, 같이 달리기의 랜덤 풀에 40개를 넣는다.
 # 달력에 맞춰 돌지 않는다. Worker가 매시 대기열을 보고 10개 아래로 줄면 이 작업을 부른다(apps/worker/src/refill.ts).
 #   부르는 열쇠는 Worker 비밀값 GITHUB_DISPATCH_TOKEN(이 저장소의 Actions 읽기·쓰기 권한만 가진 토큰)이다.
 #   밖에서 부르는 실행이라 GitHub의 "60일 동안 활동이 없으면 예약 실행을 멈춘다" 규칙에 걸리지 않는다.
@@ -24,6 +24,9 @@ on:
       official:
         description: 커뮤니티에 올릴 수
         default: '8'
+      random:
+        description: 같이 달리기 랜덤 풀에 넣을 수
+        default: '40'
 
 # 두 번 불려도 한 번에 하나씩만 돈다. 같은 문제를 겹쳐 넣지 않게
 concurrency:
@@ -33,7 +36,7 @@ concurrency:
 jobs:
   fill:
     runs-on: ubuntu-latest
-    timeout-minutes: 240
+    timeout-minutes: 330
     env:
       LINKLE_URL: ${{ vars.LINKLE_URL }}
       LINKLE_ADMIN_TOKEN: ${{ secrets.LINKLE_ADMIN_TOKEN }}
@@ -66,3 +69,10 @@ jobs:
         run: pnpm --filter puzzle-gen generate --pool official --count ${{ inputs.official || '8' }} --minutes 45 --exclude out/used.txt
       - name: 커뮤니티에 올리기
         run: pnpm --filter puzzle-gen upload --pool official
+
+      - name: 이미 쓴 문서 다시 받기
+        run: pnpm --filter puzzle-gen used
+      - name: 같이 달리기 랜덤 문제 만들기
+        run: pnpm --filter puzzle-gen generate --pool random --count ${{ inputs.random || '40' }} --minutes 70 --exclude out/used.txt
+      - name: 랜덤 풀에 넣기
+        run: pnpm --filter puzzle-gen upload --pool random

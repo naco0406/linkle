@@ -27,7 +27,7 @@ export async function copyText(text: string): Promise<boolean> {
  * 붙여 넣는 앱이 서식을 받으면 제목이 하이퍼링크가 되고, 아니면 글자판이 들어간다.
  * 서식 복사를 못 하는 브라우저에서는 글자판만 복사한다.
  */
-async function copyRich(text: string, html: string): Promise<boolean> {
+export async function copyRich(text: string, html: string): Promise<boolean> {
   try {
     if (typeof ClipboardItem === 'undefined' || !navigator.clipboard?.write) throw new Error('no rich clipboard')
     await navigator.clipboard.write([

@@ -2,7 +2,8 @@ import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
-const api = { target: process.env.API_TARGET ?? 'http://127.0.0.1:8801' }
+// ws: 같이 달리기 방(/api/rooms/:code/ws)은 WebSocket이다
+const api = { target: process.env.API_TARGET ?? 'http://127.0.0.1:8801', ws: true }
 
 /**
  * 방문 통계(GA4). Google 태그 관리자 컨테이너 안에 GA4 태그(G-EBJNTJQE1X)가 들어 있고,

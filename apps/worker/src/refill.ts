@@ -4,6 +4,8 @@
 
 /** 오늘의 문제가 이만큼 아래로 남으면 채운다. 채우기는 한 시간 안팎이라 열흘이면 넉넉하다 */
 export const REFILL_BELOW = 10
+/** 같이 달리기의 랜덤 풀이 이만큼 아래로 남아도 채운다(설계 문서 16.3.3). 한 번 채우면 40개가 들어온다 */
+export const RANDOM_BELOW = 60
 /** 한 번 부르면 이만큼은 다시 부르지 않는다. 도는 중이거나 실패했을 때 매시 부르지 않게. 실패하면 다음 날 다시 한다 */
 export const REFILL_COOLDOWN_MS = 20 * 60 * 60 * 1000
 export const WORKFLOW = { repo: 'naco0406/linkle', file: 'puzzles.yml', ref: 'main' } as const
@@ -44,8 +46,16 @@ export async function readRefill(db: D1Database): Promise<RefillState | null> {
 type Send = (r: Request) => Promise<Response>
 
 export async function queueLeft(db: D1Database): Promise<number> {
-  const row = await db.prepare(`SELECT COUNT(*) AS n FROM puzzle_queue WHERE status = 'approved' AND pool = 'daily'`).first<{ n: number }>()
-  return row?.n ?? 0
+  const row = await db
+    .prepare(`SELECT (SELECT COUNT(*) FROM puzzle_queue WHERE status = 'approved' AND pool = 'daily') AS n, (SELECT COUNT(*) FROM puzzles WHERE kind = 'random' AND status = 'published') AS r`)
+    .first<{ n: number; r: number }>()
+  // 랜덤 풀이 모자라면 대기열이 넉넉해도 채운다. 채우기 한 번이 둘 다 채운다
+  return lowestOf(row?.n ?? 0, row?.r ?? 0)
+}
+
+/** 랜덤 풀의 부족을 대기열 기준으로 바꿔 말한다: 랜덤이 기준 아래면 대기열이 기준 아래인 것처럼 */
+export function lowestOf(queue: number, random: number): number {
+  return random < RANDOM_BELOW ? Math.min(queue, REFILL_BELOW - 1) : queue
 }
 
 /** GitHub에 문제 채우기를 부르고, 그 결과를 남긴다. 예약 작업과 관리자 화면의 "지금 채우기"가 함께 쓴다 */

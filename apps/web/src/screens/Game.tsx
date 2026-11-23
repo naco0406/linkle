@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useRef, useState } from 'react'
+import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react'
 import { ChevronRight, CircleHelp, Flag, Footprints, Timer, Undo2, X } from 'lucide-react'
 import { backTarget, elapsedMs, formatClock, moveCount, pathOf, stackOf, type Run } from '@linkle/core'
 import { getModel } from '../game/emoji'
@@ -14,7 +14,7 @@ const TRAIL = 'items-center gap-1 overflow-x-auto whitespace-nowrap text-[14px] 
  * 게임 화면. 위에서부터 목표, 지나온 길, 문서, 그리고 되돌아가기와 숫자.
  * 문서만 스크롤되고 나머지는 늘 보인다. 화면 높이는 dvh로 잡아 모바일 브라우저의 주소창이 접히고 펴져도 맞는다.
  */
-export function Game({ run, slot = 'daily', onQuit }: { run: Run; slot?: Slot; onQuit?: () => void }) {
+export function Game({ run, slot = 'daily', onQuit, quitLabel = '그만두기', top, onMove }: { run: Run; slot?: Slot; onQuit?: () => void; quitLabel?: string; top?: ReactNode; onMove?: (run: Run) => void }) {
   const { page, busy, opening, error, go, back, retry, dismissError } = useNavigator(run, slot)
   const [help, setHelp] = useState(false)
   const scroller = useRef<HTMLDivElement>(null)
@@ -35,6 +35,15 @@ export function Game({ run, slot = 'daily', onQuit }: { run: Run; slot?: Slot; o
   useEffect(() => {
     void getModel().catch(() => {})
   }, [])
+
+  // 같이 달리기는 이동할 때마다 방에 알린다
+  const moved = useRef(run.events.length)
+  useEffect(() => {
+    if (run.events.length !== moved.current) {
+      moved.current = run.events.length
+      onMove?.(run)
+    }
+  }, [run, onMove])
 
   // 새 문서는 맨 위부터 보여 주고, 경로 띠는 지금 문서가 보이게 끝으로 민다
   useEffect(() => {
@@ -70,11 +79,14 @@ export function Game({ run, slot = 'daily', onQuit }: { run: Run; slot?: Slot; o
         </button>
         {/* 관리자 연습 판에만 있다. 오늘의 문제는 그만둘 수 없다 */}
         {onQuit && (
-          <button onClick={onQuit} aria-label="그만두기" className="press -ml-2 grid h-10 w-10 flex-none place-items-center rounded-full text-ink">
+          <button onClick={onQuit} aria-label={quitLabel} className="press -ml-2 grid h-10 w-10 flex-none place-items-center rounded-full text-ink">
             <X className="h-6 w-6" strokeWidth={1.75} />
           </button>
         )}
       </header>
+
+      {/* 도전장의 고스트 줄, 같이 달리기의 레이스 바(설계 문서 16장). 머리와 지나온 길 사이 한 줄 */}
+      {top}
 
       {/* 세로 화면에서는 지나온 길이 머리 아래에 한 줄을 차지한다 */}
       <div ref={trail} className={`${TRAIL} flex h-11 flex-none border-b border-line bg-white px-4 short:hidden`} aria-label="지나온 길">

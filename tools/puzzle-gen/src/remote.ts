@@ -23,7 +23,7 @@ export async function fetchUsed(out: string): Promise<void> {
 }
 
 /** generate가 만든 후보(candidates.json)를 운영에 넣는다 */
-export async function upload(file: string, pool: 'daily' | 'official'): Promise<void> {
+export async function upload(file: string, pool: 'daily' | 'official' | 'random'): Promise<void> {
   const { url, token } = env()
   const items = JSON.parse(readFileSync(file, 'utf8')) as unknown[]
   for (let i = 0; i < items.length; i += 50) {

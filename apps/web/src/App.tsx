@@ -10,10 +10,18 @@ import { Archive } from './screens/Archive'
 import { Community } from './screens/Community'
 import { PuzzlePage } from './screens/Puzzle'
 import { Yesterday } from './screens/Yesterday'
+import { ChallengePage } from './screens/Challenge'
+
 import { TabBar } from './ui/TabBar'
 
 // 관리자 화면은 따로 받는다. 일반 방문자의 첫 화면을 무겁게 하지 않는다
 const Admin = lazy(() => import('./screens/Admin').then(m => ({ default: m.Admin })))
+// 같이 달리기 방과 출제 화면도 따로 받는다(QR 읽기, 룰렛 등). 커뮤니티에서 들어갈 때만 받는다
+const RoomPage = lazy(() => import('./screens/Room').then(m => ({ default: m.RoomPage })))
+const MakePage = lazy(() => import('./screens/Make').then(m => ({ default: m.MakePage })))
+const MinePage = lazy(() => import('./screens/Make').then(m => ({ default: m.MinePage })))
+const MinePuzzlePage = lazy(() => import('./screens/Make').then(m => ({ default: m.MinePuzzlePage })))
+const later = (el: React.ReactNode) => <Suspense fallback={null}>{el}</Suspense>
 
 /** 오늘의 게임. 어느 화면을 보일지는 주소가 아니라 Run의 상태가 정한다 */
 function Daily() {
@@ -57,7 +65,12 @@ export function App() {
           <Route path="/archive" element={<Archive />} />
           <Route path="/archive/:id" element={<PuzzlePage key="archive" kind="archive" />} />
           <Route path="/community" element={<Community />} />
+          <Route path="/community/new" element={later(<MakePage />)} />
+          <Route path="/community/mine" element={later(<MinePage />)} />
+          <Route path="/community/mine/:id" element={later(<MinePuzzlePage />)} />
           <Route path="/community/:id" element={<PuzzlePage key="community" kind="community" />} />
+          <Route path="/c/:code" element={<ChallengePage />} />
+          <Route path="/room/:code" element={later(<RoomPage />)} />
           <Route path="/me" element={<Me />} />
           <Route path="/about" element={<About />} />
         </Route>

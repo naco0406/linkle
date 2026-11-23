@@ -26,5 +26,8 @@
   // 매시 5분: 오늘·내일 문제가 비어 있으면 대기열에서 채우고, 어제의 기록을 모으고 확인한다.
   // 할 일이 없으면 DB를 한 번 읽고 끝난다. 위키백과가 잠시 막혀도 다음 시간에 이어서 한다. 무료 요금제는 계정당 예약이 5개까지라 하나로 묶었다.
   "triggers": { "crons": ["5 * * * *"] },
+  // 같이 달리기 방(설계 문서 16.3.7). SQLite를 쓰는 Durable Object는 Workers Free 요금제에서 된다
+  "durable_objects": { "bindings": [{ "name": "ROOM", "class_name": "Room" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Room"] }],
   "observability": { "enabled": true }
 }

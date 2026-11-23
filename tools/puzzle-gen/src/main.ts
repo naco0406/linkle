@@ -5,7 +5,7 @@ import { buildGraph } from './graph.ts'
 //   download  덤프 받기 (data/)
 //   build     링크 지도 만들기 (data/graph/)
 //   used      운영에서 이미 쓴 제목 받기 (LINKLE_URL, LINKLE_ADMIN_TOKEN)
-//   upload    만든 후보를 운영에 넣기 (--pool daily|official)
+//   upload    만든 후보를 운영에 넣기 (--pool daily|official|random)
 //   solve     정해진 출발·도착 쌍의 정답 경로 찾기 (--in pairs.json → out/solved.json)
 //   reason    이미 있는 문제들을 추론 검사 (--in pairs.json → out/reason.json)
 //   generate  후보 고르기 → 추론 검사(뜻이 가까운 문, 게임 규칙으로 경로 확인) → out/queue.sql(오늘의 문제 대기열) 또는 --pool official이면 out/official.sql(커뮤니티)
@@ -16,6 +16,8 @@ const GRAPH = join(DATA, 'graph')
 const OUT = join(here, 'out')
 
 const [cmd, ...args] = process.argv.slice(2)
+/** daily: 오늘의 문제 대기열, official: 커뮤니티의 링클이 낸 문제, random: 같이 달리기의 랜덤 풀(설계 문서 16.3.3) */
+const poolOf = (s: string) => (s === 'official' || s === 'random' ? s : 'daily') as 'daily' | 'official' | 'random'
 const opt = (name: string, fallback: string) => {
   const i = args.indexOf(`--${name}`)
   return i >= 0 ? args[i + 1]! : fallback
@@ -36,7 +38,7 @@ if (cmd === 'build') {
     outDir: OUT,
     count: Number(opt('count', '40')),
     seed: Number(opt('seed', String(Date.now() % 1e9))),
-    pool: opt('pool', 'daily') === 'official' ? 'official' : 'daily',
+    pool: poolOf(opt('pool', 'daily')),
     exclude,
     // --minutes <분>: 이 시간이 지나면 그때까지 찾은 것만 낸다
     minutes: Number(opt('minutes', '0')),
@@ -54,7 +56,7 @@ if (cmd === 'build') {
   await fetchUsed(opt('out', join(OUT, 'used.txt')))
 } else if (cmd === 'upload') {
   const { upload } = await import('./remote.ts')
-  await upload(opt('file', join(OUT, 'candidates.json')), opt('pool', 'daily') === 'official' ? 'official' : 'daily')
+  await upload(opt('file', join(OUT, 'candidates.json')), poolOf(opt('pool', 'daily')))
 } else {
   console.log('사용법: node src/main.ts download | build | generate [--count 40] [--seed 1] [--pool daily|official] [--exclude titles.txt]')
   process.exit(1)

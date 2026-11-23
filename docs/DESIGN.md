@@ -776,7 +776,7 @@ Worker의 예약 작업이 매시 5분에 돈다(`5 * * * *`). 할 일이 없으
 9. **무한 모드 1단계**: `/archive`, `/community`(링클 출제 문제), 문제별 순위표, 자동 닉네임. (완료)
 10. **마감**: PWA, 내 기록, 크레딧, 라이선스 표기, 도메인 연결. 여기까지가 첫 공개다. (크레딧·라이선스 표기와 도메인 완료: 게임 문서 아래 출처·CC BY-SA 4.0, 도착 화면과 어제의 기록에서 원문 링크, `/about`(위키백과 글의 출처와 바꾼 점만 적는다. 유사도 모델은 운영자 소유라 라이선스를 적지 않는다). 게임 중에는 원문으로 나가는 링크를 두지 않는다)
    - 방문 통계: GA4(2026-11-21). Google 태그 관리자 컨테이너 `GTM-WGWM22L3` 안에 GA4 태그 `G-EBJNTJQE1X`가 있고, 화면 이동도 그 태그가 페이지 조회로 센다. 운영 빌드에만 넣고(`apps/web/vite.config.ts`) `/admin`은 세지 않는다. 게임 이벤트(시작, 도착)는 아직 보내지 않는다.
-11. **무한 모드 2단계**: 사용자 출제(`/community/new`), 신고, Turnstile. 2026-11-23에 친구와 겨루기(16장)와 함께 다시 짰다. 순서는 16.6.
+11. **무한 모드 2단계와 친구와 겨루기**: 도전장, 랜덤 풀, 같이 달리기, 친구에게 내기, 커뮤니티에 올리기, 신고. (완료 2026-11-23, 16.9. Turnstile은 하지 않았다)
 
 6번에서 `puzzles`와 `runs`를 처음부터 3.9의 모양(문제 id 기준)으로 만든다. 9번과 11번에서 스키마를 다시 뜯지 않기 위해서다.
 
@@ -1366,3 +1366,30 @@ CREATE INDEX runs_challenge ON runs (challenge, duration_ms) WHERE challenge IS 
 - 같은 와이파이(학교, 회사)의 8명이 한 IP로 위키백과를 부를 때 4.1의 요청 제한에 닿는지. 한 판 이동 수로는 분당 수십 번이라 닿지 않을 것으로 본다.
 - 이동마다 색을 계산할 때 모바일에서 걸리는 시간. 모델은 대기실에서 미리 받는다.
 - 앱 안 브라우저의 기기 id 문제가 실제로 얼마나 자주 생기는지.
+- 같은 방에 8명이 실제 휴대폰으로 동시에 달렸을 때의 Durable Object 요청 수와 실행 시간. 로컬(wrangler dev)에서 두 기기로만 확인했다.
+
+### 16.9 구현 (2026-11-23)
+
+16.6의 다섯 단계를 한 번에 만들었다. 시안 보드(`docs/design/friend-race/`)의 화면을 따랐다.
+
+| 무엇 | 어디 |
+|---|---|
+| 메시지 모양과 검사, 결과 줄 세우기, 고스트, 이름 다시 뽑기 | `packages/core/src/room.ts`, `ghost.ts`, `nickname.ts`, `share.ts` |
+| D1: 도전장 표, `runs.challenge`·`runs.room`, `players.salt` | `apps/worker/migrations/0006_friends.sql` |
+| 도전장, 이름 다시 뽑기, 친구에게 내기(초안 → 출제자가 풀면 unlisted), 커뮤니티에 올리기, 신고 | `apps/worker/src/friends.ts`, `pair.ts`, `index.ts` |
+| 방의 규칙(순수 상태 기계)과 Durable Object | `apps/worker/src/room-core.ts`, `room.ts`. 설정은 두 wrangler 파일의 `durable_objects`, `migrations` |
+| 랜덤 풀 | `tools/puzzle-gen --pool random`, 관리용 API `pool: 'random'`, 문제 채우기 워크플로의 세 번째 단계. 랜덤 풀이 60개 아래면 대기열이 넉넉해도 채운다(`refill.ts`의 `lowestOf`) |
+| 화면 | `apps/web/src/screens/Challenge.tsx`(/c/:code), `Room.tsx`(/room/:code), `Make.tsx`(/community/new, /community/mine), `ui/Friends.tsx`, `ui/QrScanner.tsx`, `game/room.ts`, `game/inApp.ts` |
+
+시안과 달라진 것과 정한 것:
+
+- 방의 판(D1 `runs`)은 출발 순간에 방이 사람마다 만들고, 시작 시각은 출발 시각이다. 완료는 지금처럼 `/api/runs/:id/finish`로 보낸다. 그래서 커뮤니티 문제의 순위표, 시간 검사(5.3), 경로 확인(12.4)이 같은 코드로 돈다. 방에는 도착 알림만 따로 간다.
+- 이동마다 보내는 색은 목표 문서의 첫 문단을 출발 전에 받아 기기에서 구한다. 끝난 뒤의 "길 다시 보기"는 각 기기가 자기 길을 방에 한 번 보내 모두에게 나누고, 저장하지 않는다. 방이 잠들었다 깨면 이 길은 다시 받아야 한다.
+- 방 정보(GET /api/rooms/:code)는 참가 확인 화면을 위해 방장 이름, 사람 이름, 규칙을 돌려준다. 모두 자동 이름이라 보여도 된다.
+- 같이 달리기의 하루 상한은 방 수로 센다(`ROOMS_PER_DAY` = 1500, `job_state`의 `rooms:날짜`). 넘으면 방 만들기가 429 `busy`를 돌려주고 커뮤니티가 "오늘은 같이 달리기가 붐벼요"를 띄운다.
+- 출제자 관전의 "내가 간 길"은 내 문제함 API(`/api/mine`)의 `solution`을 쓴다.
+- 받은 도전장은 열어 본 것만 기기에 남긴다(`linkle:inbox:v1`). 서버에는 누가 무엇을 받았는지가 없다.
+- 공개 연출의 미끼 제목은 후보 문서 목록 대신 손으로 고른 100개다(`apps/web/src/game/reel.ts`). 후보 문서 목록을 정적 파일로 내는 것은 문제 생성 도구의 다음 작업이다.
+- 방, 출제 화면은 따로 받는다(QR 읽기 포함). 첫 화면 번들은 늘지 않았다.
+
+하지 않은 것: 출제의 Turnstile(사이트 키와 비밀값을 운영자가 만들어야 한다. 대신 기기당 하루 5문제와 신고로 막는다), 관리자 화면에 신고 수 보이기(API는 `reports`를 돌려준다), 신고된 문제의 사람 검토 흐름.

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
-import { ChevronRight, Flag, Share2 } from 'lucide-react'
+import { ChevronRight, Flag, Send, Share2 } from 'lucide-react'
 import { elapsedMs, formatClock, kstDate, moveCount, type Run } from '@linkle/core'
 import { useStats } from '../game/stats'
 import { now, useGame } from '../game/store'
@@ -9,6 +9,11 @@ import { Card, Countdown, Cta, formatDateKo, kindOfEmoji, PathStep as Step, Sq, 
 import { Spinner, Toast } from '../ui/parts'
 import { shareRun } from '../ui/share'
 import { StreakCelebration } from '../ui/Streak'
+import { getChallenge } from '../game/api'
+import { useLoad } from '../game/useLoad'
+import { ADMIN_RUN_PREFIX } from '../game/admin'
+import { ChallengeBoard, sendChallenge, TwoPaths, VsCards } from '../ui/Friends'
+import { CardTitle } from './Yesterday'
 
 type TileValue = { label: string; value: string | number | null; unit?: string }
 
@@ -49,7 +54,12 @@ export function Arrival({
     ? `${puzzle.date ? `${formatDateKo(puzzle.date).replace(/ \S+요일$/, '')}, ` : ''}${puzzle.number}번째 링클`
     : run.mode === 'archive'
       ? `${puzzle.number}번째 링클을 지난 문제로 풀었어요`
-      : `링클 커뮤니티 ${puzzle.number}번`
+      : puzzle.kind === 'random'
+        ? `링클 랜덤 ${puzzle.number}번`
+        : `링클 커뮤니티 ${puzzle.number}번`
+  // 오늘의 문제가 아니면 "결과 공유"가 "도전장 보내기"가 된다(설계 문서 16.2). 서버가 판을 받은 뒤에 만들 수 있다
+  const challengeable = !daily && !run.runId.startsWith(ADMIN_RUN_PREFIX)
+  const ready = run.outbox === 'none'
 
   // 오늘의 문제로 연속 일수가 방금 늘었으면 축하 화면이 먼저 나온다
   if (daily && celebrate && celebrate === puzzle.date) {
@@ -100,13 +110,25 @@ export function Arrival({
         를 따라요.
       </p>
 
+      {run.challenge && ready && <ChallengeResult code={run.challenge} />}
+
       {children && <div className="mt-3 flex flex-col gap-3">{children}</div>}
 
       <div className="sticky bottom-0 mt-auto bg-gradient-to-t from-secondary from-70% to-transparent pb-[max(16px,env(safe-area-inset-bottom))] pt-6">
-        <Cta onClick={async () => setToast(await shareRun(run))} disabled={!run.emoji}>
-          <Share2 className="h-5 w-5" strokeWidth={1.75} aria-hidden />
-          결과 공유
-        </Cta>
+        {challengeable ? (
+          <>
+            <Cta onClick={async () => setToast(await sendChallenge(run))} disabled={!run.emoji || !ready}>
+              <Send className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+              {run.challenge ? '나도 도전장 보내기' : '도전장 보내기'}
+            </Cta>
+            <p className="mt-1.5 text-center text-[13px] leading-5 text-ink-2">결과와 함께 이 문제로 겨루는 링크가 가요</p>
+          </>
+        ) : (
+          <Cta onClick={async () => setToast(await shareRun(run))} disabled={!run.emoji}>
+            <Share2 className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+            결과 공유
+          </Cta>
+        )}
         <div className={`mt-1 flex items-center ${daily ? 'justify-between' : 'justify-center'}`}>
           {daily && <Countdown />}
           <TextButton onClick={close} className={daily ? '-mr-3' : ''}>
@@ -116,6 +138,24 @@ export function Arrival({
         </div>
       </div>
       {toast && <Toast message={toast} onDone={clearToast} />}
+    </div>
+  )
+}
+
+/** 도전장으로 푼 판: 나와 보낸 사람, 두 길, 같은 링크로 푼 사람끼리의 순위 */
+function ChallengeResult({ code }: { code: string }) {
+  const { data } = useLoad(`challenge:${code}`, () => getChallenge(code))
+  if (!data?.compare) return null
+  return (
+    <div className="mt-3 flex flex-col gap-3">
+      <VsCards me={data.compare.mine} them={data.sender} byMoves={data.byAuthor} />
+      <Card className="!p-4">
+        <TwoPaths mine={data.compare.mine.path} theirs={data.compare.theirs.path} />
+      </Card>
+      <Card aria-label="이 도전장 순위">
+        <CardTitle side={`${data.board.length}명`}>이 도전장 순위</CardTitle>
+        <ChallengeBoard data={data} />
+      </Card>
     </div>
   )
 }

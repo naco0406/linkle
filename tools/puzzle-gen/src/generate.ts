@@ -59,7 +59,7 @@ async function similarity(titles: [string, string], leads: Leads, model: ReturnT
   return score01(model, v(titles[0]), v(titles[1]))
 }
 
-export async function generate(o: { graphDir: string; outDir: string; count: number; seed: number; pool?: 'daily' | 'official'; exclude?: string[]; minutes?: number }): Promise<Candidate[]> {
+export async function generate(o: { graphDir: string; outDir: string; count: number; seed: number; pool?: 'daily' | 'official' | 'random'; exclude?: string[]; minutes?: number }): Promise<Candidate[]> {
   const g = loadGraph(o.graphDir)
   const rand = seeded(o.seed)
   const wiki = new Wiki()
@@ -163,8 +163,8 @@ export async function generate(o: { graphDir: string; outDir: string; count: num
 
   mkdirSync(o.outDir, { recursive: true })
   writeFileSync(join(o.outDir, 'candidates.json'), JSON.stringify(found, null, 1))
-  const file = o.pool === 'official' ? 'official.sql' : 'queue.sql'
-  writeFileSync(join(o.outDir, file), o.pool === 'official' ? officialSql(found, Date.now()) : queueSql(found, Date.now()))
+  const file = o.pool === 'official' ? 'official.sql' : o.pool === 'random' ? 'random.sql' : 'queue.sql'
+  writeFileSync(join(o.outDir, file), o.pool === 'official' || o.pool === 'random' ? officialSql(found, Date.now(), o.pool) : queueSql(found, Date.now()))
   log(`${o.outDir}/${file}: ${found.length}개`)
   return found
 }
@@ -185,13 +185,13 @@ export function queueSql(items: Candidate[], now: number): string {
  * 커뮤니티의 "링클이 낸 문제"로 바로 공개하는 SQL. 번호는 링클이 낸 문제끼리 이어진다.
  * 한 줄씩 넣어야 앞 줄이 넣은 번호를 다음 줄이 본다. 같은 쌍은 한 번만 들어간다(puzzles_pair).
  */
-export function officialSql(items: Candidate[], now: number): string {
+export function officialSql(items: Candidate[], now: number, kind: 'official' | 'random' = 'official'): string {
   if (items.length === 0) return '-- 후보 없음\n'
   return items
     .map(
       c =>
         `INSERT OR IGNORE INTO puzzles (kind, number, start_id, start_title, end_id, end_title, par, difficulty, solution, status, created_at)\n` +
-        `SELECT 'official', COALESCE(MAX(number), 0) + 1, ${c.start.id}, ${q(c.start.title)}, ${c.end.id}, ${q(c.end.title)}, ${c.par}, ${q(c.difficulty)}, ${q(JSON.stringify(c.solution))}, 'published', ${now} FROM puzzles WHERE kind = 'official';`,
+        `SELECT '${kind}', COALESCE(MAX(number), 0) + 1, ${c.start.id}, ${q(c.start.title)}, ${c.end.id}, ${q(c.end.title)}, ${c.par}, ${q(c.difficulty)}, ${q(JSON.stringify(c.solution))}, 'published', ${now} FROM puzzles WHERE kind = '${kind}';`,
     )
     .join('\n')
     .concat('\n')

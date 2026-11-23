@@ -59,20 +59,24 @@ export async function findPuzzle(db: D1Database, id: number): Promise<StoredPuzz
  */
 export async function startRun(
   db: D1Database,
-  input: { puzzleId: number; playerId: string; kind: RunKind; now: number },
+  input: { puzzleId: number; playerId: string; kind: RunKind; now: number; challenge?: string | null; room?: string | null; salt?: number },
 ): Promise<{ runId: string; startedAt: number }> {
   const { puzzleId, playerId, kind, now } = input
+  const challenge = input.challenge ?? null
+  const room = input.room ?? null
   const runId = crypto.randomUUID()
   // 순위표에 쓰는 이름은 기기 id에서 정해진다(nicknameOf). 처음 온 기기만 넣는다
-  const player = db.prepare(`INSERT INTO players (id, name, created_at) VALUES (?1, ?2, ?3) ON CONFLICT (id) DO NOTHING`).bind(playerId, nicknameOf(playerId), now)
+  const player = db.prepare(`INSERT INTO players (id, name, created_at, salt) VALUES (?1, ?2, ?3, ?4) ON CONFLICT (id) DO NOTHING`).bind(playerId, nicknameOf(playerId, input.salt ?? 0), now, input.salt ?? 0)
   const insert = (ranked: 0 | 1) =>
     db
-      .prepare('INSERT INTO runs (id, puzzle_id, mode, ranked, player_id, started_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6) ON CONFLICT DO NOTHING')
-      .bind(runId, puzzleId, kind.mode, ranked, playerId, now)
+      .prepare('INSERT INTO runs (id, puzzle_id, mode, ranked, player_id, started_at, challenge, room) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8) ON CONFLICT DO NOTHING')
+      .bind(runId, puzzleId, kind.mode, ranked, playerId, now, challenge, room)
+  // 도전장으로 시작한 판은 그 도전장의 도전 수에 센다
+  const take = challenge ? [db.prepare('UPDATE challenges SET takers = takers + 1 WHERE code = ?1').bind(challenge)] : []
   const fresh = { runId, startedAt: now }
 
   if (!kind.ranked) {
-    await db.batch([player, insert(0)])
+    await db.batch([player, insert(0), ...take])
     return fresh
   }
 
@@ -83,13 +87,13 @@ export async function startRun(
   const existing = results[2]?.results[0]
   if (!existing || existing.id === runId) {
     // 처음 도전한 판만 도전 수에 센다. 커뮤니티 목록의 "도전"과 "클리어율"이 이 값을 쓴다
-    await db.prepare('UPDATE puzzles SET plays = plays + 1 WHERE id = ?1').bind(puzzleId).run()
+    await db.batch([db.prepare('UPDATE puzzles SET plays = plays + 1 WHERE id = ?1').bind(puzzleId), ...take])
     return fresh
   }
   if (kind.mode === 'daily') return { runId: existing.id, startedAt: existing.started_at }
 
   // 커뮤니티 문제의 두 번째 도전부터는 순위에 들지 않는 새 Run이다
-  await insert(0).run()
+  await db.batch([insert(0), ...take])
   return fresh
 }
 
@@ -99,6 +103,8 @@ export type RunForFinish = {
   /** 이미 끝난 Run이면 저장된 결과 */
   finished: FinishResult | null
   puzzle: Puzzle
+  status: string
+  authorId: string | null
 }
 
 /** order는 그 문제를 몇 번째로 끝냈는지. 기록에 들지 않는 판은 null */
@@ -128,6 +134,8 @@ export async function findRunForFinish(db: D1Database, runId: string): Promise<R
     startedAt: row.started_at,
     finished: row.finished_at === null ? null : { order: row.finish_order, durationMs: row.duration_ms ?? 0 },
     puzzle: toStored(row).puzzle,
+    status: row.status,
+    authorId: row.author_id,
   }
 }
 
@@ -311,7 +319,8 @@ export async function puzzleInfo(db: D1Database, id: number): Promise<PuzzleInfo
       .bind(id),
   ])
   const row = card?.results[0] as (PuzzleCard & { date: string | null; status: string }) | undefined
-  if (!row || row.status !== 'published') return null
+  // 링크가 있는 사람만 푸는 문제(unlisted)도 카드는 보인다. 목록(listCommunity)에는 나오지 않는다
+  if (!row || (row.status !== 'published' && row.status !== 'unlisted')) return null
   const { status: _status, ...rest } = row
   return { ...rest, medianMoves: (median?.results[0] as { moves?: number } | undefined)?.moves ?? null }
 }
