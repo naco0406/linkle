@@ -81,3 +81,16 @@ button:disabled {
     opacity: 1;
   }
 }
+
+/* 룰렛이 멈춘 칸이 한 번 톡 튄다 */
+@keyframes land {
+  0% {
+    scale: 0.94;
+  }
+  55% {
+    scale: 1.05;
+  }
+  100% {
+    scale: 1;
+  }
+}

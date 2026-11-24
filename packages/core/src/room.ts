@@ -15,8 +15,11 @@ export const REACTIONS = ['👏', '😱', '🤔', '🔥', '😭', '🐢'] as con
 export type Reaction = (typeof REACTIONS)[number]
 /** 반응을 보낼 수 있는 간격 */
 export const REACTION_GAP_MS = 1000
-/** 시작을 누른 뒤 출발 릴이 멈추는 때, 도착 릴이 멈추는 때, 출발하는 때(ms). 그사이 기기는 출발 문서를 받아 둔다 */
-export const REVEAL = { start: 2400, end: 3200, go: 8000 } as const
+/**
+ * 시작을 누른 뒤 출발 릴이 멈추는 때, 도착 릴이 멈추는 때, 출발하는 때(ms). 그사이 기기는 출발 문서를 받아 둔다.
+ * 두 릴은 함께 돌기 시작해 출발 릴이 먼저 멈추고, 도착 릴은 한 박자 더 끌다 멈춘다. 마지막 3초가 3, 2, 1이다
+ */
+export const REVEAL = { start: 3200, end: 4800, go: 9800 } as const
 /** 방장이 다시 돌릴 수 있는 마지막 순간(출발 전 ms) */
 export const RESPIN_BEFORE_GO_MS = 1500
 export const LIMIT_MINUTES = [5, 10, 15, 0] as const

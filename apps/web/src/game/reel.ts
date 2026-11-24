@@ -30,3 +30,36 @@ export function reelOf(seed: number, length: number, exclude: string[]): string[
 }
 
 export { fetchSummary }
+
+/** 손잡이를 당긴 듯 빨라지는 시간(ms) */
+export const SPIN_UP_MS = 280
+/** 목표 칸을 지나쳤다가 제자리로 딸깍 돌아오는 시간(ms) */
+export const SETTLE_MS = 320
+/** 지나치는 거리(칸) */
+const OVERSHOOT = 0.16
+
+/**
+ * 릴의 위치(칸 단위)와 속도(칸/초). 서버 시각 하나로 정해지므로 모든 기기가 같은 장면을 본다.
+ *   0 ~ SPIN_UP_MS      속도가 0에서 최고까지 오른다
+ *   그 뒤 ~ total       3차 곡선으로 길게 느려진다. 마지막 몇 칸은 한 칸씩 넘어가는 것이 보인다(실제 룰렛처럼)
+ *                       목표 칸을 살짝 지나친 자리에서 선다
+ *   total ~ +SETTLE_MS  제자리로 딸깍 돌아온다
+ * elapsed: 돌기 시작한 뒤 지난 시간, total: 설 때까지 걸리는 시간, distance: 목표 칸까지 지나갈 칸 수
+ */
+export function reelAt(elapsed: number, total: number, distance: number): { p: number; v: number; done: boolean } {
+  const t = Math.max(0, elapsed)
+  const ta = SPIN_UP_MS
+  const far = distance + OVERSHOOT
+  // 빨라지는 구간 끝의 속도가 느려지는 구간 처음 속도와 같게 맞춘다
+  const vmax = (3 * far) / (total + 0.5 * ta)
+  const d0 = (vmax * ta) / 2
+  if (t < ta) return { p: (vmax * t * t) / (2 * ta), v: ((vmax * t) / ta) * 1000, done: false }
+  if (t < total) {
+    const x = (t - ta) / (total - ta)
+    const rest = far - d0
+    return { p: d0 + rest * (1 - (1 - x) ** 3), v: ((3 * rest * (1 - x) ** 2) / (total - ta)) * 1000, done: false }
+  }
+  const u = Math.min(1, (t - total) / SETTLE_MS)
+  const back = u < 0.5 ? 4 * u ** 3 : 1 - (-2 * u + 2) ** 3 / 2
+  return { p: far - OVERSHOOT * back, v: 0, done: u >= 1 }
+}

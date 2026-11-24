@@ -28,7 +28,7 @@ import { getModel, levelFor } from '../game/emoji'
 import { detectInApp, stayedHere, stayHere } from '../game/inApp'
 import { loadPage } from '../game/pages'
 import { myName, rerollSalt } from '../game/player'
-import { reelOf } from '../game/reel'
+import { reelAt, reelOf } from '../game/reel'
 import { CREATED, roomSlot, useRoom, type RoomState } from '../game/room'
 import { fetchSummary } from '../game/summary'
 import { now, runIn, useGame, useImmersive } from '../game/store'
@@ -735,7 +735,6 @@ function TimeLeft({ endsAt, t }: { endsAt: number | null; t: number }) {
 function Reveal({ state, me, send, t }: { state: RoomState; me: SeatView; send: Send; t: number }) {
   const start = state.start!
   const base = start.startsAt - REVEAL.go
-  const startStop = base + REVEAL.start
   const endStop = base + REVEAL.end
   const reduced = useMemo(() => matchMedia('(prefers-reduced-motion: reduce)').matches, [])
   const [leads, setLeads] = useState<[string | null, string | null]>([null, null])
@@ -747,7 +746,6 @@ function Reveal({ state, me, send, t }: { state: RoomState; me: SeatView; send: 
   }, [start.puzzle.start.title, start.puzzle.end.title])
   const left = Math.ceil((start.startsAt - t) / 1000)
   const counting = t >= endStop + 1500 && left <= 3
-  const decoys = useMemo(() => reelOf(start.seed, 40, [start.puzzle.start.title, start.puzzle.end.title]), [start])
   const canRespin = me.host && state.room?.rules.source === 'random' && t < start.startsAt - RESPIN_BEFORE_GO_MS
 
   if (counting)
@@ -766,25 +764,6 @@ function Reveal({ state, me, send, t }: { state: RoomState; me: SeatView; send: 
         </p>
       </div>
     )
-  const reel = (label: string, title: string, stopAt: number, lead: string | null, offset: number) => {
-    const stopped = fast >= stopAt
-    const i = Math.floor(fast / 85) + offset
-    const items = stopped || reduced ? [decoys[offset % decoys.length]!, stopped ? title : '?', decoys[(offset + 1) % decoys.length]!] : [decoys[i % 40]!, decoys[(i + 1) % 40]!, decoys[(i + 2) % 40]!]
-    return (
-      <div>
-        <p className="mb-2 ml-1 text-[14px] leading-5 text-white/70">{label}</p>
-        <div className="relative flex h-[148px] flex-col items-center justify-center overflow-hidden rounded-[20px] bg-white/10">
-          <span className={`absolute inset-x-3 top-1/2 h-14 -translate-y-1/2 rounded-[14px] ${stopped ? 'bg-white' : 'bg-white/15 shadow-[inset_0_0_0_1.5px_rgb(255_255_255/0.5)]'}`} aria-hidden />
-          {items.map((x, k) => (
-            <span key={k} className={`relative grid place-items-center whitespace-nowrap ${k === 1 ? `h-[52px] text-[26px] font-bold ${stopped ? 'text-primary' : 'text-white/60 blur-[1px]'}` : `h-11 text-[17px] text-white/40 ${stopped ? '' : 'blur-[1.2px]'}`}`}>
-              {x}
-            </span>
-          ))}
-        </div>
-        {stopped && lead && <p className="mt-2.5 px-1 text-[13px] leading-5 text-white/85">{lead}</p>}
-      </div>
-    )
-  }
   const others = state.room?.seats.filter(s => s.role !== 'spectator') ?? []
   return (
     <div className="flex min-h-dvh flex-col bg-primary px-5 pb-[max(20px,env(safe-area-inset-bottom))] pt-[max(24px,env(safe-area-inset-top))] text-white">
@@ -794,8 +773,8 @@ function Reveal({ state, me, send, t }: { state: RoomState; me: SeatView; send: 
           <span>{state.room ? RULE_TEXT(state.room.rules).split(',')[0] : ''}</span>
         </div>
         <div className="mt-12 flex flex-col gap-5">
-          {reel('출발', start.puzzle.start.title, startStop, leads[0], 3)}
-          {reel('도착', start.puzzle.end.title, endStop, leads[1], 17)}
+          <Reel key={`s${start.startsAt}`} label="출발" title={start.puzzle.start.title} seed={start.seed} base={base} total={REVEAL.start} distance={34} lead={leads[0]} reduced={reduced} exclude={[start.puzzle.start.title, start.puzzle.end.title]} />
+          <Reel key={`e${start.startsAt}`} label="도착" title={start.puzzle.end.title} seed={start.seed ^ 0x9e3779b9} base={base} total={REVEAL.end} distance={50} lead={leads[1]} reduced={reduced} exclude={[start.puzzle.start.title, start.puzzle.end.title]} />
         </div>
         <div className="mt-auto pt-6 text-center">
           {canRespin && fast >= endStop ? (
@@ -815,6 +794,93 @@ function Reveal({ state, me, send, t }: { state: RoomState; me: SeatView; send: 
           </div>
         </div>
       </div>
+    </div>
+  )
+}
+
+const ROW = 56
+/** 창에 보이는 줄 수. 가운데 줄이 뽑힌 칸이다 */
+const ROWS = 3
+
+/**
+ * 룰렛 릴 하나(16.3.3). 세로로 도는 띠를 서버 시각에 맞춰 움직인다: 손잡이를 당긴 듯 빨라졌다가 길게 느려지고,
+ * 마지막 몇 칸은 한 칸씩 넘어가다 목표 칸을 살짝 지나쳐 딸깍 돌아온다. 위치는 시각 하나로 정해져 모든 기기가 같은 장면을 본다.
+ * 띠는 원통처럼 위아래 칸이 눕고 흐려지며, 빠를수록 번진다.
+ */
+function Reel({ label, title, seed, base, total, distance, lead, reduced, exclude }: { label: string; title: string; seed: number; base: number; total: number; distance: number; lead: string | null; reduced: boolean; exclude: string[] }) {
+  const strip = useMemo(() => {
+    const items = reelOf(seed, distance + ROWS + 2, exclude)
+    items[distance + 1] = title
+    return items
+  }, [seed, distance, title, exclude])
+  const [frame, setFrame] = useState(() => reelAt(now() - base, total, distance))
+  const ticked = useRef(Math.floor(frame.p))
+  const landed = useRef(frame.done)
+
+  useEffect(() => {
+    if (reduced) return
+    let raf = 0
+    const loop = () => {
+      const f = reelAt(now() - base, total, distance)
+      setFrame(f)
+      // 느려진 뒤에는 칸이 넘어갈 때마다 짧게 떨린다(지원하는 휴대폰만). 멈출 때는 한 번 더
+      const cell = Math.floor(f.p + 0.5)
+      if (cell !== ticked.current) {
+        ticked.current = cell
+        if (f.v > 0 && f.v < 9) navigator.vibrate?.(4)
+      }
+      if (now() - base >= total && !landed.current) {
+        landed.current = true
+        navigator.vibrate?.(24)
+      }
+      if (!f.done) raf = requestAnimationFrame(loop)
+    }
+    raf = requestAnimationFrame(loop)
+    return () => cancelAnimationFrame(raf)
+  }, [base, total, distance, reduced])
+
+  const stopped = reduced ? now() - base >= total : now() - base >= total
+  const p = reduced ? (stopped ? distance : 0) : frame.p
+  const blur = reduced ? 0 : Math.min(3, frame.v / 9)
+  const first = Math.max(0, Math.floor(p) - 1)
+  const center = p + 1
+  return (
+    <div>
+      <p className="mb-2 ml-1 text-[14px] leading-5 text-white/70">{label}</p>
+      <div className="relative overflow-hidden rounded-[20px] bg-white/10 [mask-image:linear-gradient(to_bottom,transparent,#000_22%,#000_78%,transparent)]" style={{ height: ROW * ROWS }} aria-live="polite" aria-label={stopped ? `${label} ${title}` : `${label} 고르는 중`}>
+        {/* 가운데 창. 멈추면 흰 칸이 되고 한 번 톡 튄다 */}
+        <span
+          key={stopped ? 'on' : 'off'}
+          className={`absolute inset-x-3 top-1/2 z-0 h-[56px] -translate-y-1/2 rounded-[14px] transition-colors duration-200 ${stopped ? 'animate-[land_0.32s_ease-out] bg-white' : 'bg-white/15 shadow-[inset_0_0_0_1.5px_rgb(255_255_255/0.55)]'}`}
+          aria-hidden
+        />
+        <div className="absolute inset-x-0 top-0" style={{ filter: blur > 0.15 ? `blur(${blur.toFixed(2)}px)` : undefined }} aria-hidden>
+          {(reduced ? [distance, distance + 1, distance + 2] : Array.from({ length: ROWS + 3 }, (_, k) => first + k)).map(k => {
+            const text = reduced && !stopped && k === distance + 1 ? '?' : strip[k]
+            if (text === undefined) return null
+            const d = k - center // 가운데 줄에서 몇 칸 떨어졌는지
+            const y = (k - p) * ROW
+            const tilt = Math.max(-1, Math.min(1, d / 1.6))
+            const hit = stopped && k === distance + 1
+            return (
+              <span
+                key={k}
+                className={`absolute inset-x-0 grid place-items-center whitespace-nowrap px-6 font-bold ${hit ? 'text-primary' : 'text-white'}`}
+                style={{
+                  top: 0,
+                  height: ROW,
+                  transform: `translateY(${y}px) scaleY(${(1 - 0.38 * Math.abs(tilt)).toFixed(3)})`,
+                  opacity: hit ? 1 : 1 - 0.55 * Math.abs(tilt),
+                  fontSize: Math.abs(d) < 0.5 ? 26 : 20,
+                }}
+              >
+                {text}
+              </span>
+            )
+          })}
+        </div>
+      </div>
+      <p className={`mt-2.5 min-h-10 px-1 text-[13px] leading-5 text-white/85 transition-opacity duration-300 ${stopped && lead ? 'opacity-100' : 'opacity-0'}`}>{lead ?? ''}</p>
     </div>
   )
 }
