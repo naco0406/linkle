@@ -1378,7 +1378,7 @@ CREATE INDEX runs_challenge ON runs (challenge, duration_ms) WHERE challenge IS 
 | D1: 도전장 표, `runs.challenge`·`runs.room`, `players.salt` | `apps/worker/migrations/0006_friends.sql` |
 | 도전장, 이름 다시 뽑기, 친구에게 내기(초안 → 출제자가 풀면 unlisted), 커뮤니티에 올리기, 신고 | `apps/worker/src/friends.ts`, `pair.ts`, `index.ts` |
 | 방의 규칙(순수 상태 기계)과 Durable Object | `apps/worker/src/room-core.ts`, `room.ts`. 설정은 두 wrangler 파일의 `durable_objects`, `migrations` |
-| 랜덤 풀 | `tools/puzzle-gen --pool random`, 관리용 API `pool: 'random'`, 문제 채우기 워크플로의 세 번째 단계. 랜덤 풀이 60개 아래면 대기열이 넉넉해도 채운다(`refill.ts`의 `lowestOf`) |
+| 랜덤 풀 | `tools/puzzle-gen --pool random`, 관리용 API `pool: 'random'`, 문제 채우기 워크플로의 세 번째 단계. 랜덤 풀이 20개 아래면 대기열이 넉넉해도 채운다. 이때 워크플로에 모자란 쪽의 수만 넘기고(`refill.ts`의 `refillInputs`), 0인 단계는 건너뛴다. 처음에 기준을 60으로 두었다가 한 번에 채우는 양(40)보다 커서 20시간마다 채우기를 불렀다(2026-11-24) |
 | 화면 | `apps/web/src/screens/Challenge.tsx`(/c/:code), `Room.tsx`(/room/:code), `Make.tsx`(/community/new, /community/mine), `ui/Friends.tsx`, `ui/QrScanner.tsx`, `game/room.ts`, `game/inApp.ts` |
 
 시안과 달라진 것과 정한 것:

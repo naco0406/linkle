@@ -59,20 +59,26 @@ jobs:
       - name: 이미 쓴 문서 받기
         run: pnpm --filter puzzle-gen used
       - name: 오늘의 문제 후보 만들기
+        if: ${{ (inputs.daily || '40') != '0' }}
         run: pnpm --filter puzzle-gen generate --count ${{ inputs.daily || '40' }} --minutes 165 --exclude out/used.txt
       - name: 오늘의 문제 대기열에 넣기
+        if: ${{ (inputs.daily || '40') != '0' }}
         run: pnpm --filter puzzle-gen upload --pool daily
 
       - name: 이미 쓴 문서 다시 받기
         run: pnpm --filter puzzle-gen used
       - name: 커뮤니티 문제 만들기
+        if: ${{ (inputs.official || '8') != '0' }}
         run: pnpm --filter puzzle-gen generate --pool official --count ${{ inputs.official || '8' }} --minutes 45 --exclude out/used.txt
       - name: 커뮤니티에 올리기
+        if: ${{ (inputs.official || '8') != '0' }}
         run: pnpm --filter puzzle-gen upload --pool official
 
       - name: 이미 쓴 문서 다시 받기
         run: pnpm --filter puzzle-gen used
       - name: 같이 달리기 랜덤 문제 만들기
+        if: ${{ (inputs.random || '40') != '0' }}
         run: pnpm --filter puzzle-gen generate --pool random --count ${{ inputs.random || '40' }} --minutes 70 --exclude out/used.txt
       - name: 랜덤 풀에 넣기
+        if: ${{ (inputs.random || '40') != '0' }}
         run: pnpm --filter puzzle-gen upload --pool random

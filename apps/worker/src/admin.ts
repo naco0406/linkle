@@ -182,7 +182,7 @@ async function refillNow(env: AdminEnv): Promise<Response> {
   const [left, last] = await Promise.all([queueLeft(env.DB), readRefill(env.DB)])
   if (!canCallNow(last, now)) throw new HttpError(409, 'recent')
   // GitHub가 거절해도 200으로 답하고 그 상태를 그대로 알려 준다(토큰 권한 확인용)
-  return json(await dispatchRefill(env.DB, env.GITHUB_DISPATCH_TOKEN, now, left))
+  return json(await dispatchRefill(env.DB, env.GITHUB_DISPATCH_TOKEN, now, left, undefined, true))
 }
 
 /**
