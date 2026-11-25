@@ -14,6 +14,18 @@
       "port": 8801
     },
     {
+      "name": "reels-worker",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "worker", "exec", "wrangler", "dev", "--local", "--port", "8821", "--persist-to", "../reels/.state"],
+      "port": 8821, "autoPort": false
+    },
+    {
+      "name": "reels-web",
+      "runtimeExecutable": "env",
+      "runtimeArgs": ["API_TARGET=http://127.0.0.1:8821", "pnpm", "--filter", "web", "exec", "vite", "--host", "127.0.0.1", "--port", "5211", "--strictPort"],
+      "port": 5211
+    },
+    {
       "name": "wikirace-legacy",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["--prefix", "../wikirace", "run", "dev"],
