@@ -82,6 +82,28 @@ button:disabled {
   }
 }
 
+/* 화면 아래에서 안내가 올라온다 */
+@keyframes rise {
+  from {
+    translate: 0 8px;
+    opacity: 0;
+  }
+  to {
+    translate: 0 0;
+    opacity: 1;
+  }
+}
+
+/* 남은 시간 막대가 줄어든다 */
+@keyframes drain {
+  from {
+    scale: 1 1;
+  }
+  to {
+    scale: 0 1;
+  }
+}
+
 /* 룰렛이 멈춘 칸이 한 번 톡 튄다 */
 @keyframes land {
   0% {

@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react'
+import { Fragment, useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { ChevronRight, CircleHelp, Flag, Footprints, Timer, Undo2, X } from 'lucide-react'
 import { backTarget, elapsedMs, formatClock, moveCount, pathOf, stackOf, type Run } from '@linkle/core'
 import { getModel } from '../game/emoji'
@@ -7,6 +7,7 @@ import { useNavigator } from '../game/useNavigator'
 import { Help, PathTrail, Spinner, Toast, useTick } from '../ui/parts'
 import { WikiView } from '../ui/WikiView'
 import { CC_BY_SA } from '../ui/license'
+import { FIND_WINDOW_MS, FindNotice } from '../ui/FindNotice'
 
 const TRAIL = 'items-center gap-1 overflow-x-auto whitespace-nowrap text-[14px] [scrollbar-width:none] [mask-image:linear-gradient(to_right,transparent,#000_24px)]'
 
@@ -51,14 +52,31 @@ export function Game({ run, slot = 'daily', onQuit, quitLabel = '그만두기', 
     for (const el of [trail.current, trailShort.current]) el?.scrollTo({ left: el.scrollWidth })
   }, [page?.id, stack.length])
 
-  // 페이지 내 검색은 막지 않고 표시만 남긴다. 통계 후보에서만 빠진다
+  // 페이지 내 검색은 막지 않고 표시만 남긴다. 통계 후보에서만 빠진다(설계 문서 5.2).
+  // 기록이 걸린 판이면 처음 누를 때 한 번 알리고, 정해진 시간 안에 다시 누르면 검색이 열린다
+  const stake = run.phase !== 'playing' || run.room ? null : run.mode === 'daily' ? '어제의 기록' : run.mode === 'community' ? '순위표' : null
+  const searched = run.flags.includes('find')
+  const [asking, setAsking] = useState(false)
+  const armedUntil = useRef(0)
+  const stopAsking = useCallback(() => setAsking(false), [])
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'f') useGame.getState().flag(slot, 'find')
+      if (!(e.metaKey || e.ctrlKey) || e.altKey || e.shiftKey) return
+      // 한글 입력 상태에서는 key가 'ㄹ'로 온다. 자판 위치로도 본다
+      if (e.code !== 'KeyF' && e.key.toLowerCase() !== 'f') return
+      if (!stake || searched || Date.now() < armedUntil.current) {
+        armedUntil.current = 0
+        setAsking(false)
+        useGame.getState().flag(slot, 'find')
+        return
+      }
+      e.preventDefault()
+      armedUntil.current = Date.now() + FIND_WINDOW_MS
+      setAsking(true)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [slot])
+  }, [slot, stake, searched])
 
   return (
     <div className="flex h-dvh flex-col bg-white pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
@@ -128,7 +146,8 @@ export function Game({ run, slot = 'daily', onQuit, quitLabel = '그만두기', 
           )}
         </div>
         {/* 무엇을 여는 중인지 말해 준다. 잘못 눌렀는지 바로 알 수 있다 */}
-        {busy && opening && page && (
+        {asking && stake && <FindNotice stake={stake} onDone={stopAsking} />}
+        {busy && opening && page && !asking && (
           <p role="status" className="absolute bottom-4 left-1/2 z-10 flex h-10 max-w-[calc(100%-32px)] -translate-x-1/2 items-center gap-2 rounded-full bg-ink px-4 text-[14px] text-white">
             <Spinner className="h-3.5 w-3.5 flex-none text-white" />
             <b className="truncate font-semibold">{opening}</b>
