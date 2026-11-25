@@ -20,7 +20,7 @@ export const RESULT_BUBBLE_H = LINE * 6 + PAD_Y * 2
 const TEXT_BUBBLE_H = LINE + PAD_Y * 2
 
 export function blockHeight(m: Msg) {
-  const bubble = m.kind === 'result' ? RESULT_BUBBLE_H : TEXT_BUBBLE_H
+  const bubble = m.kind === 'result' ? RESULT_BUBBLE_H : TEXT_BUBBLE_H + LINE * (m.text.split('\n').length - 1)
   return (m.mine ? 0 : NAME + 4) + bubble
 }
 

@@ -8,7 +8,9 @@
     "studio": "remotion studio src/index.ts",
     "render": "remotion render src/index.ts LinkleStory out/linkle-story.mp4 && remotion render src/index.ts LinkleStory out/linkle-story-clean.mp4 --props='{\"captions\":false}' && node record/srt.ts",
     "render:play": "remotion render src/index.ts LinkleReelC out/linkle-reel-c.mp4",
-    "stills": "node record/stills.ts"
+    "stills": "node record/stills.ts",
+    "race": "node record/race.ts",
+    "render:race": "remotion render src/index.ts LinkleRace out/linkle-race.mp4 && remotion render src/index.ts LinkleRace out/linkle-race-clean.mp4 --props='{\"captions\":false}' && node record/srt.ts"
   },
   "dependencies": {
     "@remotion/cli": "4.0.545",

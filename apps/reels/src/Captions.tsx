@@ -18,12 +18,15 @@ const SIZE = 54
 const LINE_H = 96
 const GAP = 12
 
-export function StoryCaption({ sec, from, to, text, color = C.primary }: { sec: number; from: number; to: number; text: string; color?: string }) {
+/** 아래에 붙일 때 마지막 줄의 아래 끝(캔버스 y). 릴스 아래 글자 영역(1540~)을 피한다 */
+export const CAPTION_BOTTOM = 1500
+
+export function StoryCaption({ sec, from, to, text, color = C.primary, bottom = false }: { sec: number; from: number; to: number; text: string; color?: string; bottom?: boolean }) {
   if (sec < from || sec >= to) return null
   const lines = text.split('\n')
   const out = ramp(sec, to - 0.24, to, Easing.in(Easing.cubic))
   return (
-    <div style={{ position: 'absolute', left: 0, right: 0, top: CAPTION_TOP, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: GAP, opacity: 1 - out, transform: `translateY(${-14 * out}px)` }}>
+    <div style={{ position: 'absolute', left: 0, right: 0, ...(bottom ? { bottom: 1920 - CAPTION_BOTTOM } : { top: CAPTION_TOP }), display: 'flex', flexDirection: 'column', alignItems: 'center', gap: GAP, opacity: 1 - out, transform: `translateY(${-14 * out}px)` }}>
       {lines.map((line, i) => {
         const start = from + i * 0.11
         const wipe = ramp(sec, start, start + 0.34)

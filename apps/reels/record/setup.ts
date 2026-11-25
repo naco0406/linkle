@@ -28,4 +28,12 @@ wrangler(
   `INSERT INTO puzzles (kind, number, date, start_id, start_title, end_id, end_title, par, difficulty, solution, clears, plays, created_at) VALUES ` +
     `('daily', ${NUMBER}, ${q(kst)}, ${p.start.id}, ${q(p.start.title)}, ${p.end.id}, ${q(p.end.title)}, ${p.par}, ${q(p.difficulty)}, ${q(JSON.stringify(p.solution))}, ${FRIENDS_CLEARED}, ${FRIENDS_CLEARED}, ${Date.now()});`,
 )
-console.log(`\n${STATE}: ${kst} #${NUMBER} ${p.start.title} → ${p.end.title}`)
+// 같이 달리기(두 번째 릴스)의 랜덤 풀: 한 문제만 넣어 룰렛이 늘 이 문제에서 멈추게 한다
+const race = seeds.find(s => s.start.title === '떡볶이' && s.end.title === '화성')
+if (!race) throw new Error('seed-puzzles.json에 떡볶이 → 화성이 없습니다')
+wrangler(
+  'd1', 'execute', 'linkle', '--command',
+  `INSERT INTO puzzles (kind, number, date, start_id, start_title, end_id, end_title, par, difficulty, solution, created_at) VALUES ` +
+    `('random', 1, NULL, ${race.start.id}, ${q(race.start.title)}, ${race.end.id}, ${q(race.end.title)}, ${race.par}, ${q(race.difficulty)}, ${q(JSON.stringify(race.solution))}, ${Date.now()});`,
+)
+console.log(`\n${STATE}: ${kst} #${NUMBER} ${p.start.title} → ${p.end.title}, 랜덤 #1 ${race.start.title} → ${race.end.title}`)
